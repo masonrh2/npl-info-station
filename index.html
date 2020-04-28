@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPL Block Information Station</title>
+    <meta propterty="og:image" content="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
+    <meta propterty="og:type" content="website" />
+    <style>
+      div.header img {
+        float: left;
+        width: 60px;
+        height: 60px;
+      }
+      div.header h1 {
+        position: relative;
+        top: 10px; /* how much farther down the top of the header should be from the top of the image*/
+        left: 10px; /* distance between the left margin of the header and the right of the image*/
+      }
+      dl.inline-flex {
+        display: flex;
+        flex-flow: row;
+        flex-wrap: wrap;
+        width: 360px; /* set the container width*/
+        overflow: visible;
+      }
+      dl.inline-flex dt {
+        flex: 0 0 40%; /* % of container width above for term (MUST sum to 100% with same setting for dd below) */
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+      dl.inline-flex dd {
+        margin-left: auto;
+        text-align: left;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        flex: 0 0 60% /* % of container width above for description (MUST sum to 100% with same setting for dt above) */
+      }
+    </style>
+</head>
+<body>
+  <div class="header">
+    <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
+    <h1>NPL Block Information Station</h1>
+  </div><br>
+  <form action="javascript:onSubmit()">
+    <label>DBN: </label><input type="text" id="inputDBN">
+    <button id="submitDBN">Submit</button><br><br>
+  </form>
+  <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
+  <section id="imagesSelection" style="display: none;">
+    <section id="allCheckboxes" style="display: none;">
+      <input type="checkbox" id="CBshowLTOriginalImgs" onclick="toggleLTOriginalImages()" style="display: none;">
+      <label for="CBshowLTOriginalImgs" id="CBshowLTOriginalImgsLabel" style="display: none;">Show Light Transmission Original Images</label><br>
+      <input type="checkbox" id="CBshowLTCroppedImgs" onclick="toggleLTCroppedImages()" style="display: none;">
+      <label for="CBshowLTCroppedImgs" id="CBshowLTCroppedImgsLabel" style="display: none;">Show Light Transmission Cropped Images</label><br>
+      <input type="checkbox" id="CBshowNLImgs" onclick="toggleNLImages()" style="display: none;">
+      <label for="CBshowNLImgs" id="CBshowNLImgsLabel" style="display: none;">Show Natural Light Images</label><br>
+    </section>
+    <p id="loadingImages" style="display: none;">Loading Images...</p>
+    <p id="noImagesFound" style="display: none;">No Images Found</p>
+  </section>
+  
+  <p id="currentDateAndTime" style="display: none;"></p>
+
+  <section id="blockDetailsSection" style="display: none;">
+    <h2>Block Details</h2>
+    <dl class='inline-flex'>
+      <dt>DBN:</dt>
+      <dd id="dbn"></dd>
+      <dt>Block Type:</dt>
+      <dd id="block"></dd>
+      <dt>Status:</dt>
+      <dd id="status"></dd>
+      <dt>Comment:</dt>
+      <dd id="comment"></dd>
+    </dl>
+  </section>
+  <section id="blockDetailsNoInfo" style="display: none;">
+    <p style="font-style: italic; font-size: 1.5em;">Unable to find any block information for this dbn</p>
+  </section>
+
+  <section id="densitySection" style="display: none;">
+    <h2>Density</h2>
+    <dl class='inline-flex'>
+      <dt>Volume:</dt>
+      <dd id="volume"></dd>
+      <dt>Mass:</dt>
+      <dd id="mass"></dd>
+      <dt>Density:</dt>
+      <dd id="density"></dd>
+      <dt>Date:</dt>
+      <dd id="densityDate"></dd>
+    </dl>
+  </section>
+  <section id="densityNoInfo" style="display: none;">
+    <p style="font-style: italic; font-size: 1.5em;">Unable to find any density data for this block</p>
+  </section>
+
+  <section id="lightTransSection" style="display: none;">
+    <h2>Light Transmission</h2>
+    <dl class='inline-flex'>
+      <dt>Fiber Count:</dt>
+      <dd id="fiberPercentage"></dd>
+      <dt>Good End:</dt>
+      <dd id="goodEnd"></dd>
+      <dt>Missing Row:</dt>
+      <dd id="missingRow"></dd>
+      <dt>13 Connected Holes:</dt>
+      <dd id="thirteenHoles"></dd>
+      <dt>Date:</dt>
+      <dd id="lightTransDate"></dd>
+    </dl>
+    <img id="lightTransImgW" width="480" style="display: none;"/>
+    <img id="lightTransImgN" width="480" style="display: none;"/>
+    <img id="lightTransImgCroppedW" width="480" style="display: none;"/>
+    <img id="lightTransImgCroppedN" width="480" style="display: none;"/>
+  </section>
+  <section id="lightTransNoInfo" style="display: none;">
+    <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
+  </section>
+
+  <section id="natLightSection" style="display: none;">
+    <h2>Natural Light</h2>
+    <dl class='inline-flex'>
+      <dt>Date:</dt>
+      <dd id="natLightDate"></dd>
+    </dl>
+    <img id="natLightImgW" width="480" style="display: none;"/>
+    <img id="natLightImgN" width="480" style="display: none;"/>
+  </section>
+  <section id="natLightNoInfo" style="display: none;">
+    <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
+  </section>
+
+  <section id="scintSection" style="display: none;">
+    <h2>Scintillation</h2>
+    <dl class='inline-flex'>
+      <dt>Scintillation:</dt>
+      <dd id="scintillation"></dd>
+      <dt>Ratio:</dt>
+      <dd id="scintRatio"></dd>
+      <dt>Date:</dt>
+      <dd id="scintDate"></dd>
+    </dl>
+  </section>
+  <section id="scintNoInfo" style="display: none;">
+    <p style="font-style: italic; font-size: 1.5em;">Unable to find any scintillation data for this block</p>
+  </section>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script>
+    document.getElementById("submitDBN").addEventListener("click", onSubmit)
+    function onSubmit() {
+      // first clear the console? may help with the issue of console logging and calling everything twice? maybe not
+      console.clear()
+      // create a timestamp to display     
+      document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
+      document.getElementById("currentDateAndTime").style.display = 'block'
+      // show that we're loading the block data
+      document.getElementById("loadingBlockData").style.display = 'inline'
+      // grab the dbn from the input box
+      var dbn = document.getElementById("inputDBN").value
+      // hide all block test/info and noInfo sections for them to be loaded if needed by onLoadTestingDataSuccess
+      document.getElementById("blockDetailsSection").style.display = 'none'
+      document.getElementById("blockDetailsNoInfo").style.display = 'none'
+      document.getElementById("densitySection").style.display = 'none'
+      document.getElementById("densityNoInfo").style.display = 'none'
+      document.getElementById("lightTransSection").style.display = 'none'
+      document.getElementById("lightTransNoInfo").style.display = 'none'
+      document.getElementById("natLightSection").style.display = 'none'
+      document.getElementById("natLightNoInfo").style.display = 'none'
+      document.getElementById("scintSection").style.display = 'none'
+      document.getElementById("scintNoInfo").style.display = 'none'
+      // hide imagesSelection section for it to be loaded if needed by onLoadTestingDataSuccess
+      document.getElementById("imagesSelection").style.display = 'none'
+      // and reset the checkboxes
+      resetCheckboxes()
+      // and reset text that isn't automatically reset in imagesSelection section
+      document.getElementById("noImagesFound").style.display = 'none'
+      // and reset the img src urls just in case one happens to be shown but on overwritten
+      // (e.g. one LT cropped image returns a url and the other does not (e.g. DBN 68))
+      document.getElementById("lightTransImgW").src = '#'
+      document.getElementById("lightTransImgN").src = '#'
+      document.getElementById("lightTransImgCroppedW").src = '#'
+      document.getElementById("lightTransImgCroppedN").src = '#'
+      document.getElementById("natLightImgW").src = '#'
+      document.getElementById("natLightImgN").src = '#'
+      // run loadTestingDataAsStringifiedJson and pass it's return data to a success handler
+      google.script.run.withSuccessHandler(onLoadTestingDataSuccess).loadTestingDataAsStringifiedJSON(dbn)
+    }
+    function onLoadTestingDataSuccess (returnedByLoadTestingData) {
+      var htmlMap = new Map(JSON.parse(returnedByLoadTestingData))
+      // first check if ALL nulls were returned, in which case there's no information for this dbn
+      // (or loadTestingData returned all null from an INVALID dbn submission)
+      let htmlMapArray = Array.from(htmlMap)
+      let allNull = htmlMapArray.every(function(element) {
+        element == null || !dataPresent(element[1])
+      })
+      if (allNull) {
+        // no data at all for this dbn
+        document.getElementById("loadingBlockData").style.display = 'none'
+        alert('no information at all was found for this DBN')
+        document.getElementById("currentDateAndTime").style.display = 'none'
+        return
+      }
+      let getImageUrlsRun = false
+      // Check if any block information is present
+      if (dataPresent(htmlMap.get("dbn")) || dataPresent(htmlMap.get("block")) || dataPresent(htmlMap.get("status")) || dataPresent(htmlMap.get("comment"))) {
+        // some block info present, so make the info section visible and update its entries and hide the noInfo section
+        document.getElementById("blockDetailsSection").style.display = 'block'
+        if (dataPresent(htmlMap.get("dbn"))) {
+          document.getElementById("dbn").innerHTML = htmlMap.get("dbn")
+        } else {
+          document.getElementById("dbn").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("block"))) {
+          document.getElementById("block").innerHTML = htmlMap.get("block")
+        } else {
+          document.getElementById("block").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("status"))) {
+          document.getElementById("status").innerHTML = htmlMap.get("status") + statusMap.get(htmlMap.get("status"))
+        } else {
+          document.getElementById("status").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("comment"))) {
+          document.getElementById("comment").innerHTML = htmlMap.get("comment")
+        } else {
+          document.getElementById("comment").innerHTML = '(no comment found)'
+        }
+        document.getElementById("blockDetailsNoInfo").style.display = 'none'
+      } else {
+        // no block info present, so make the noInfo section visible and clear entries in info section
+        document.getElementById("dbn").innerHTML = ''
+        document.getElementById("block").innerHTML = ''
+        document.getElementById("status").innerHTML = ''
+        document.getElementById("comment").innerHTML = ''
+        document.getElementById("blockDetailsNoInfo").style.display = 'block'
+      }
+
+      // Check if any density data is present, and if so, make that section visible and update the relevant entries
+      // If not, display section that says this data couldn't be found
+      if (dataPresent(htmlMap.get("volume")) || dataPresent(htmlMap.get("mass")) || dataPresent(htmlMap.get("density")) || dataPresent(htmlMap.get("densityDate"))) {
+        // some density data present, so make the info section visible and update its entries and hide the noInfo section, 
+        document.getElementById("densitySection").style.display = 'block'
+        if (dataPresent(htmlMap.get("volume"))) {
+          document.getElementById("volume").innerHTML = htmlMap.get("volume") + ' mL'
+        } else {
+          document.getElementById("volume").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("mass"))) {
+          document.getElementById("mass").innerHTML = htmlMap.get("mass") + ' g'
+        } else {
+          document.getElementById("mass").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("density"))) {
+          document.getElementById("density").innerHTML = htmlMap.get("density") + ' g/mL'
+        } else {
+          document.getElementById("density").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("densityDate"))) {
+          document.getElementById("densityDate").innerHTML = htmlMap.get("densityDate")
+        } else {
+          document.getElementById("densityDate").innerHTML = '(no date found)'
+        }
+        document.getElementById("densityNoInfo").style.display = 'none'
+      } else {
+        // no density data present, so make the noInfo section visible and clear all entries in info section
+        document.getElementById("volume").innerHTML = ''
+        document.getElementById("mass").innerHTML = ''
+        document.getElementById("density").innerHTML = ''
+        document.getElementById("densityDate").innerHTML = ''
+        document.getElementById("densityNoInfo").style.display = 'block'
+      }
+      
+      // Check if any light transmission data is present
+      if (dataPresent(htmlMap.get("goodEnd")) || dataPresent(htmlMap.get("fiberPercentage")) || dataPresent(htmlMap.get("missingRow")) || dataPresent(htmlMap.get("thirteenHoles")) || dataPresent(htmlMap.get("lightTransDate"))) {
+        // some block info present, so make the info section visible and update its entries and hide the noInfo section, and call getImageUrls
+        document.getElementById("lightTransSection").style.display = 'block'
+        if (dataPresent(htmlMap.get("goodEnd"))) {
+          document.getElementById("goodEnd").innerHTML = htmlMap.get("goodEnd")
+        } else {
+          document.getElementById("goodEnd").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("fiberPercentage"))) {
+          document.getElementById("fiberPercentage").innerHTML = htmlMap.get("fiberPercentage") + ' %'
+        } else {
+          document.getElementById("fiberPercentage").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("missingRow"))) {
+          document.getElementById("missingRow").innerHTML = htmlMap.get("missingRow")
+        } else {
+          document.getElementById("missingRow").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("thirteenHoles"))) {
+          document.getElementById("thirteenHoles").innerHTML = htmlMap.get("thirteenHoles")
+        } else {
+          document.getElementById("thirteenHoles").innerHTML = '(no value found)'
+        }
+        if (dataPresent(htmlMap.get("lightTransDate"))) {
+          document.getElementById("lightTransDate").innerHTML = htmlMap.get("lightTransDate")
+        } else {
+          document.getElementById("lightTransDate").innerHTML = '(no date found)'
+        }
+        document.getElementById("lightTransNoInfo").style.display = 'none'
+        // and run getImageUrls
+        document.getElementById("imagesSelection").style.display = 'block'
+        document.getElementById("loadingImages").style.display = 'inline'
+        google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(htmlMap.get("dbn"))
+        getImageUrlsRun = true
+      } else {
+        // no block info present, so make the noInfo section visible and clear entries in info section
+        document.getElementById("goodEnd").innerHTML = ''
+        document.getElementById("fiberPercentage").innerHTML = ''
+        document.getElementById("missingRow").innerHTML = ''
+        document.getElementById("thirteenHoles").innerHTML = ''
+        document.getElementById("lightTransDate").innerHTML = ''
+        document.getElementById("lightTransNoInfo").style.display = 'block'
+      }
+      
+      // Check if any natural light data is present
+      if (dataPresent(htmlMap.get("natLightDate"))) {
+        // some block info present, so make the info section visible and update its entries and hide the noInfo section, 
+        document.getElementById("natLightSection").style.display = 'block'
+        document.getElementById("natLightDate").innerHTML = htmlMap.get("natLightDate")
+        document.getElementById("natLightNoInfo").style.display = 'none'
+        if (!getImageUrlsRun) {
+          // run getImageUrls if it hasn't been run
+          document.getElementById("imagesSelection").style.display = 'block'
+          document.getElementById("loadingImages").style.display = 'inline'
+          google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(htmlMap.get("dbn"))
+          
+          getImageUrlsRun = true
+        }
+      } else {
+        // no block info present, so make the noInfo section visible and clear entries in info section
+        document.getElementById("natLightDate").innerHTML = ''
+        document.getElementById("natLightNoInfo").style.display = 'block'
+        // I don't need to run getImageUrls, so if light transmission didn't run it, when we don't need any of the image checkboxes AND we need to reset them (if they are checked, uncheck them and toggle!)
+        if (!getImageUrlsRun) {
+          resetCheckboxes();
+        }
+
+      }
+
+      // Check if any scinitllation data if present, and if so, make that section visible and update the relevent entries
+      if (dataPresent(htmlMap.get("scintillation")) || dataPresent(htmlMap.get("scintRatio")) || dataPresent(htmlMap.get("scintDate"))) {
+        // some block info present, so make the info section visible and update its entries and hide the noInfo section, 
+        document.getElementById("scintSection").style.display = 'block'
+        if (htmlMap.get("scintillation")) {
+          document.getElementById("scintillation").innerHTML = htmlMap.get("scintillation") + ' mV'
+        } else {
+          document.getElementById("scintillation").innerHTML = '(no value found)'
+        }
+        if (htmlMap.get("scintRatio")) {
+          document.getElementById("scintRatio").innerHTML = htmlMap.get("scintRatio")
+        } else {
+          document.getElementById("scintRatio").innerHTML = '(no value found)'
+        }
+        if (htmlMap.get("scintDate")) {
+          document.getElementById("scintDate").innerHTML = htmlMap.get("scintDate")
+        } else {
+          document.getElementById("scintDate").innerHTML = '(no date found)'
+        }
+        document.getElementById("scintNoInfo").style.display = 'none'
+      } else {
+        // no block info present, so make the noInfo section visible and clear entries in info section
+        document.getElementById("scintillation").innerHTML = ''
+        document.getElementById("scintRatio").innerHTML = ''
+        document.getElementById("scintDate").innerHTML = ''
+        document.getElementById("scintNoInfo").style.display = 'block'
+      }
+      // now hide the loading block data text...
+      document.getElementById("loadingBlockData").style.display = 'none'
+    }
+    // run if no image data is needed—resets all checkboxes individually and hides checkboxes section
+    function resetCheckboxes () {
+      if (document.getElementById("CBshowLTOriginalImgs").checked == true) {
+      document.getElementById("CBshowLTOriginalImgs").checked = false
+      toggleLTOriginalImages()
+      }
+      document.getElementById("CBshowLTOriginalImgs").style.display = 'none'
+      document.getElementById("CBshowLTOriginalImgsLabel").style.display = 'none'
+      
+      if (document.getElementById("CBshowLTCroppedImgs").checked == true) {
+      document.getElementById("CBshowLTCroppedImgs").checked = false
+      toggleLTCroppedImages()
+      }
+      document.getElementById("CBshowLTCroppedImgs").style.display = 'none'
+      document.getElementById("CBshowLTCroppedImgsLabel").style.display = 'none'
+
+      if (document.getElementById("CBshowNLImgs").checked == true) {
+      document.getElementById("CBshowNLImgs").checked = false
+      toggleNLImages()
+      }
+      document.getElementById("CBshowNLImgs").style.display = 'none'
+      document.getElementById("CBshowNLImgsLabel").style.display = 'none'
+      // hide entire section
+      document.getElementById("allCheckboxes").style.display = 'none'
+    }
+    function onGetImageUrlsSuccess (imageUrls) {
+      // log imageUrls returned (for debugging)
+      console.log("imageUrls[0] was " + imageUrls[0])
+      console.log("imageUrls[1] was " + imageUrls[1])
+      console.log("imageUrls[2] was " + imageUrls[2])
+      console.log("imageUrls[3] was " + imageUrls[3])
+      console.log("imageUrls[4] was " + imageUrls[4])
+      console.log("imageUrls[5] was " + imageUrls[5])
+      // check if getImageUrls returned any urls...
+      if (imageUrls[0] != null || imageUrls[1] != null || imageUrls[2] != null || imageUrls[3] != null || imageUrls[4] != null || imageUrls[5] != null) {
+        // ...at least one url was returned, so check each pair of images...
+        if (imageUrls[0] != null || imageUrls[1] != null) { // one of these isn't null, so show its checkbox AND check each image to see if it should be made visible
+        document.getElementById("CBshowLTOriginalImgs").style.display = 'inline'
+        document.getElementById("CBshowLTOriginalImgsLabel").style.display = 'inline'
+        if (imageUrls[0] != null) {
+          document.getElementById("lightTransImgW").src = imageUrls[0]
+        } else {
+          //somehow tell toggle that this image should never be shown, even when toggle is called...
+          //and add be able to undo this when a normal pair of pictures is returned...
+        }
+        if (imageUrls[1] != null) {
+          document.getElementById("lightTransImgN").src = imageUrls[1]
+        } else {
+          //somehow tell toggle that this image should never be shown, even when toggle is called...
+          //and add be able to undo this when a normal pair of pictures is returned...
+        }
+        } else { // both are null...if the box is checked, uncheck it AND call its toggle fn AND make sure it's hidden!
+          if (document.getElementById("CBshowLTOriginalImgs").checked == true) {
+            document.getElementById("CBshowLTOriginalImgs").checked = false
+            toggleLTOriginalImages()
+          }
+          document.getElementById("CBshowLTOriginalImgs").style.display = 'none'
+          document.getElementById("CBshowLTOriginalImgsLabel").style.display = 'none'
+        }
+        if (imageUrls[2] != null || imageUrls[3] != null) { // one of these isn't null, so show its checkbox AND check each image to see if it should be made visible
+          document.getElementById("CBshowLTCroppedImgs").style.display = 'inline'
+          document.getElementById("CBshowLTCroppedImgsLabel").style.display = 'inline'
+          if (imageUrls[2] != null) {
+            document.getElementById("lightTransImgCroppedW").src = imageUrls[2]
+          } else {
+            //somehow tell toggle that this image should never be shown, even when toggle is called...
+            //and add be able to undo this when a normal pair of pictures is returned...
+          }
+          if (imageUrls[3] != null) {
+            document.getElementById("lightTransImgCroppedN").src = imageUrls[3]
+          } else {
+            //somehow tell toggle that this image should never be shown, even when toggle is called...
+            //and add be able to undo this when a normal pair of pictures is returned...
+          }
+        } else { // both are null...if the box is checked, uncheck it AND call its toggle fn
+          if (document.getElementById("CBshowLTCroppedImgs").checked == true) {
+            document.getElementById("CBshowLTCroppedImgs").checked = false
+            toggleLTCroppedImages()
+          }
+          document.getElementById("CBshowLTCroppedImgs").style.display = 'none'
+          document.getElementById("CBshowLTCroppedImgsLabel").style.display = 'none'
+        }
+        if (imageUrls[4] != null || imageUrls[5] != null) { // one of these isn't null, so show its checkbox AND check each image to see if it should be made visible
+          document.getElementById("CBshowNLImgs").style.display = 'inline'
+          document.getElementById("CBshowNLImgsLabel").style.display = 'inline'
+          if (imageUrls[4] != null) {
+            document.getElementById("natLightImgW").src = imageUrls[4]
+          } else {
+            //somehow tell toggle that this image should never be shown, even when toggle is called...
+            //and add be able to undo this when a normal pair of pictures is returned...
+          }
+          if (imageUrls[5] != null) {
+            document.getElementById("natLightImgN").src = imageUrls[5]
+          } else {
+            //somehow tell toggle that this image should never be shown, even when toggle is called...
+            //and add be able to undo this when a normal pair of pictures is returned...
+          }
+        } else { // both are null...if the box is checked, uncheck it AND call its toggle fn
+          if (document.getElementById("CBshowNLImgs").checked == true) {
+            document.getElementById("CBshowNLImgs").checked = false
+            toggleNLImages()
+          }
+          document.getElementById("CBshowNLImgs").style.display = 'none'
+          document.getElementById("CBshowNLImgsLabel").style.display = 'none'
+        }
+        // finally, display the checkboxes section
+        document.getElementById("loadingImages").style.display = 'none'
+        document.getElementById("allCheckboxes").style.display = 'block'
+      } else {
+        // ...NO image urls were returned, so there's no iamge data to display
+        document.getElementById("loadingImages").style.display = 'none'
+        document.getElementById("noImagesFound").style.display = 'inline'
+      }
+    }
+    function toggleLTOriginalImages () {
+      let x = document.getElementById("lightTransImgW")
+      let y = document.getElementById("lightTransImgN")
+      if (x.style.display === "none" || y.style.display === "none") {
+        x.style.display = "block"
+        y.style.display = "block"
+      } else {
+        x.style.display = "none"
+        y.style.display = "none"
+      }
+    }
+    function toggleLTCroppedImages () {
+      let x = document.getElementById("lightTransImgCroppedW")
+      let y = document.getElementById("lightTransImgCroppedN")
+      if (x.style.display === "none" || y.style.display === "none") {
+        x.style.display = "block"
+        y.style.display = "block"
+      } else {
+        x.style.display = "none"
+        y.style.display = "none"
+      }
+    }
+    function toggleNLImages () {
+      let x = document.getElementById("natLightImgW")
+      let y = document.getElementById("natLightImgN")
+      if (x.style.display === "none" || y.style.display === "none") {
+        x.style.display = "block"
+        y.style.display = "block"
+      } else {
+        x.style.display = "none"
+        y.style.display = "none"
+      }
+    }
+    // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
+    function dataPresent (data) {
+      return (data != null && data != '' && data != '#NUM!' && data != '#DIV/0!')
+    }
+    // Converts a status number to english so it can be added to the block information
+    var statusMap = new Map([
+      ['0',' (fiber set awaiting mold)'],
+      ['1',' (mold awaiting tungsten powder)'],
+      ['2',' (mold with tungsten awaiting epoxy)'],
+      ['3',' (mold awaiting unmolding)'],
+      ['4',' (unmolded, awating machining)'],
+      ['5',' (machined, awaiting testing)'],
+      ['5a',' (all tests good, I think?)'],
+      ['5b',' (some tests bad, I think?)'],
+      ['6',' (tests good, awaiting shipment)'],
+      ['7',' (shipped, at BNL)'],
+      ['8',' (graveyard, I think?)']
+    ])
+  </script>
+</body>
+</html>
