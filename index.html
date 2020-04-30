@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NPL Block Information Station</title>
-    <meta propterty="og:image" content="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
-    <meta propterty="og:type" content="website" />
     <style>
       div.header img {
         float: left;
@@ -43,11 +41,14 @@
     <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
     <h1>NPL Block Information Station</h1>
   </div><br>
+  
   <form action="javascript:onSubmit()">
     <label>DBN: </label><input type="text" id="inputDBN">
     <button id="submitDBN">Submit</button>
   </form>
+  
   <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
+  
   <section id="imagesSelection" style="display: none;">
     <br>
     <section id="allCheckboxes" style="display: none;">
@@ -60,17 +61,16 @@
     </section>
     <p id="loadingImages" style="display: none;">Loading Images...</p>
     <p id="noImagesFound" style="display: none;">No Images Found</p>
-    <br><br>
   </section>
   
-  <p id="currentDateAndTime" style="display: none;"></p><br>
+  <p id="currentDateAndTime" style="display: none;"></p>
 
   <section id="blockDetailsSection" style="display: none;">
     <h2>Block Details</h2>
     <dl class='inline-flex'>
       <dt>DBN:</dt>
       <dd id="dbn"></dd>
-      <dt>Block Type:</dt>
+      <dt>Block Design:</dt>
       <dd id="block"></dd>
       <dt>Status:</dt>
       <dd id="status"></dd>
@@ -152,11 +152,25 @@
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script>
-    // document.getElementById("submitDBN").addEventListener("click", onSubmit)
+    // Converts a status number to english so it can be added to the block information
+    var statusMap = new Map([
+      ['0',' (fiber set)'],
+      ['1',' (fibers in mold)'],
+      ['2',' (tungsten in mold)'],
+      ['3',' (potted)'],
+      ['4',' (machining)'],
+      ['5',' (ready for testing)'],
+      ['5a',' (A-grade, all tests good)'],
+      ['5b',' (B-grade, some tests bad)'],
+      ['6',' (ready to be shipped)'],
+      ['7',' (shipped, at BNL)'],
+      ['8',' (graveyard)']
+    ])
+    // called what enter is pressed on text box or submit is clicked
     function onSubmit() {
       // create a timestamp to display     
       document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
-      document.getElementById("currentDateAndTime").style.display = 'inline'
+      document.getElementById("currentDateAndTime").style.display = 'block'
       // show that we're loading the block data
       document.getElementById("loadingBlockData").style.display = 'block'
       // grab the dbn from the input box
@@ -523,20 +537,6 @@
     function dataPresent (data) {
       return (data != null && data != '' && data != '#NUM!' && data != '#DIV/0!')
     }
-    // Converts a status number to english so it can be added to the block information
-    var statusMap = new Map([
-      ['0',' (fiber set awaiting mold)'],
-      ['1',' (mold awaiting tungsten powder)'],
-      ['2',' (mold with tungsten awaiting epoxy)'],
-      ['3',' (mold awaiting unmolding)'],
-      ['4',' (unmolded, awating machining)'],
-      ['5',' (machined, awaiting testing)'],
-      ['5a',' (all tests good, I think?)'],
-      ['5b',' (some tests bad, I think?)'],
-      ['6',' (tests good, awaiting shipment)'],
-      ['7',' (shipped, at BNL)'],
-      ['8',' (graveyard, I think?)']
-    ])
   </script>
 </body>
 </html>

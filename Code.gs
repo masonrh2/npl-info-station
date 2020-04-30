@@ -7,6 +7,10 @@ function doGet () {
 
 // Create maps that will take a key (e.g. density) and return the corresponding column that contains that data depending on which sheet contains the desired dbn
 // Note that adding or deleting a column will temporarily break this, until the values below are changed
+
+// maximum DBN (reject dbns larger than this)
+var maxDbn = 3498
+
 // For sheet Blocks DB
 var blocksSheet1Map = ([
   ['dbn', 0],
@@ -222,7 +226,7 @@ function loadTestingData (dbn) {
   // The dbn passed from the html doesn't seem to be an int, so make sure it is (dbn 1 would return info for dbn 10 otherwise)
   dbn = Math.floor(dbn)
   // Reject invalid dbns and choose the correct sheet and map for valid dbns
-  if (dbn < 0 || dbn > 3498) {
+  if (dbn < 0 || dbn > maxDbn) {
     Logger.log('the input dbn was out of range')
     return new Map()
   } else if (dbn < 2000) {
@@ -389,9 +393,9 @@ function searchFolderForFiles (folderToSearch, fileNameWithoutExtensionArray) {
     }
   }
   Logger.log("this probably shouldn't have happened unless you were passed weird dbn that has .png")
-  // Otherwise, look for some bullshit like a random .png...this process is much less efficient...
+  // Otherwise, look for something weird like a random .png...this process is much less efficient...
   // and only search the file name at the end of the array (no zeroes added), because these random .png files seem to
-  // consistenly follow this nonstandard naming convention (asinine DBN_642 instead of standard DBN_0642)
+  // consistenly follow this nonstandard naming convention (less nice DBN_642 instead of standard DBN_0642)
   let noZeroesName = fileNameWithoutExtensionArray[fileNameWithoutExtensionArray.length - 1]
   let fileIterator = folderToSearch.getFiles()
   while (fileIterator.hasNext()) {
