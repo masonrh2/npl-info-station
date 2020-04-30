@@ -74,6 +74,10 @@
       <dd id="block"></dd>
       <dt>Status:</dt>
       <dd id="status"></dd>
+      <dt id="shipmentLabel">BNL Shipment:</dt>
+      <dd id="shipment"></dd>
+      <dt id="sectorLabel">Sector:</dt>
+      <dd id="sector"></dd>
       <dt>Comment:</dt>
       <dd id="comment"></dd>
     </dl>
@@ -152,7 +156,17 @@
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script>
-    // Converts a status number to english so it can be added to the block information
+    // store each section's name in an array for easy iteration:
+    var allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
+    // store each section's information in an array for easy iteration:
+    var blockDetailsKeys = ['dbn', 'block', 'status', 'shipment', 'sector', 'comment']
+    var densityKeys = ['volume', 'mass', 'density', 'densityDate']
+    var lightTransKeys = ['goodEnd', 'fiberPercentage', 'missingRow', 'thirteenHoles', 'lightTransDate']
+    var natLightKeys = ['natLightDate']
+    var scintKeys = ['scintillation', 'scintRatio', 'scintDate']
+    // store all testing images in an array for easy iteration:
+    var allTestingImgs = ['lightTransImgW', 'lightTransImgN', 'lightTransImgCroppedW', 'lightTransImgCroppedN', 'natLightImgW', 'natLightImgN']
+    // converts a status number to english so it can be added to the block information
     var statusMap = new Map([
       ['0',' (fiber set)'],
       ['1',' (fibers in mold)'],
@@ -166,7 +180,7 @@
       ['7',' (shipped, at BNL)'],
       ['8',' (graveyard)']
     ])
-    // called what enter is pressed on text box or submit is clicked
+    // called when enter is pressed in text box or submit button is clicked
     function onSubmit() {
       // create a timestamp to display     
       document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
@@ -176,17 +190,11 @@
       // grab the dbn from the input box
       var dbn = document.getElementById("inputDBN").value
       console.log('fetching information for DBN ' + dbn)
-      // hide all block test/info and noInfo sections for them to be loaded if needed by onLoadTestingDataSuccess
-      document.getElementById("blockDetailsSection").style.display = 'none'
-      document.getElementById("blockDetailsNoInfo").style.display = 'none'
-      document.getElementById("densitySection").style.display = 'none'
-      document.getElementById("densityNoInfo").style.display = 'none'
-      document.getElementById("lightTransSection").style.display = 'none'
-      document.getElementById("lightTransNoInfo").style.display = 'none'
-      document.getElementById("natLightSection").style.display = 'none'
-      document.getElementById("natLightNoInfo").style.display = 'none'
-      document.getElementById("scintSection").style.display = 'none'
-      document.getElementById("scintNoInfo").style.display = 'none'
+      // hide all block info and noInfo sections for them to be loaded if needed by onLoadTestingDataSuccess
+      for (let i = 0; i < allSectionPrefixes.length; i++) {
+        document.getElementById(allSectionPrefixes[i] + 'Section').style.display = 'none'
+        document.getElementById(allSectionPrefixes[i] + 'NoInfo').style.display = 'none'
+      }
       // hide imagesSelection section for it to be loaded if needed by onLoadTestingDataSuccess
       document.getElementById("imagesSelection").style.display = 'none'
       // and reset the checkboxes
@@ -195,15 +203,35 @@
       document.getElementById("noImagesFound").style.display = 'none'
       // and reset the img src urls just in case one happens to be shown but on overwritten
       // (e.g. one LT cropped image returns a url and the other does not (e.g. DBN 68))
-      document.getElementById("lightTransImgW").src = '#'
-      document.getElementById("lightTransImgN").src = '#'
-      document.getElementById("lightTransImgCroppedW").src = '#'
-      document.getElementById("lightTransImgCroppedN").src = '#'
-      document.getElementById("natLightImgW").src = '#'
-      document.getElementById("natLightImgN").src = '#'
+      for (let i = 0; i < allTestingImgs.length; i++) {
+        document.getElementById(allTestingImgs[i]).src = '#'
+      }
       // run loadTestingDataAsStringifiedJson and pass it's return data to a success handler
       console.log('loading testing data')
       google.script.run.withSuccessHandler(onLoadTestingDataSuccess).loadTestingDataAsStringifiedJSON(dbn)
+    }
+    // takes array of string element ids and clears their innerHTML
+    function clearElements(array) {
+      for (let i = 0; i < array.length; i++) {
+        document.getElementById(array[i]).innerHTML = ''
+      }
+    }
+    // pulls the info with key id from map and updates its innerHTML if it contains info
+    // hides the element AND its label if it does not contain info if failureMessage == 0
+    // otherwise sets the innerHTML to the failure message
+    function updateField(id, failureMessage) {
+
+    }
+    // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
+    function dataPresent (data) {
+      return (data != null && data != '' && data != '#NUM!' && data != '#DIV/0!')
+    }
+    // takes a map and an array of string ids and checks if any map values for key ids have data
+    // "has data" is determined by function dataPresent
+    function someDataPresent(map, array) {
+      return array.some(function(element) {
+        return dataPresent(map.get(element))
+      })
     }
     function onLoadTestingDataSuccess (returnedByLoadTestingData) {
       var htmlMap = new Map(JSON.parse(returnedByLoadTestingData))
@@ -222,7 +250,7 @@
       }
       let getImageUrlsRun = false
       // Check if any block information is present
-      if (dataPresent(htmlMap.get("dbn")) || dataPresent(htmlMap.get("block")) || dataPresent(htmlMap.get("status")) || dataPresent(htmlMap.get("comment"))) {
+      if (someDataPresent(htmlMap, blockDetailsKeys)) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("blockDetailsSection").style.display = 'block'
         if (dataPresent(htmlMap.get("dbn"))) {
@@ -240,6 +268,18 @@
         } else {
           document.getElementById("status").innerHTML = '(no value found)'
         }
+        if (dataPresent(htmlMap.get("shipment"))) {
+          document.getElementById("shipment").innerHTML = htmlMap.get("shipment")
+        } else {
+          document.getElementById("shipment").style.display = 'none'
+          document.getElementById("shipmentLabel").style.display = 'none'
+        }
+        if (dataPresent(htmlMap.get("sector"))) {
+          document.getElementById("sector").innerHTML = htmlMap.get("sector")
+        } else {
+          document.getElementById("sector").style.display = 'none'
+          document.getElementById("sectorLabel").style.display = 'none'
+        }
         if (dataPresent(htmlMap.get("comment"))) {
           document.getElementById("comment").innerHTML = htmlMap.get("comment")
         } else {
@@ -251,6 +291,8 @@
         document.getElementById("dbn").innerHTML = ''
         document.getElementById("block").innerHTML = ''
         document.getElementById("status").innerHTML = ''
+        document.getElementById("shipment").innerHTML = ''
+        document.getElementById("sector").innerHTML = ''
         document.getElementById("comment").innerHTML = ''
         document.getElementById("blockDetailsNoInfo").style.display = 'block'
       }
@@ -532,10 +574,6 @@
         x.style.display = "none"
         y.style.display = "none"
       }
-    }
-    // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
-    function dataPresent (data) {
-      return (data != null && data != '' && data != '#NUM!' && data != '#DIV/0!')
     }
   </script>
 </body>

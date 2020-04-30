@@ -16,7 +16,9 @@ var blocksSheet1Map = ([
   ['dbn', 0],
   ['block', 2],
   ['status', 3],
+  ['shipment', 4],
   ['comment', 6],
+  ['sector', 7],
   ['volume', 40],
   ['mass', 42],
   ['density', 44],
@@ -36,6 +38,8 @@ var blocksSheet2Map = new Map([
   ['dbn', 0],
   ['block', 2],
   ['status', 3],
+  ['shipment', 4],
+  ['sector', 6],
   ['comment', 7],
   ['volume', 40],
   ['mass', 42],
@@ -74,6 +78,7 @@ function loadFiles () {
   // Note that changing the names or locations of the folders in google drive may temporarily break this, until the paths below are chagned
   // Begin spaghetti of if statements, although trees and recursion is another possiblity...
   // Locate testing folder... (for Mason's drive)
+  // Consider just searching for folder/file names directly form drive when migrating to sphenix emcal account
   if (DriveApp.getFoldersByName('testing').hasNext()) {
   // ...found testing folder, now save it
     testingFolder = DriveApp.getFoldersByName('testing').next()
@@ -198,7 +203,9 @@ function loadFiles () {
 }
 
 /**
- * Get all of this block's relevant data as stringified JSPN
+ * Get all of this block's relevant data as stringified JSON
+ * It seems to be necessary to convert to a string BEFORE the map is passed to the html script,
+ * because passing a map object, which should work, returned a seemingly empty object to the html script
  * @param {number} dbn The block's DBN
  * @return {string} The Map that's usually returned by loadTestingData, but converted to a string so that it can be passed to the html
  */
