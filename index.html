@@ -42,7 +42,7 @@
     <h1>NPL Block Information Station</h1>
   </div><br>
   
-  <form action="javascript:onSubmit()">
+  <form action="javascript:onSubmit()" style="display: block;">
     <label>DBN: </label><input type="text" id="inputDBN">
     <button id="submitDBN">Submit</button>
   </form>
@@ -50,17 +50,16 @@
   <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
   
   <section id="imagesSelection" style="display: none;">
-    <br>
     <section id="allCheckboxes" style="display: none;">
-      <input type="checkbox" id="CBshowLTOriginalImgs" onclick="toggleImages('lightTransImg')" style="display: none;">
-      <label for="CBshowLTOriginalImgs" id="CBshowLTOriginalImgsLabel" style="display: none;">Show Light Transmission Original Images</label><br>
-      <input type="checkbox" id="CBshowLTCroppedImgs" onclick="toggleImages('lightTransImgCropped')" style="display: none;">
-      <label for="CBshowLTCroppedImgs" id="CBshowLTCroppedImgsLabel" style="display: none;">Show Light Transmission Cropped Images</label><br>
-      <input type="checkbox" id="CBshowNLImgs" onclick="toggleImages('natLightImg')" style="display: none;">
-      <label for="CBshowNLImgs" id="CBshowNLImgsLabel" style="display: none;">Show Natural Light Images</label>
+      <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')" style="display: none;">
+      <label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel" style="display: none;">Show Light Transmission Original Images</label><br>
+      <input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')" style="display: none;">
+      <label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel" style="display: none;">Show Light Transmission Cropped Images</label><br>
+      <input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')" style="display: none;">
+      <label for="CBshow-natLightImg" id="CBshow-natLightImgLabel" style="display: none;">Show Natural Light Images</label>
     </section>
-    <p id="loadingImages" style="display: none;">Loading Images...</p>
-    <p id="noImagesFound" style="display: none;">No Images Found</p>
+    <div id="loadingImages" style="display: none; margin-top: 1em;">Loading Images...</div>
+    <div id="noImagesFound" style="display: none; margin-top: 1em;">No Images Found</div>
   </section>
   
   <p id="currentDateAndTime" style="display: none;"></p>
@@ -164,6 +163,8 @@
     var lightTransKeys = ['goodEnd', 'fiberPercentage', 'missingRow', 'thirteenHoles', 'lightTransDate']
     var natLightKeys = ['natLightDate']
     var scintKeys = ['scintillation', 'scintRatio', 'scintDate']
+    // store all image prefixes in an array for easy iteration
+    var allImagePrefixes = ['lightTransImg', 'lightTransImgCropped', 'natLightImg']
     // store all testing image IDs in an array for easy iteration:
     var allTestingImgs = ['lightTransImgW', 'lightTransImgN', 'lightTransImgCroppedW', 'lightTransImgCroppedN', 'natLightImgW', 'natLightImgN']
     // IF a testing value has a key in this map, display the message when no data for that value was found
@@ -265,6 +266,10 @@
         return dataPresent(map.get(element))
       })
     }
+    // called after loadTestingData (from google script) is called, and is called with what loadTestingData returned as the argument
+    // handles updating all block data and chooses which sections to show and hide based on what loadTestingData returned
+    // note that the argument is actually what's returned by loadTestingDataAsStringifiedJSON, since we don't seem to be able
+    // to pass complicated objects like maps between the google script and the HTML script (if there is a way, I haven't found it) 
     function onLoadTestingDataSuccess (returnedByLoadTestingData) {
       var htmlMap = new Map(JSON.parse(returnedByLoadTestingData))
       // first check if ALL nulls were returned, in which case there's no information for this dbn
@@ -321,7 +326,7 @@
         }
         // and run getImageUrls
         document.getElementById("imagesSelection").style.display = 'block'
-        document.getElementById("loadingImages").style.display = 'inline'
+        document.getElementById("loadingImages").style.display = 'block'
         console.log('fetching image urls')
         google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(htmlMap.get("dbn"))
         getImageUrlsRun = true
@@ -344,7 +349,7 @@
         if (!getImageUrlsRun) {
           // run getImageUrls if it hasn't been run
           document.getElementById("imagesSelection").style.display = 'block'
-          document.getElementById("loadingImages").style.display = 'inline'
+          document.getElementById("loadingImages").style.display = 'block'
           console.log('fetching image urls')
           google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(htmlMap.get("dbn"))
           getImageUrlsRun = true
@@ -381,123 +386,55 @@
       // now hide the loading block data text...
       document.getElementById("loadingBlockData").style.display = 'none'
     }
-    // run if no image data is needed—resets all checkboxes individually and hides checkboxes section
+    // resets a checkbox to unchecked
+    function resetCheckbox (imagePrefix) {
+      // if a checkbox is checked, uncheck it and call it's toggle function to hide images
+      if (document.getElementById('CBshow-' + imagePrefix).checked == true) {
+        document.getElementById('CBshow-' + imagePrefix).checked = false
+        toggleImages(imagePrefix)
+      }
+      // then hide the checkbox and its label
+      document.getElementById('CBshow-' + imagePrefix).style.display = 'none'
+      document.getElementById('CBshow-' + imagePrefix + 'Label').style.display = 'none'
+    }
+    // reset all checkboxes individually and hide checkboxes section
     function resetCheckboxes () {
-      /*
-      let checkboxArray = ['CBshowLTOriginalImgs', 'CBshowLTCroppedImgs', 'CBshowNLImgs']
-      for (let i = 0; i < checkboxArray.length; i++) {
-        if (document.getElementById(checkboxArray[i]).checked == true) {
-        document.getElementById(checkboxArray[i]).checked = false
-        toggleImages()
-        }
-        document.getElementById(checkboxArray[i]).style.display = 'none'
-        document.getElementById(checkboxArray[i] + 'Label').style.display = 'none'
+      for (let i = 0; i < allImagePrefixes.length; i++) {
+        resetCheckbox(allImagePrefixes[i])
       }
-      */
-      if (document.getElementById("CBshowLTOriginalImgs").checked == true) {
-      document.getElementById("CBshowLTOriginalImgs").checked = false
-      toggleLTOriginalImages()
-      }
-      document.getElementById("CBshowLTOriginalImgs").style.display = 'none'
-      document.getElementById("CBshowLTOriginalImgsLabel").style.display = 'none'
-      
-      if (document.getElementById("CBshowLTCroppedImgs").checked == true) {
-      document.getElementById("CBshowLTCroppedImgs").checked = false
-      toggleLTCroppedImages()
-      }
-      document.getElementById("CBshowLTCroppedImgs").style.display = 'none'
-      document.getElementById("CBshowLTCroppedImgsLabel").style.display = 'none'
-
-      if (document.getElementById("CBshowNLImgs").checked == true) {
-      document.getElementById("CBshowNLImgs").checked = false
-      toggleNLImages()
-      }
-      document.getElementById("CBshowNLImgs").style.display = 'none'
-      document.getElementById("CBshowNLImgsLabel").style.display = 'none'
-      // hide entire section
       document.getElementById("allCheckboxes").style.display = 'none'
     }
+
+    // does not perfectly nicely handle the situation where ONE end's image is present and the other is not..
+    // since this case is so rare, it tries to load both (and if one happens to not have an image, a placeholder is displayed)
     function onGetImageUrlsSuccess (imageUrls) {
       // check if getImageUrls returned any urls...
-      if (imageUrls[0] != null || imageUrls[1] != null || imageUrls[2] != null || imageUrls[3] != null || imageUrls[4] != null || imageUrls[5] != null) {
-        // ...at least one url was returned, so check each pair of images...
-        if (imageUrls[0] != null || imageUrls[1] != null) { // one of these isn't null, so show its checkbox AND check each image to see if it should be made visible
-        document.getElementById("CBshowLTOriginalImgs").style.display = 'inline'
-        document.getElementById("CBshowLTOriginalImgsLabel").style.display = 'inline'
-        if (imageUrls[0] != null) {
-          document.getElementById("lightTransImgW").src = imageUrls[0]
-        } else {
-          //somehow tell toggle that this image should never be shown, even when toggle is called...
-          //and add be able to undo this when a normal pair of pictures is returned...
-        }
-        if (imageUrls[1] != null) {
-          document.getElementById("lightTransImgN").src = imageUrls[1]
-        } else {
-          //somehow tell toggle that this image should never be shown, even when toggle is called...
-          //and add be able to undo this when a normal pair of pictures is returned...
-        }
-        } else { // both are null...if the box is checked, uncheck it AND call its toggle fn AND make sure it's hidden!
-          if (document.getElementById("CBshowLTOriginalImgs").checked == true) {
-            document.getElementById("CBshowLTOriginalImgs").checked = false
-            toggleLTOriginalImages()
-          }
-          document.getElementById("CBshowLTOriginalImgs").style.display = 'none'
-          document.getElementById("CBshowLTOriginalImgsLabel").style.display = 'none'
-        }
-        if (imageUrls[2] != null || imageUrls[3] != null) { // one of these isn't null, so show its checkbox AND check each image to see if it should be made visible
-          document.getElementById("CBshowLTCroppedImgs").style.display = 'inline'
-          document.getElementById("CBshowLTCroppedImgsLabel").style.display = 'inline'
-          if (imageUrls[2] != null) {
-            document.getElementById("lightTransImgCroppedW").src = imageUrls[2]
-          } else {
-            //somehow tell toggle that this image should never be shown, even when toggle is called...
-            //and add be able to undo this when a normal pair of pictures is returned...
-          }
-          if (imageUrls[3] != null) {
-            document.getElementById("lightTransImgCroppedN").src = imageUrls[3]
-          } else {
-            //somehow tell toggle that this image should never be shown, even when toggle is called...
-            //and add be able to undo this when a normal pair of pictures is returned...
-          }
-        } else { // both are null...if the box is checked, uncheck it AND call its toggle fn
-          if (document.getElementById("CBshowLTCroppedImgs").checked == true) {
-            document.getElementById("CBshowLTCroppedImgs").checked = false
-            toggleLTCroppedImages()
-          }
-          document.getElementById("CBshowLTCroppedImgs").style.display = 'none'
-          document.getElementById("CBshowLTCroppedImgsLabel").style.display = 'none'
-        }
-        if (imageUrls[4] != null || imageUrls[5] != null) { // one of these isn't null, so show its checkbox AND check each image to see if it should be made visible
-          document.getElementById("CBshowNLImgs").style.display = 'inline'
-          document.getElementById("CBshowNLImgsLabel").style.display = 'inline'
-          if (imageUrls[4] != null) {
-            document.getElementById("natLightImgW").src = imageUrls[4]
-          } else {
-            //somehow tell toggle that this image should never be shown, even when toggle is called...
-            //and add be able to undo this when a normal pair of pictures is returned...
-          }
-          if (imageUrls[5] != null) {
-            document.getElementById("natLightImgN").src = imageUrls[5]
-          } else {
-            //somehow tell toggle that this image should never be shown, even when toggle is called...
-            //and add be able to undo this when a normal pair of pictures is returned...
-          }
-        } else { // both are null...if the box is checked, uncheck it AND call its toggle fn
-          if (document.getElementById("CBshowNLImgs").checked == true) {
-            document.getElementById("CBshowNLImgs").checked = false
-            toggleNLImages()
-          }
-          document.getElementById("CBshowNLImgs").style.display = 'none'
-          document.getElementById("CBshowNLImgsLabel").style.display = 'none'
-        }
-        // finally, display the checkboxes section
+      if (imageUrls.every((element) => element == null)) {
+        // ...NO image urls were returned, so there's no image data to display
         document.getElementById("loadingImages").style.display = 'none'
-        document.getElementById("allCheckboxes").style.display = 'inline'
-      } else {
-        // ...NO image urls were returned, so there's no iamge data to display
-        document.getElementById("loadingImages").style.display = 'none'
-        document.getElementById("noImagesFound").style.display = 'inline'
+        document.getElementById("noImagesFound").style.display = 'block'
+        return
       }
+      // first set all not null urls to their image srcs
+      imageUrls.forEach((element, index) => {
+        if (element != null) {
+          document.getElementById(allTestingImgs[index]).src = element
+        }
+      });
+      // determine which checkboxes / image sections need to be displayed
+      for (let i = 0; i < allImagePrefixes.length; i++) {
+        if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
+          // one of this section's images is present, so display its checkbox
+          document.getElementById('CBshow-' + allImagePrefixes[i]).style.display = 'inline'
+          document.getElementById('CBshow-' + allImagePrefixes[i] + 'Label').style.display = 'inline'
+        } else {
+          // this section is not needed—reset its checkbox
+          resetCheckbox(allImagePrefixes[i])
+        }
+      }
+      // finally, display the checkboxes section
+      document.getElementById("loadingImages").style.display = 'none'
+      document.getElementById("allCheckboxes").style.display = 'block'
     }
     // takes an image name prefix (e.g. lightTransImg, lightTransImgCropped, or natLightImg)
     // and toggles the visibility of the corresponding wide and narrow images
