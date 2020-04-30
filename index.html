@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NPL Block Information Station</title>
-    <meta propterty="og:image" content="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
-    <meta propterty="og:type" content="website" />
     <style>
       div.header img {
         float: left;
@@ -43,19 +41,23 @@
     <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
     <h1>NPL Block Information Station</h1>
   </div><br>
+  
   <form action="javascript:onSubmit()">
     <label>DBN: </label><input type="text" id="inputDBN">
-    <button id="submitDBN">Submit</button><br><br>
+    <button id="submitDBN">Submit</button>
   </form>
+  
   <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
+  
   <section id="imagesSelection" style="display: none;">
+    <br>
     <section id="allCheckboxes" style="display: none;">
       <input type="checkbox" id="CBshowLTOriginalImgs" onclick="toggleLTOriginalImages()" style="display: none;">
       <label for="CBshowLTOriginalImgs" id="CBshowLTOriginalImgsLabel" style="display: none;">Show Light Transmission Original Images</label><br>
       <input type="checkbox" id="CBshowLTCroppedImgs" onclick="toggleLTCroppedImages()" style="display: none;">
       <label for="CBshowLTCroppedImgs" id="CBshowLTCroppedImgsLabel" style="display: none;">Show Light Transmission Cropped Images</label><br>
       <input type="checkbox" id="CBshowNLImgs" onclick="toggleNLImages()" style="display: none;">
-      <label for="CBshowNLImgs" id="CBshowNLImgsLabel" style="display: none;">Show Natural Light Images</label><br>
+      <label for="CBshowNLImgs" id="CBshowNLImgsLabel" style="display: none;">Show Natural Light Images</label>
     </section>
     <p id="loadingImages" style="display: none;">Loading Images...</p>
     <p id="noImagesFound" style="display: none;">No Images Found</p>
@@ -68,7 +70,7 @@
     <dl class='inline-flex'>
       <dt>DBN:</dt>
       <dd id="dbn"></dd>
-      <dt>Block Type:</dt>
+      <dt>Block Design:</dt>
       <dd id="block"></dd>
       <dt>Status:</dt>
       <dd id="status"></dd>
@@ -111,10 +113,10 @@
       <dt>Date:</dt>
       <dd id="lightTransDate"></dd>
     </dl>
-    <img id="lightTransImgW" width="480" style="display: none;"/>
-    <img id="lightTransImgN" width="480" style="display: none;"/>
-    <img id="lightTransImgCroppedW" width="480" style="display: none;"/>
-    <img id="lightTransImgCroppedN" width="480" style="display: none;"/>
+    <img id="lightTransImgW" height="360" style="display: none;"/>
+    <img id="lightTransImgN" height="360" style="display: none;"/>
+    <img id="lightTransImgCroppedW" height="360" style="display: none;"/>
+    <img id="lightTransImgCroppedN" height="360" style="display: none;"/>
   </section>
   <section id="lightTransNoInfo" style="display: none;">
     <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
@@ -126,8 +128,8 @@
       <dt>Date:</dt>
       <dd id="natLightDate"></dd>
     </dl>
-    <img id="natLightImgW" width="480" style="display: none;"/>
-    <img id="natLightImgN" width="480" style="display: none;"/>
+    <img id="natLightImgW" height="360" style="display: none;"/>
+    <img id="natLightImgN" height="360" style="display: none;"/>
   </section>
   <section id="natLightNoInfo" style="display: none;">
     <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
@@ -150,17 +152,30 @@
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script>
-    document.getElementById("submitDBN").addEventListener("click", onSubmit)
+    // Converts a status number to english so it can be added to the block information
+    var statusMap = new Map([
+      ['0',' (fiber set)'],
+      ['1',' (fibers in mold)'],
+      ['2',' (tungsten in mold)'],
+      ['3',' (potted)'],
+      ['4',' (machining)'],
+      ['5',' (ready for testing)'],
+      ['5a',' (A-grade, all tests good)'],
+      ['5b',' (B-grade, some tests bad)'],
+      ['6',' (ready to be shipped)'],
+      ['7',' (shipped, at BNL)'],
+      ['8',' (graveyard)']
+    ])
+    // called what enter is pressed on text box or submit is clicked
     function onSubmit() {
-      // first clear the console? may help with the issue of console logging and calling everything twice? maybe not
-      console.clear()
       // create a timestamp to display     
       document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
       document.getElementById("currentDateAndTime").style.display = 'block'
       // show that we're loading the block data
-      document.getElementById("loadingBlockData").style.display = 'inline'
+      document.getElementById("loadingBlockData").style.display = 'block'
       // grab the dbn from the input box
       var dbn = document.getElementById("inputDBN").value
+      console.log('fetching information for DBN ' + dbn)
       // hide all block test/info and noInfo sections for them to be loaded if needed by onLoadTestingDataSuccess
       document.getElementById("blockDetailsSection").style.display = 'none'
       document.getElementById("blockDetailsNoInfo").style.display = 'none'
@@ -187,6 +202,7 @@
       document.getElementById("natLightImgW").src = '#'
       document.getElementById("natLightImgN").src = '#'
       // run loadTestingDataAsStringifiedJson and pass it's return data to a success handler
+      console.log('loading testing data')
       google.script.run.withSuccessHandler(onLoadTestingDataSuccess).loadTestingDataAsStringifiedJSON(dbn)
     }
     function onLoadTestingDataSuccess (returnedByLoadTestingData) {
@@ -307,6 +323,7 @@
         // and run getImageUrls
         document.getElementById("imagesSelection").style.display = 'block'
         document.getElementById("loadingImages").style.display = 'inline'
+        console.log('fetching image urls for light transmission and natural light')
         google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(htmlMap.get("dbn"))
         getImageUrlsRun = true
       } else {
@@ -329,6 +346,7 @@
           // run getImageUrls if it hasn't been run
           document.getElementById("imagesSelection").style.display = 'block'
           document.getElementById("loadingImages").style.display = 'inline'
+          console.log('fetching image urls for light transmission and natural light')
           google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(htmlMap.get("dbn"))
           
           getImageUrlsRun = true
@@ -337,8 +355,9 @@
         // no block info present, so make the noInfo section visible and clear entries in info section
         document.getElementById("natLightDate").innerHTML = ''
         document.getElementById("natLightNoInfo").style.display = 'block'
-        // I don't need to run getImageUrls, so if light transmission didn't run it, when we don't need any of the image checkboxes AND we need to reset them (if they are checked, uncheck them and toggle!)
+        // I don't need to run getImageUrls, so if light transmission didn't run it, then we don't need any of the image checkboxes AND we need to reset them (if they are checked, uncheck them and toggle)
         if (!getImageUrlsRun) {
+          console.log('determined there was no need to search for images')
           resetCheckboxes();
         }
 
@@ -400,13 +419,6 @@
       document.getElementById("allCheckboxes").style.display = 'none'
     }
     function onGetImageUrlsSuccess (imageUrls) {
-      // log imageUrls returned (for debugging)
-      console.log("imageUrls[0] was " + imageUrls[0])
-      console.log("imageUrls[1] was " + imageUrls[1])
-      console.log("imageUrls[2] was " + imageUrls[2])
-      console.log("imageUrls[3] was " + imageUrls[3])
-      console.log("imageUrls[4] was " + imageUrls[4])
-      console.log("imageUrls[5] was " + imageUrls[5])
       // check if getImageUrls returned any urls...
       if (imageUrls[0] != null || imageUrls[1] != null || imageUrls[2] != null || imageUrls[3] != null || imageUrls[4] != null || imageUrls[5] != null) {
         // ...at least one url was returned, so check each pair of images...
@@ -481,7 +493,7 @@
         }
         // finally, display the checkboxes section
         document.getElementById("loadingImages").style.display = 'none'
-        document.getElementById("allCheckboxes").style.display = 'block'
+        document.getElementById("allCheckboxes").style.display = 'inline'
       } else {
         // ...NO image urls were returned, so there's no iamge data to display
         document.getElementById("loadingImages").style.display = 'none'
@@ -525,20 +537,6 @@
     function dataPresent (data) {
       return (data != null && data != '' && data != '#NUM!' && data != '#DIV/0!')
     }
-    // Converts a status number to english so it can be added to the block information
-    var statusMap = new Map([
-      ['0',' (fiber set awaiting mold)'],
-      ['1',' (mold awaiting tungsten powder)'],
-      ['2',' (mold with tungsten awaiting epoxy)'],
-      ['3',' (mold awaiting unmolding)'],
-      ['4',' (unmolded, awating machining)'],
-      ['5',' (machined, awaiting testing)'],
-      ['5a',' (all tests good, I think?)'],
-      ['5b',' (some tests bad, I think?)'],
-      ['6',' (tests good, awaiting shipment)'],
-      ['7',' (shipped, at BNL)'],
-      ['8',' (graveyard, I think?)']
-    ])
   </script>
 </body>
 </html>

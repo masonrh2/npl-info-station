@@ -7,6 +7,10 @@ function doGet () {
 
 // Create maps that will take a key (e.g. density) and return the corresponding column that contains that data depending on which sheet contains the desired dbn
 // Note that adding or deleting a column will temporarily break this, until the values below are changed
+
+// maximum DBN (reject dbns larger than this)
+var maxDbn = 3498
+
 // For sheet Blocks DB
 var blocksSheet1Map = ([
   ['dbn', 0],
@@ -48,131 +52,149 @@ var blocksSheet2Map = new Map([
   ['natLightDate', 70]
 ])
 
-// Locate the database and all of the needed folders
+// declare variable that will be needed by other functions after loadFiles has run
+var filesLoaded = false
+var database
+var blocksSheet1
+var blocksSheet2
+var lightTransOriginalFolder
+var lightTransCroppedFolder
+var lightTransArchiveOriginalFolder
+var naturalLightFolder
+var naturalLightArchiveFolder
 
-
-// Note that changing the names or locations of the folders in google drive may temporarily break this, until the paths below are chagned
-// Begin spaghetti of if statements, although trees and recursion is another possiblity...
-// Locate testing folder... (for Mason's drive)
-if (DriveApp.getFoldersByName('testing').hasNext()) {
+/**
+ * locate and save database sheets and all testing folders
+ */
+function loadFiles () {
+  let testingFolder
+  let QATestsFolder
+  let lightTransTestFolder
+  let databaseSheets
+  // Note that changing the names or locations of the folders in google drive may temporarily break this, until the paths below are chagned
+  // Begin spaghetti of if statements, although trees and recursion is another possiblity...
+  // Locate testing folder... (for Mason's drive)
+  if (DriveApp.getFoldersByName('testing').hasNext()) {
   // ...found testing folder, now save it
-  var testingFolder = DriveApp.getFoldersByName('testing').next()
-  // Locate sPHENIX folder...
-  if (testingFolder.getFoldersByName('sPHENIX').hasNext()) {
-    // ...found sPHENIX folder, now locate database...
-    if (testingFolder.getFoldersByName('sPHENIX').next().getFilesByName('Blocks database').hasNext()) {
-      // ...found database, now save it
-      var database = testingFolder.getFoldersByName('sPHENIX').next().getFilesByName('Blocks database').next()
-      // Get database Spreadsheet (Sheet[]) from database file id and find the sheets Blocks DB and Blocks1364DB...
-      var databaseSheets = Sheets.Spreadsheets.get(database.getId()).sheets
-      // ...loop through the sheets until you find the desired sheets, then save them...
-      for (let i = 0; i < databaseSheets.length; i++) {
-        if (databaseSheets[i].properties.title === 'Blocks DB') {
-          var blocksSheet1 = databaseSheets[i]
-          continue
+    testingFolder = DriveApp.getFoldersByName('testing').next()
+    // Locate sPHENIX folder...
+    if (testingFolder.getFoldersByName('sPHENIX').hasNext()) {
+      // ...found sPHENIX folder, now locate database...
+      if (testingFolder.getFoldersByName('sPHENIX').next().getFilesByName('Blocks database').hasNext()) {
+        // ...found database, now save it
+        database = testingFolder.getFoldersByName('sPHENIX').next().getFilesByName('Blocks database').next()
+        // Get database Spreadsheet (Sheet[]) from database file id and find the sheets Blocks DB and Blocks1364DB...
+        databaseSheets = Sheets.Spreadsheets.get(database.getId()).sheets
+        // ...loop through the sheets until you find the desired sheets, then save them...
+        for (let i = 0; i < databaseSheets.length; i++) {
+          if (databaseSheets[i].properties.title === 'Blocks DB') {
+            blocksSheet1 = databaseSheets[i]
+            continue
+          }
+          if (databaseSheets[i].properties.title === 'Blocks1364DB') {
+            blocksSheet2 = databaseSheets[i]
+          }
         }
-        if (databaseSheets[i].properties.title === 'Blocks1364DB') {
-          var blocksSheet2 = databaseSheets[i]
+        // ...check if you found both sheets
+        if (blocksSheet1 == null || blocksSheet2 == null) {
+          // Failed to locate both sheets
+          Logger.log('failed to locate database sheet(s) in database spreadsheet')
         }
-      }
-      // ...check if you found both sheets
-      if (blocksSheet1 == null || blocksSheet2 == null) {
-        // Failed to locate both sheets
-        Logger.log('failed to locate database sheet(s) in database spreadsheet')
+      } else {
+        // ...failed to locate database
+        Logger.log('failed to locate database in sPHENIX')
       }
     } else {
-      // ...failed to locate database
-      Logger.log('failed to locate database in sPHENIX')
+      // ...failed to locate sPHENIX folder
+      Logger.log('failed to locate sPHENIX folder in testing folder')
     }
-  } else {
-    // ...failed to locate sPHENIX folder
-    Logger.log('failed to locate sPHENIX folder in testing folder')
-  }
-  // Locate sPHENIX--NEW folder...
-  if (testingFolder.getFoldersByName('sPHENIX--NEW').hasNext()) {
-    // ...found sPHENIX--NEW folder, now locate QA tests folder...
-    if (testingFolder.getFoldersByName('sPHENIX--NEW').next().getFoldersByName('QA tests').hasNext()) {
-      // ...found QA tests folder, now save it
-      var QATestsFolder = testingFolder.getFoldersByName('sPHENIX--NEW').next().getFoldersByName('QA tests').next()
-      // Locate all light transmission and natural light folders
-      // Locate light transmission test folder...
-      if (QATestsFolder.getFoldersByName('Light Transmission Test').hasNext()) {
-        // ...found light transmission test folder, now save it
-        var lightTransTestFolder = QATestsFolder.getFoldersByName('Light Transmission Test').next()
-        // Locate light transmission block pictures folder...
-        if (lightTransTestFolder.getFoldersByName('Block pictures').hasNext()) {
-          // ...found block pictures folder
-          // Locate original folder...
-          if (lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Original').hasNext()) {
-            // ...found original folder, now save it
-            var lightTransFolder = lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Original').next()
+    // Locate sPHENIX--NEW folder...
+    if (testingFolder.getFoldersByName('sPHENIX--NEW').hasNext()) {
+      // ...found sPHENIX--NEW folder, now locate QA tests folder...
+      if (testingFolder.getFoldersByName('sPHENIX--NEW').next().getFoldersByName('QA tests').hasNext()) {
+        // ...found QA tests folder, now save it
+        QATestsFolder = testingFolder.getFoldersByName('sPHENIX--NEW').next().getFoldersByName('QA tests').next()
+        // Locate all light transmission and natural light folders
+        // Locate light transmission test folder...
+        if (QATestsFolder.getFoldersByName('Light Transmission Test').hasNext()) {
+          // ...found light transmission test folder, now save it
+          lightTransTestFolder = QATestsFolder.getFoldersByName('Light Transmission Test').next()
+          // Locate light transmission block pictures folder...
+          if (lightTransTestFolder.getFoldersByName('Block pictures').hasNext()) {
+            // ...found block pictures folder
+            // Locate original folder...
+            if (lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Original').hasNext()) {
+              // ...found original folder, now save it
+              lightTransOriginalFolder = lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Original').next()
+            } else {
+              // ...failed to locate original folder
+              Logger.log('failed to locate original folder in light transmission test/block pictures')
+            }
+            // Locate cropped folder...
+            if (lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Cropped').hasNext()) {
+              // ...found cropped folder, now save it
+              lightTransCroppedFolder = lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Cropped').next()
+            } else {
+              // ...failed to find cropped folder
+              Logger.log('failed to find cropped folder in light transmission test/block pictures')
+            }
           } else {
-            // ...failed to locate original folder
-            Logger.log('failed to locate original folder in light transmission test/block pictures')
-          }
-          // Locate cropped folder...
-          if (lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Cropped').hasNext()) {
-            // ...found cropped folder, now save it
-            var lightTransCroppedFolder = lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Cropped').next()
-          } else {
-            // ...failed to find cropped folder
-            Logger.log('failed to find cropped folder in light transmission test/block pictures')
-          }
-        } else {
-          // ...failed to find light transmission block pictures folder
-          Logger.log('failed to block pictures folder in light transmission test')
-        }
-      } else {
-        // ...failed to locate light transmission test folder
-        Logger.log('failed to locate light transmission test folder in QA tests')
-      }
-      // Locate light transmission archive folder...
-      if (QATestsFolder.getFoldersByName('LightTransmissionArchive').hasNext()) {
-        // ...found light transmission archive folder, now locate block pictures...
-        if (QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').hasNext()) {
-          // ...found block pictures folder, now locate original folder...
-          if (QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').next().getFoldersByName('Original').hasNext()) {
-            // ...found original folder, now save it
-            var lightTransArchiveFolder = QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').next().getFoldersByName('Original').next()
-          } else {
-            // ...failed to locate original folder
-            Logger.log('failed to locate original folder in light transmission archive/block pictures')
+            // ...failed to find light transmission block pictures folder
+            Logger.log('failed to block pictures folder in light transmission test')
           }
         } else {
-          // ...failed to locate block pictures folder
-          Logger.log('failed to locate block pictures folder in light transmission archive')
+          // ...failed to locate light transmission test folder
+          Logger.log('failed to locate light transmission test folder in QA tests')
+        }
+        // Locate light transmission archive folder...
+        if (QATestsFolder.getFoldersByName('LightTransmissionArchive').hasNext()) {
+          // ...found light transmission archive folder, now locate block pictures...
+          if (QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').hasNext()) {
+            // ...found block pictures folder, now locate original folder...
+            if (QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').next().getFoldersByName('Original').hasNext()) {
+              // ...found original folder, now save it
+              lightTransArchiveOriginalFolder = QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').next().getFoldersByName('Original').next()
+            } else {
+              // ...failed to locate original folder
+              Logger.log('failed to locate original folder in light transmission archive/block pictures')
+            }
+          } else {
+            // ...failed to locate block pictures folder
+            Logger.log('failed to locate block pictures folder in light transmission archive')
+          }
+        } else {
+          // ...failed to locate light transmission archive folder
+          Logger.log('failed to locate light transmission archive folder in QA tests')
+        }
+        // Locate natural light folder...
+        if (QATestsFolder.getFoldersByName('Physical Pictures').hasNext()) {
+          // ...found natural light folder, now save it
+          naturalLightFolder = QATestsFolder.getFoldersByName('Physical Pictures').next()
+        } else {
+          // ...failed to find natural light folder
+          Logger.log('failed to locate physical pictures in QA tests')
+        }
+        // Locate natural light archive folder...
+        if (QATestsFolder.getFoldersByName('NaturalLightArchive').hasNext()) {
+          // ...found natural light archive, now save it
+          naturalLightArchiveFolder = QATestsFolder.getFoldersByName('NaturalLightArchive').next()
+        } else {
+          // ...failed to locate natural light archive
+          Logger.log('failed to locate natural light archive in QA tests')
         }
       } else {
-        // ...failed to locate light transmission archive folder
-        Logger.log('failed to locate light transmission archive folder in QA tests')
-      }
-      // Locate natural light folder...
-      if (QATestsFolder.getFoldersByName('Physical Pictures').hasNext()) {
-        // ...found natural light folder, now save it
-        var naturalLightFolder = QATestsFolder.getFoldersByName('Physical Pictures').next()
-      } else {
-        // ...failed to find natural light folder
-        Logger.log('failed to locate physical pictures in QA tests')
-      }
-      // Locate natural light archive folder...
-      if (QATestsFolder.getFoldersByName('NaturalLightArchive').hasNext()) {
-        // ...found natural light archive, now save it
-        var naturalLightArchiveFolder = QATestsFolder.getFoldersByName('NaturalLightArchive').next()
-      } else {
-        // ...failed to locate natural light archive
-        Logger.log('failed to locate natural light archive in QA tests')
+        // ... failed to locate QA tests folder
+        Logger.log('failed to locate QA tests folder in sPHENIX--NEW')
       }
     } else {
-      // ... failed to locate QA tests folder
-      Logger.log('failed to locate QA tests folder in sPHENIX--NEW')
+      // ...failed to locate sPHENIX--NEW folder
+      Logger.log('failed to locate sPHENIX--NEW folder in testing folder')
     }
   } else {
-    // ...failed to locate sPHENIX--NEW folder
-    Logger.log('failed to locate sPHENIX--NEW folder in testing folder')
+    // ...failed to locate testing folder
+    Logger.log('unable to locate testing folder in drive')
   }
-} else {
-  // ...failed to locate testing folder
-  Logger.log('unable to locate testing folder in drive')
+  filesLoaded = true
 }
 
 /**
@@ -192,6 +214,10 @@ function loadTestingDataAsStringifiedJSON (dbn) {
 function loadTestingData (dbn) {
   // Default dbn for testing only:
   // dbn = 2000
+  // if files aren't loaded, load them
+  if (!filesLoaded) {
+    loadFiles()
+  }
   // check for NaN
   if (isNaN(dbn)) {
     // return an empty map
@@ -200,7 +226,7 @@ function loadTestingData (dbn) {
   // The dbn passed from the html doesn't seem to be an int, so make sure it is (dbn 1 would return info for dbn 10 otherwise)
   dbn = Math.floor(dbn)
   // Reject invalid dbns and choose the correct sheet and map for valid dbns
-  if (dbn < 0 || dbn > 3498) {
+  if (dbn < 0 || dbn > maxDbn) {
     Logger.log('the input dbn was out of range')
     return new Map()
   } else if (dbn < 2000) {
@@ -240,6 +266,10 @@ function loadTestingData (dbn) {
 function getImageUrls (dbn) {
   // Default dbn for testing only:
   // var dbn = 811
+  // if files aren't loaded, load them
+  if (!filesLoaded) {
+    loadFiles()
+  }
   let blockMap = loadTestingData(dbn)
   let lightTransImgWId
   let lightTransImgNId
@@ -250,10 +280,10 @@ function getImageUrls (dbn) {
   // Set the folders to search (archive or normal folder...)
   if (parseInt(blockMap.get('lightTransDate').substring(0, 4)) === 2019) {
     // If light transmission picture date is from 2019, use the archive
-    var currentLightTransFolder = lightTransArchiveFolder
+    var currentlightTransOriginalFolder = lightTransArchiveOriginalFolder
   } else {
     // Otherwise, use the normal folder
-    var currentLightTransFolder = lightTransFolder
+    var currentlightTransOriginalFolder = lightTransOriginalFolder
   }
   if (parseInt(blockMap.get('lightTransDate').substring(0, 4)) === 2019) {
     // If natural light picture date is from 2019, use the archive
@@ -275,16 +305,16 @@ function getImageUrls (dbn) {
   })
   // Locate the light transmission date folder
   // Assumes that the date in database matches the date folder name always (though getDateFolder could be adapted to handle LT as well...)
-  if (currentLightTransFolder.getFoldersByName(blockMap.get('lightTransDate')).hasNext()) {
+  if (currentlightTransOriginalFolder.getFoldersByName(blockMap.get('lightTransDate')).hasNext()) {
     // ...found light transmission date folder, now locate wide and narrow images
-    let dateFolder = currentLightTransFolder.getFoldersByName(blockMap.get('lightTransDate')).next()
+    let dateFolder = currentlightTransOriginalFolder.getFoldersByName(blockMap.get('lightTransDate')).next()
     lightTransImgWId = searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionWide)
     // Logger.log('tried to set lightTransImgWId to ' + searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionWide) + ' for names ' + lightTransImgNamesWithoutExtensionWide)
     lightTransImgNId = searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionNarrow)
     // Logger.log('tried to set lightTransImgNId to ' + searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionNarrow) + ' for names ' + lightTransImgNamesWithoutExtensionNarrow)
   } else {
     // ...failed to locate light transmission date folder
-    // Logger.log('could not locate ' + blockMap.get('lightTransDate') + ' in ' + currentLightTransFolder.getName())
+    // Logger.log('could not locate ' + blockMap.get('lightTransDate') + ' in ' + currentlightTransOriginalFolder.getName())
   }
 
   // Locate cropped light transmission images...
@@ -363,9 +393,9 @@ function searchFolderForFiles (folderToSearch, fileNameWithoutExtensionArray) {
     }
   }
   Logger.log("this probably shouldn't have happened unless you were passed weird dbn that has .png")
-  // Otherwise, look for some bullshit like a random .png...this process is much less efficient...
+  // Otherwise, look for something weird like a random .png...this process is much less efficient...
   // and only search the file name at the end of the array (no zeroes added), because these random .png files seem to
-  // consistenly follow this nonstandard naming convention (asinine DBN_642 instead of standard DBN_0642)
+  // consistenly follow this nonstandard naming convention (less nice DBN_642 instead of standard DBN_0642)
   let noZeroesName = fileNameWithoutExtensionArray[fileNameWithoutExtensionArray.length - 1]
   let fileIterator = folderToSearch.getFiles()
   while (fileIterator.hasNext()) {
