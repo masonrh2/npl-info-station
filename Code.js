@@ -61,6 +61,7 @@ var blocksSheet2Map = new Map([
 // declare variable that will be needed by other functions after loadFiles has run
 var filesLoaded = false
 var database
+var databaseSheets
 var blocksSheet1
 var blocksSheet2
 var lightTransOriginalFolder
@@ -76,7 +77,6 @@ function loadFiles () {
   let testingFolder
   let QATestsFolder
   let lightTransTestFolder
-  let databaseSheets
   // Note that changing the names or locations of the folders in google drive may temporarily break this, until the paths below are chagned
   // Begin spaghetti of if statements, although trees and recursion is another possiblity...
   // Locate testing folder... (for Mason's drive)
@@ -91,14 +91,14 @@ function loadFiles () {
         // ...found database, now save it
         database = testingFolder.getFoldersByName('sPHENIX').next().getFilesByName('Blocks database').next()
         // Get database Spreadsheet (Sheet[]) from database file id and find the sheets Blocks DB and Blocks1364DB...
-        databaseSheets = Sheets.Spreadsheets.get(database.getId()).sheets
+        databaseSheets = SpreadsheetApp.open(database).getSheets()
         // ...loop through the sheets until you find the desired sheets, then save them...
         for (let i = 0; i < databaseSheets.length; i++) {
-          if (databaseSheets[i].properties.title === 'Blocks DB') {
+          if (databaseSheets[i].getName() === 'Blocks DB') {
             blocksSheet1 = databaseSheets[i]
             continue
           }
-          if (databaseSheets[i].properties.title === 'Blocks1364DB') {
+          if (databaseSheets[i].getName() === 'Blocks1364DB') {
             blocksSheet2 = databaseSheets[i]
           }
         }
@@ -204,67 +204,12 @@ function loadFiles () {
   filesLoaded = true
 }
 
-/**
- * Get all of this block's relevant data as stringified JSON
- * It seems to be necessary to convert to a string BEFORE the map is passed to the html script,
- * because passing a map object, which should work, returned a seemingly empty object to the html script
- * @param {number} dbn The block's DBN
- * @return {string} The Map that's usually returned by loadTestingData, but converted to a string so that it can be passed to the html
- */
-function loadTestingDataAsStringifiedJSON (dbn) {
-  return JSON.stringify(Array.from(loadTestingData(dbn).entries()))
-}
-
-/**
- * Get all of this block's relevant data from the database in a Map
- * @param {number} dbn The block's DBN
- * @return {Map} A Map whose keys are block properties (e.g. 'block' or 'lightTransDate') which point to the relevant information (e.g. 23 or 20201225)
- */
-function loadTestingData (dbn) {
-  // Default dbn for testing only:
-  // dbn = 2000
-  // if files aren't loaded, load them
+function getDatabase () {
   if (!filesLoaded) {
     loadFiles()
   }
-  // check for NaN
-  if (isNaN(dbn)) {
-    // return an empty map
-    return new Map()
-  }
-  // The dbn passed from the html doesn't seem to be an int, so make sure it is (dbn 1 would return info for dbn 10 otherwise)
-  dbn = Math.floor(dbn)
-  // Reject invalid dbns and choose the correct sheet and map for valid dbns
-  if (dbn < 0 || dbn > maxDbn) {
-    Logger.log('the input dbn was out of range')
-    return new Map()
-  } else if (dbn < 2000) {
-    var currentSheet = blocksSheet1
-    var currentSheetId = blocksSheet1.properties.sheetId
-    var currentSheetName = blocksSheet1.properties.title
-    var currentRowOffset = 2
-    var currentSheetMap = blocksSheet1Map
-  } else {
-    var currentSheet = blocksSheet2
-    var currentSheetId = blocksSheet2.properties.sheetId
-    var currentSheetName = blocksSheet2.properties.title
-    var currentRowOffset = 2 - 2000
-    var currentSheetMap = blocksSheet2Map
-  }
-  var row = dbn + currentRowOffset
-  // Construct a cell range in A1 format for the block's row
-  var ref = "'" + currentSheetName + "'!" + 'A' + row + ':BZ' + row
-  Logger.log('the cell range generated was: ' + ref)
-  var blockData = Sheets.Spreadsheets.Values.get(database.getId(), ref).values[0]
-  // Create a new map that maps block properites to their actual values
-  var blockMap = new Map()
-  for (let pair of currentSheetMap) {
-    // Logger.log("currentSheetMap has key " + pair[0] + " -> " + blockData[pair[1]]);
-    blockMap.set(pair[0], blockData[pair[1]])
-  }
-  // Logger.log('stringify currentSheetMap produced: ' + JSON.stringify(Array.from(currentSheetMap.entries())))
-  // Logger.log('stringify blockMap produced: ' + JSON.stringify(Array.from(blockMap.entries())))
-  return blockMap
+  let sheets = SpreadsheetApp.open(database).getSheets()
+  return [sheets[0].getDataRange().getDisplayValues(), sheets[1].getDataRange().getDisplayValues()]
 }
 
 /**
@@ -272,14 +217,14 @@ function loadTestingData (dbn) {
  * @param {number} dbn The block's DBN
  * @return {string[]} Array of image urls [LT_W, LT_N, LT_cropped_W, LT_cropped_N, NL_W, NL_N]
  */
-function getImageUrls (dbn) {
+function getImageUrls (blockMap) {
   // Default dbn for testing only:
   // var dbn = 811
   // if files aren't loaded, load them
+  let dbn = blockMap[0]
   if (!filesLoaded) {
     loadFiles()
   }
-  let blockMap = loadTestingData(dbn)
   let lightTransImgWId
   let lightTransImgNId
   let lightTransCroppedImgWId
@@ -287,14 +232,14 @@ function getImageUrls (dbn) {
   let natLightImgWId
   let natLightImgNId
   // Set the folders to search (archive or normal folder...)
-  if (parseInt(blockMap.get('lightTransDate').substring(0, 4)) === 2019) {
+  if (parseInt(blockMap[1].substring(0, 4)) === 2019) {
     // If light transmission picture date is from 2019, use the archive
     var currentlightTransOriginalFolder = lightTransArchiveOriginalFolder
   } else {
     // Otherwise, use the normal folder
     var currentlightTransOriginalFolder = lightTransOriginalFolder
   }
-  if (parseInt(blockMap.get('lightTransDate').substring(0, 4)) === 2019) {
+  if (parseInt(blockMap[1].substring(0, 4)) === 2019) {
     // If natural light picture date is from 2019, use the archive
     var currentNatLightFolder = naturalLightArchiveFolder
   } else {
@@ -314,16 +259,16 @@ function getImageUrls (dbn) {
   })
   // Locate the light transmission date folder
   // Assumes that the date in database matches the date folder name always (though getDateFolder could be adapted to handle LT as well...)
-  if (currentlightTransOriginalFolder.getFoldersByName(blockMap.get('lightTransDate')).hasNext()) {
+  if (currentlightTransOriginalFolder.getFoldersByName(blockMap[1]).hasNext()) {
     // ...found light transmission date folder, now locate wide and narrow images
-    let dateFolder = currentlightTransOriginalFolder.getFoldersByName(blockMap.get('lightTransDate')).next()
+    let dateFolder = currentlightTransOriginalFolder.getFoldersByName(blockMap[1]).next()
     lightTransImgWId = searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionWide)
     // Logger.log('tried to set lightTransImgWId to ' + searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionWide) + ' for names ' + lightTransImgNamesWithoutExtensionWide)
     lightTransImgNId = searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionNarrow)
     // Logger.log('tried to set lightTransImgNId to ' + searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionNarrow) + ' for names ' + lightTransImgNamesWithoutExtensionNarrow)
   } else {
     // ...failed to locate light transmission date folder
-    // Logger.log('could not locate ' + blockMap.get('lightTransDate') + ' in ' + currentlightTransOriginalFolder.getName())
+    // Logger.log('could not locate ' + blockMap[1] + ' in ' + currentlightTransOriginalFolder.getName())
   }
 
   // Locate cropped light transmission images...
@@ -331,7 +276,7 @@ function getImageUrls (dbn) {
   lightTransCroppedImgNId = searchFolderForFiles(lightTransCroppedFolder, lightTransImgNamesWithoutExtensionNarrow)
 
   // Locate natural light date folder...
-  let natLightDateFolder = getDateFolder(currentNatLightFolder, blockMap.get('natLightDate'), dbn)
+  let natLightDateFolder = getDateFolder(currentNatLightFolder, blockMap[2], dbn)
   if (natLightDateFolder != null) {
     if (currentNatLightFolder.getFoldersByName(natLightDateFolder).hasNext()) {
       // ...found natural light date folder, now find
@@ -360,7 +305,7 @@ function getImageUrls (dbn) {
     }
   } else {
     // getDateFolder failed to find a suitable folder
-    Logger.log('getDateFolder failed to find a suitable folder for dbn ' + dbn + ' with date ' + blockMap.get('natLightDate') + ' in ' + currentNatLightFolder.getName())
+    Logger.log('getDateFolder failed to find a suitable folder for dbn ' + dbn + ' with date ' + blockMap[2] + ' in ' + currentNatLightFolder.getName())
   }
   // Logger.log('!our new function returned ' + getDateFolder(naturalLightFolder, '20200305', 811))
   var imageUrls = [
@@ -368,8 +313,8 @@ function getImageUrls (dbn) {
     lightTransImgNId,
     lightTransCroppedImgWId,
     lightTransCroppedImgNId,
-    natLightImgWId, // currentNatLightFolder.getFoldersByName(blockMap.get('natLightDate')).next().getFilesByName(lightTransImgNameWide).next().getId(),
-    natLightImgNId // currentNatLightFolder.getFoldersByName(blockMap.get('natLightDate')).next().getFilesByName(lightTransImgNameNarrow).next().getId()
+    natLightImgWId, // currentNatLightFolder.getFoldersByName(blockMap[2]).next().getFilesByName(lightTransImgNameWide).next().getId(),
+    natLightImgNId // currentNatLightFolder.getFoldersByName(blockMap[2]).next().getFilesByName(lightTransImgNameNarrow).next().getId()
   ]
   imageUrls.forEach(function (element, index, array) {
     if (element != null) {

@@ -189,8 +189,62 @@
       ['7','(shipped, at BNL)'],
       ['8','(graveyard)']
     ])
-    // called when enter is pressed in text box or submit button is clicked
-    function onSubmit() {
+    // maximum DBN (reject dbns larger than this)
+    var maxDbn = 3498
+    // For sheet Blocks DB
+    var blocksSheet1Map = ([
+      ['dbn', 0],
+      ['block', 2],
+      ['status', 3],
+      ['shipment', 4],
+      ['comment', 6],
+      ['sector', 7],
+      ['volume', 40],
+      ['mass', 42],
+      ['density', 44],
+      ['densityDate', 45],
+      ['goodEnd', 47],
+      ['fiberPercentage', 49],
+      ['missingRow', 59],
+      ['thirteenHoles', 60],
+      ['lightTransDate', 64],
+      ['scintillation', 65],
+      ['scintRatio', 67],
+      ['scintDate', 69],
+      ['natLightDate', 70]
+    ])
+    // For sheet Blocks1364DB
+    var blocksSheet2Map = new Map([
+      ['dbn', 0],
+      ['block', 2],
+      ['status', 3],
+      ['shipment', 4],
+      ['sector', 6],
+      ['comment', 7],
+      ['volume', 40],
+      ['mass', 42],
+      ['density', 44],
+      ['densityDate', 45],
+      ['goodEnd', 47],
+      ['fiberPercentage', 49],
+      ['missingRow', 59],
+      ['thirteenHoles', 60],
+      ['lightTransDate', 64],
+      ['scintillation', 65],
+      ['scintRatio', 67],
+      ['scintDate', 69],
+      ['natLightDate', 70]
+    ])
+    // [Blocks DB, Blocks1364DB]
+    var database
+    //
+    function onGetDatabaseSuccess (returnedByGetDataBase) {
+      database = returnedByGetDataBase
+      console.log('loaded database')
+      afterOnSubmit()
+    }
+    //
+    function afterOnSubmit () {
       // create a timestamp to display     
       document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
       document.getElementById("currentDateAndTime").style.display = 'block'
@@ -217,7 +271,18 @@
       }
       // run loadTestingDataAsStringifiedJson and pass it's return data to a success handler
       console.log('loading testing data')
-      google.script.run.withSuccessHandler(onLoadTestingDataSuccess).loadTestingDataAsStringifiedJSON(dbn)
+      //google.script.run.withSuccessHandler(onLoadTestingDataSuccess).loadTestingDataAsStringifiedJSON(dbn)
+      onLoadTestingDataSuccess(dbn)
+    }
+    // called when enter is pressed in text box or submit button is clicked
+    function onSubmit() {
+      // load the database if it hasn't been loaded
+      if (database == null) {
+        console.log('loading database')
+        google.script.run.withSuccessHandler(onGetDatabaseSuccess).getDatabase()
+      } else {
+        afterOnSubmit()
+      }
     }
     // takes array of string element ids and clears their innerHTML
     function clearElements(array) {
@@ -264,8 +329,42 @@
     // handles updating all block data and chooses which sections to show and hide based on what loadTestingData returned
     // note that the argument is actually what's returned by loadTestingDataAsStringifiedJSON, since we don't seem to be able
     // to pass complicated objects like maps between the google script and the HTML script (if there is a way, I haven't found it) 
-    function onLoadTestingDataSuccess (returnedByLoadTestingData) {
-      var htmlMap = new Map(JSON.parse(returnedByLoadTestingData))
+    function onLoadTestingDataSuccess (dbn) {
+      let htmlMap
+      // check for NaN
+      if (isNaN(dbn)) {
+        // return an empty map
+        htmlMap = new Map()
+      }
+      // The dbn passed from the html doesn't seem to be an int, so make sure it is (dbn 1 would return info for dbn 10 otherwise)
+      dbn = Math.floor(dbn)
+      // Reject invalid dbns and choose the correct sheet and map for valid dbns
+      if (dbn < 0 || dbn > maxDbn) {
+        // Logger.log('the input dbn was out of range')
+        htmlMap = new Map()
+      } else if (dbn < 2000) {
+        var currentSheet = database[0]
+        var currentRowOffset = 1
+        var currentSheetMap = blocksSheet1Map
+      } else {
+        var currentSheet = database[1]
+        var currentRowOffset = 1 - 2000
+        var currentSheetMap = blocksSheet2Map
+      }
+      if (htmlMap == null) {
+        var row = dbn + currentRowOffset
+        // Construct a cell range in A1 format for the block's row
+        var blockData = currentSheet[row]
+        // Create a new map that maps block properites to their actual values
+        var blockMap = new Map()
+        for (let pair of currentSheetMap) {
+          // Logger.log("currentSheetMap has key " + pair[0] + " -> " + blockData[pair[1]]);
+          blockMap.set(pair[0], blockData[pair[1]])
+        }
+        htmlMap = blockMap
+      }
+      
+
       // first check if ALL nulls were returned, in which case there's no information for this dbn
       // (or loadTestingData returned all null from an INVALID dbn submission)
       let htmlMapArray = Array.from(htmlMap)
@@ -280,7 +379,8 @@
         return
       }
       let getImageUrlsRun = false
-      
+      let toGetImageUrls = [blockMap.get('dbn'), blockMap.get('lightTransDate'), blockMap.get('natLightDate')]
+
       // BLOCK DETAILS  (check if data is present)
       if (someDataPresent(htmlMap, blockDetailsKeys)) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
@@ -322,7 +422,7 @@
         document.getElementById("imagesSelection").style.display = 'block'
         document.getElementById("loadingImages").style.display = 'block'
         console.log('fetching image urls')
-        google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(htmlMap.get("dbn"))
+        google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(toGetImageUrls)
         getImageUrlsRun = true
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
@@ -345,7 +445,7 @@
           document.getElementById("imagesSelection").style.display = 'block'
           document.getElementById("loadingImages").style.display = 'block'
           console.log('fetching image urls')
-          google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(htmlMap.get("dbn"))
+          google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(toGetImageUrls)
           getImageUrlsRun = true
         }
       } else {
