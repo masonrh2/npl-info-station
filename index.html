@@ -34,6 +34,20 @@
         overflow: hidden;
         flex: 0 0 60% /* % of container width above for description (MUST sum to 100% with same setting for dt above) */
       }
+      figure.testImg {
+        display: inline-block;
+        width: 640px;
+        height: auto;
+        margin: 1em; /* adjust as needed */
+      }
+      figure.testImg img {
+        vertical-align: top;
+        width: inherit;
+        height: auto;
+      }
+      figure.testImg figcaption {
+        text-align: center;
+      }
     </style>
 </head>
 <body>
@@ -116,10 +130,22 @@
       <dt id='lightTransDateLabel'>Date:</dt>
       <dd id="lightTransDate"></dd>
     </dl>
-    <img id="lightTransImgW" height="360" style="display: none;"/>
-    <img id="lightTransImgN" height="360" style="display: none;"/>
-    <img id="lightTransImgCroppedW" height="360" style="display: none;"/>
-    <img id="lightTransImgCroppedN" height="360" style="display: none;"/>
+    <figure class="testImg" id="lightTransImgFigW" style="display: none;">
+      <img id="lightTransImgW" height="360"/>
+      <figcaption>Wide End</figcaption>
+    </figure>
+    <figure class="testImg" id="lightTransImgFigN" style="display: none;">
+      <img id="lightTransImgN" height="360"/>
+      <figcaption>Narrow End</figcaption>
+    </figure>
+    <figure class="testImg" id="lightTransImgCroppedFigW" style="display: none;">
+      <img id="lightTransImgCroppedW" height="360"/>
+      <figcaption>Wide End</figcaption>
+    </figure>
+    <figure class="testImg" id="lightTransImgCroppedFigN" style="display: none;">
+      <img id="lightTransImgCroppedN" height="360"/>
+      <figcaption>Narrow End</figcaption>
+    </figure>
   </section>
   <section id="lightTransNoInfo" style="display: none;">
     <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
@@ -131,8 +157,14 @@
       <dt id='natLightDateLabel'>Date:</dt>
       <dd id="natLightDate"></dd>
     </dl>
-    <img id="natLightImgW" height="360" style="display: none;"/>
-    <img id="natLightImgN" height="360" style="display: none;"/>
+    <figure class="testImg" id="natLightImgFigW" style="display: none;">
+      <img id="natLightImgW" height="360"/>
+      <figcaption>Wide End</figcaption>
+    </figure>
+    <figure class="testImg" id="natLightImgFigN" style="display: none;">
+      <img id="natLightImgN" height="360"/>
+      <figcaption>Narrow End</figcaption>
+    </figure>
   </section>
   <section id="natLightNoInfo" style="display: none;">
     <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
@@ -439,14 +471,14 @@
     // takes an image name prefix (e.g. lightTransImg, lightTransImgCropped, or natLightImg)
     // and toggles the visibility of the corresponding wide and narrow images
     function toggleImages(imagePrefix) {
-      let image1 = document.getElementById(imagePrefix + 'W')
-      let image2 = document.getElementById(imagePrefix + 'N')
-      if (image1.style.display === "none" || image2.style.display === "none") {
-        image1.style.display = "block"
-        image2.style.display = "block"
+      let fig1 = document.getElementById(imagePrefix + 'FigW')
+      let fig2 = document.getElementById(imagePrefix + 'FigN')
+      if (fig1.style.display === "none" || fig2.style.display === "none") {
+        fig1.style.display = "block"
+        fig2.style.display = "block"
       } else {
-        image1.style.display = "none"
-        image2.style.display = "none"
+        fig1.style.display = "none"
+        fig2.style.display = "none"
       }
     }
   </script>
