@@ -2,9 +2,11 @@
  * Load the html page (function with name doGet is called automatically by google web app)
  */
 function doGet () {
-  return HtmlService.createHtmlOutputFromFile('index')
+  return HtmlService.createTemplateFromFile('index').evaluate()
 }
-
+function include (filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent()
+}
 // Create maps that will take a key (e.g. density) and return the corresponding column that contains that data depending on which sheet contains the desired dbn
 // Note that adding or deleting a column will temporarily break this, until the values below are changed
 

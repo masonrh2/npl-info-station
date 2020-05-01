@@ -4,51 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NPL Block Information Station</title>
-    <style>
-      div.header img {
-        float: left;
-        width: 60px;
-        height: 60px;
-      }
-      div.header h1 {
-        position: relative;
-        top: 10px; /* how much farther down the top of the header should be from the top of the image*/
-        left: 10px; /* distance between the left margin of the header and the right of the image*/
-      }
-      dl.inline-flex {
-        display: flex;
-        flex-flow: row;
-        flex-wrap: wrap;
-        width: 360px; /* set the container width*/
-        overflow: visible;
-      }
-      dl.inline-flex dt {
-        flex: 0 0 40%; /* % of container width above for term (MUST sum to 100% with same setting for dd below) */
-        text-overflow: ellipsis;
-        overflow: hidden;
-      }
-      dl.inline-flex dd {
-        margin-left: auto;
-        text-align: left;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        flex: 0 0 60% /* % of container width above for description (MUST sum to 100% with same setting for dt above) */
-      }
-      figure.testImg {
-        display: inline-block;
-        width: 640px;
-        height: auto;
-        margin: 1em; /* adjust as needed */
-      }
-      figure.testImg img {
-        vertical-align: top;
-        width: inherit;
-        height: auto;
-      }
-      figure.testImg figcaption {
-        text-align: center;
-      }
-    </style>
+    <?!= include('css')?>
 </head>
 <body>
   <div class="header">
@@ -63,17 +19,23 @@
   
   <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
   
-  <section id="imagesSelection" style="display: none;">
+  <section id="imagesSelection" style="display: none;  margin-top: 1em;">
     <section id="allCheckboxes" style="display: none;">
-      <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')" style="display: none;">
-      <label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel" style="display: none;">Show Light Transmission Original Images</label><br>
-      <input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')" style="display: none;">
-      <label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel" style="display: none;">Show Light Transmission Cropped Images</label><br>
-      <input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')" style="display: none;">
-      <label for="CBshow-natLightImg" id="CBshow-natLightImgLabel" style="display: none;">Show Natural Light Images</label>
+      <section id="CBshow-lightTransImgSection" style="display: none;">
+        <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')">
+        <label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel">Show Light Transmission Original Images</label><br>
+      </section>
+      <section id="CBshow-lightTransImgCroppedSection" style="display: none;">
+        <input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')">
+        <label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel">Show Light Transmission Cropped Images</label><br>
+      </section>
+      <section id="CBshow-natLightImgSection" style="display: none;">
+        <input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')">
+        <label for="CBshow-natLightImg" id="CBshow-natLightImgLabel">Show Natural Light Images</label>
+      </section>
     </section>
-    <div id="loadingImages" style="display: none; margin-top: 1em;">Loading Images...</div>
-    <div id="noImagesFound" style="display: none; margin-top: 1em;">No Images Found</div>
+    <div id="loadingImages" style="display: none;">Loading Images...</div>
+    <div id="noImagesFound" style="display: none;">No Images Found</div>
   </section>
   
   <p id="currentDateAndTime" style="display: none;"></p>
@@ -425,9 +387,8 @@
         document.getElementById('CBshow-' + imagePrefix).checked = false
         toggleImages(imagePrefix)
       }
-      // then hide the checkbox and its label
-      document.getElementById('CBshow-' + imagePrefix).style.display = 'none'
-      document.getElementById('CBshow-' + imagePrefix + 'Label').style.display = 'none'
+      // then hide the checkbox
+      document.getElementById('CBshow-' + imagePrefix + 'Section').style.display = 'none'
     }
     // reset all checkboxes individually and hide checkboxes section
     function resetCheckboxes () {
@@ -457,8 +418,7 @@
       for (let i = 0; i < allImagePrefixes.length; i++) {
         if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
           // one of this section's images is present, so display its checkbox
-          document.getElementById('CBshow-' + allImagePrefixes[i]).style.display = 'inline'
-          document.getElementById('CBshow-' + allImagePrefixes[i] + 'Label').style.display = 'inline'
+          document.getElementById('CBshow-' + allImagePrefixes[i] + 'Section').style.display = 'block'
         } else {
           // this section is not needed—reset its checkbox
           resetCheckbox(allImagePrefixes[i])
