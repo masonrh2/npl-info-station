@@ -6,17 +6,18 @@
     <title>NPL Block Information Station</title>
     <?!= include('css')?>
 </head>
-<body>
+<body onload="getDatabaseOnLoad()">
   <div class="header">
     <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
     <h1>NPL Block Information Station</h1>
   </div><br>
   
-  <form action="javascript:onSubmit()" style="display: block;">
+  <form action="javascript:onSubmit()" style="display: inline;">
     <label>DBN: </label><input type="text" id="inputDBN">
     <button id="submitDBN">Submit</button>
   </form>
-  
+  <button id="massIteration" onclick="madness()">do not press</button>
+
   <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
   
   <section id="imagesSelection" style="display: none;  margin-top: 1em;">
@@ -238,50 +239,65 @@
     // [Blocks DB, Blocks1364DB]
     var database
     //
-    function onGetDatabaseSuccess (returnedByGetDataBase) {
-      database = returnedByGetDataBase
-      console.log('loaded database')
-      afterOnSubmit()
-    }
-    //
-    function afterOnSubmit () {
-      // create a timestamp to display     
-      document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
-      document.getElementById("currentDateAndTime").style.display = 'block'
-      // show that we're loading the block data
-      document.getElementById("loadingBlockData").style.display = 'block'
-      // grab the dbn from the input box
-      var dbn = document.getElementById("inputDBN").value
-      console.log('fetching information for DBN ' + dbn)
-      // hide all block info and noInfo sections for them to be loaded if needed by onLoadTestingDataSuccess
-      for (let i = 0; i < allSectionPrefixes.length; i++) {
-        document.getElementById(allSectionPrefixes[i] + 'Section').style.display = 'none'
-        document.getElementById(allSectionPrefixes[i] + 'NoInfo').style.display = 'none'
+    var slowMode = false
+    // called when the web page is loaded—loads the database
+    function getDatabaseOnLoad() {
+      google.script.run.withSuccessHandler(onSuccess).getDatabase()
+      function onSuccess (gotDatabase) {
+        if (gotDatabase == null) {
+          alert('unable to locate Blocks database in google drive!')
+          return
+        }
+        database = gotDatabase
+        console.log('loaded database')
       }
-      // hide imagesSelection section for it to be loaded if needed by onLoadTestingDataSuccess
-      document.getElementById("imagesSelection").style.display = 'none'
-      // and reset the checkboxes
-      resetCheckboxes()
-      // and reset text that isn't automatically reset in imagesSelection section
-      document.getElementById("noImagesFound").style.display = 'none'
-      // and reset the img src urls just in case one happens to be shown but on overwritten
-      // (e.g. one LT cropped image returns a url and the other does not (e.g. DBN 78))
-      for (let i = 0; i < allTestingImgs.length; i++) {
-        document.getElementById(allTestingImgs[i]).src = '#'
-      }
-      // run loadTestingDataAsStringifiedJson and pass it's return data to a success handler
-      console.log('loading testing data')
-      //google.script.run.withSuccessHandler(onLoadTestingDataSuccess).loadTestingDataAsStringifiedJSON(dbn)
-      onLoadTestingDataSuccess(dbn)
     }
     // called when enter is pressed in text box or submit button is clicked
     function onSubmit() {
       // load the database if it hasn't been loaded
       if (database == null) {
         console.log('loading database')
-        google.script.run.withSuccessHandler(onGetDatabaseSuccess).getDatabase()
+        google.script.run.withSuccessHandler(onSuccess).getDatabase()
       } else {
         afterOnSubmit()
+      }
+      function onSuccess (returnedByGetDataBase) {
+        if (returnedByGetDataBase == null) {
+          alert('unable to locate Blocks database in google drive!')
+          return
+        }
+        database = returnedByGetDataBase
+        console.log('loaded database')
+        afterOnSubmit()
+      }
+      function afterOnSubmit () {
+        // create a timestamp to display     
+        document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
+        document.getElementById("currentDateAndTime").style.display = 'block'
+        // show that we're loading the block data
+        document.getElementById("loadingBlockData").style.display = 'block'
+        // grab the dbn from the input box
+        var dbn = document.getElementById("inputDBN").value
+        console.log('fetching information for DBN ' + dbn)
+        // hide all block info and noInfo sections for them to be loaded if needed by loadTestingData
+        for (let i = 0; i < allSectionPrefixes.length; i++) {
+          document.getElementById(allSectionPrefixes[i] + 'Section').style.display = 'none'
+          document.getElementById(allSectionPrefixes[i] + 'NoInfo').style.display = 'none'
+        }
+        // hide imagesSelection section for it to be loaded if needed by loadTestingData
+        document.getElementById("imagesSelection").style.display = 'none'
+        // and reset the checkboxes
+        resetCheckboxes()
+        // and reset text that isn't automatically reset in imagesSelection section
+        document.getElementById("noImagesFound").style.display = 'none'
+        // and reset the img src urls just in case one happens to be shown but on overwritten
+        // (e.g. one LT cropped image returns a url and the other does not (e.g. DBN 78))
+        for (let i = 0; i < allTestingImgs.length; i++) {
+          document.getElementById(allTestingImgs[i]).src = '#'
+        }
+        // run loadTestingDataAsStringifiedJson and pass it's return data to a success handler
+        console.log('loading testing data')
+        loadTestingData(dbn)
       }
     }
     // takes array of string element ids and clears their innerHTML
@@ -325,11 +341,8 @@
         return dataPresent(map.get(element))
       })
     }
-    // called after loadTestingData (from google script) is called, and is called with what loadTestingData returned as the argument
-    // handles updating all block data and chooses which sections to show and hide based on what loadTestingData returned
-    // note that the argument is actually what's returned by loadTestingDataAsStringifiedJSON, since we don't seem to be able
-    // to pass complicated objects like maps between the google script and the HTML script (if there is a way, I haven't found it) 
-    function onLoadTestingDataSuccess (dbn) {
+    // loads testing data, updates fields, and unhides relevant sections based on the data present
+    function loadTestingData (dbn) {
       let htmlMap
       // check for NaN
       if (isNaN(dbn)) {
@@ -363,8 +376,6 @@
         }
         htmlMap = blockMap
       }
-      
-
       // first check if ALL nulls were returned, in which case there's no information for this dbn
       // (or loadTestingData returned all null from an INVALID dbn submission)
       let htmlMapArray = Array.from(htmlMap)
@@ -422,7 +433,11 @@
         document.getElementById("imagesSelection").style.display = 'block'
         document.getElementById("loadingImages").style.display = 'block'
         console.log('fetching image urls')
-        google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(toGetImageUrls)
+        if (slowMode) {
+          getImageUrlsSlow(toGetImageUrls[0])
+        } else {
+          google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(toGetImageUrls)
+        }
         getImageUrlsRun = true
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
@@ -445,7 +460,11 @@
           document.getElementById("imagesSelection").style.display = 'block'
           document.getElementById("loadingImages").style.display = 'block'
           console.log('fetching image urls')
-          google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(toGetImageUrls)
+          if (slowMode) {
+            getImageUrlsSlow(toGetImageUrls[0])
+          } else {
+            google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(toGetImageUrls)
+          }
           getImageUrlsRun = true
         }
       } else {
@@ -480,6 +499,7 @@
       // now hide the loading block data text...
       document.getElementById("loadingBlockData").style.display = 'none'
     }
+
     // resets a checkbox to unchecked
     function resetCheckbox (imagePrefix) {
       // if a checkbox is checked, uncheck it and call it's toggle function to hide images
@@ -490,6 +510,7 @@
       // then hide the checkbox
       document.getElementById('CBshow-' + imagePrefix + 'Section').style.display = 'none'
     }
+
     // reset all checkboxes individually and hide checkboxes section
     function resetCheckboxes () {
       for (let i = 0; i < allImagePrefixes.length; i++) {
@@ -528,6 +549,42 @@
       document.getElementById("loadingImages").style.display = 'none'
       document.getElementById("allCheckboxes").style.display = 'block'
     }
+
+    function getImageUrlsSlow (dbn) {
+      // check if getImageUrls returned any urls...
+      console.log('slow method for dbn: ' + dbn)
+      if (bigassArray[dbn] == null) {
+        console.log('bigassArray was null at index: ' + dbn)
+      } else {
+        imageUrls = bigassArray[dbn]
+        if (imageUrls.every((element) => element == null)) {
+          // ...NO image urls were returned, so there's no image data to display
+          document.getElementById("loadingImages").style.display = 'none'
+          document.getElementById("noImagesFound").style.display = 'block'
+          return
+        }
+        // first set all not null urls to their image srcs
+        imageUrls.forEach((element, index) => {
+          if (element != null) {
+            document.getElementById(allTestingImgs[index]).src = element[0]
+          }
+        });
+        // determine which checkboxes / image sections need to be displayed
+        for (let i = 0; i < allImagePrefixes.length; i++) {
+          if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
+            // one of this section's images is present, so display its checkbox
+            document.getElementById('CBshow-' + allImagePrefixes[i] + 'Section').style.display = 'block'
+          } else {
+            // this section is not needed—reset its checkbox
+            resetCheckbox(allImagePrefixes[i])
+          }
+        }
+        // finally, display the checkboxes section
+        document.getElementById("loadingImages").style.display = 'none'
+        document.getElementById("allCheckboxes").style.display = 'block'
+      }
+    }
+
     // takes an image name prefix (e.g. lightTransImg, lightTransImgCropped, or natLightImg)
     // and toggles the visibility of the corresponding wide and narrow images
     function toggleImages(imagePrefix) {
@@ -539,6 +596,19 @@
       } else {
         fig1.style.display = "none"
         fig2.style.display = "none"
+      }
+    }
+    function madness () {
+      alert('this may take SOME time...')
+      slowMode = true
+      google.script.run.withSuccessHandler(onSuccess).loadBigassArray()
+      function onSuccess (data) {
+        if (data == null) {
+          console.log('bigassArray was null :(')
+        } else {
+          bigassArray = data
+          console.log('loaded a not null bigassArray :' + data)
+        }
       }
     }
   </script>

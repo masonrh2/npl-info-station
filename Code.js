@@ -442,3 +442,85 @@ function getDateFolder (folderToSearch, date, dbn) {
   }
   return folderToReturnName
 }
+
+//
+function loadBigassArray () {
+  if (!filesLoaded) {
+    loadFiles()
+  }
+  let imgTypeMap = new Map([['LT', 0], ['LTCropped', 1],['NL', 2]])
+  let endMap = new Map([['W', 0], ['N', 1]])
+  let bigassArray = new Array(maxDbn + 1)
+  bigassArray.forEach(function (e, index, array) {
+    array[index] = new Array(6)
+  })
+  /**
+   * @param {Folder} folder the folder that contains date folders (which contain images) to search
+   * @param {string} imageType LT, LTCropped, or NL
+   * @returns {Array} bigass array indexed by dbn -> [[LT W img url, date, x], [LT N img url, date, x], [LTCropped img url, date, x], [LTCropped img url, date, x], [NL img url, date, x], [NL img url, date, x]]
+   * where x is 0 for single-block images, 1 for 2 blocks, this one on left, and 2 for 2 blocks, this one on right
+   */
+  function massIteration (folder, imageType) {
+    if (imageType === 'LTCropped') {
+      iterate(folder)
+    } else {
+      let folderIterator = folder.getFolders()
+      while (folderIterator.hasNext()) {
+        iterate(folderIterator.next())
+      }
+    }
+    function iterate (subfolder) {
+      let fileIterator = subfolder.getFiles()
+      while (fileIterator.hasNext()) {
+        let file = fileIterator.next()
+        let items = file.getName().split(/[_.-]/)
+        for (let i = 0; i < items.length; i++) {
+          items[i] = removeZeroes(items[i])
+          if (isNaN(items[i]) && items[i].length !== 1) {
+            items.splice(i, 1)
+            i--
+          }
+        }
+        let end = items.splice(-1, 1)
+        for (let i = 0; i < items.length; i++) {
+          let pos = imgTypeMap.get(imageType) + endMap.get(end)
+          if (isNaN(pos) || items[i] < 0 || items[i] > maxDbn) {
+            continue
+          }
+          bigassArray[items[i]][pos] = ['https://drive.google.com/uc?id=' + file.getId(), dateToEight(file.getDateCreated()), i]
+        }
+      }
+    }
+  }
+  massIteration(lightTransOriginalFolder, 'LT')
+  massIteration(lightTransArchiveOriginalFolder, 'LT')
+  massIteration(lightTransCroppedFolder, 'LTCropped')
+  massIteration(naturalLightFolder, 'NL')
+  massIteration(naturalLightArchiveFolder, 'NL')
+  return bigassArray
+}
+/**
+ * recursively removes zeroes from the front of a string
+ * @param {string} string to be trimmed
+ * @returns {string} string with beginning zeroes removed
+ */
+function removeZeroes (string) {
+  let toReturn = string
+  while (toReturn.charAt(0) === '0' && toReturn.length > 1) {
+    toReturn = toReturn.substr(1)
+  }
+  return toReturn
+}
+
+function dateToEight (date) {
+  let yr = date.getFullYear().toString()
+  let mo = (date.getMonth() + 1).toString()
+  let day = date.getDate().toString()
+  if (mo.length < 2) {
+    mo = '0' + mo
+  }
+  if (day.length < 2) {
+    day = '0' + day
+  }
+  return yr + mo + day
+}
