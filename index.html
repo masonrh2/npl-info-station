@@ -316,7 +316,7 @@
         document.getElementById(id).innerHTML = blockDataMap.get(id)
         if (suffixes.has(id)) {
           if (id === 'status') {
-            document.getElementById(id).innerHTML += ' ' + statusMap.get(blockDataMap.get(status))
+            document.getElementById(id).innerHTML += ' ' + statusMap.get(blockDataMap.get('status'))
           } else {
             document.getElementById(id).innerHTML += ' ' + suffixes.get(id)
           }

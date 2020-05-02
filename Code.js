@@ -451,9 +451,6 @@ function loadBigassArray () {
   let imgTypeMap = new Map([['LT', 0], ['LTCropped', 1],['NL', 2]])
   let endMap = new Map([['W', 0], ['N', 1]])
   let bigassArray = new Array(maxDbn + 1)
-  bigassArray.forEach(function (e, index, array) {
-    array[index] = new Array(6)
-  })
   /**
    * @param {Folder} folder the folder that contains date folders (which contain images) to search
    * @param {string} imageType LT, LTCropped, or NL
@@ -481,13 +478,22 @@ function loadBigassArray () {
             i--
           }
         }
-        let end = items.splice(-1, 1)
+        let end = items.splice(-1, 1).toString()
         for (let i = 0; i < items.length; i++) {
-          let pos = imgTypeMap.get(imageType) + endMap.get(end)
-          if (isNaN(pos) || items[i] < 0 || items[i] > maxDbn) {
-            continue
+          let pos
+          if (imgTypeMap.has(imageType) && endMap.has(end)) {
+            pos = 2 * imgTypeMap.get(imageType) + endMap.get(end)
           }
-          bigassArray[items[i]][pos] = ['https://drive.google.com/uc?id=' + file.getId(), dateToEight(file.getDateCreated()), i]
+          if (pos == null || items[i] < 0 || items[i] > maxDbn) {
+            Logger.log('rejected at dbn ' + items[i] + ' and pos ' + pos + ' from image type ' + imageType + ' and end ' + end)
+            continue
+          } else {
+            if (bigassArray[items[i]] == null) {
+              bigassArray[items[i]] = new Array(6)
+            }
+            Logger.log('added at dbn ' + items[i] + ' and pos ' + pos + ' from image type ' + imageType + ' and end ' + end)
+            bigassArray[items[i]][pos] = ['https://drive.google.com/uc?id=' + file.getId(), dateToEight(file.getDateCreated()), i]
+          }
         }
       }
     }
@@ -498,6 +504,30 @@ function loadBigassArray () {
   massIteration(naturalLightFolder, 'NL')
   massIteration(naturalLightArchiveFolder, 'NL')
   return bigassArray
+}
+/**
+ * recursively removes zeroes from the front of a string
+ * @param {string} string to be trimmed
+ * @returns {string} string with beginning zeroes removed
+ */
+function removeZeroes (string) {
+  let toReturn = string
+  while (toReturn.charAt(0) === '0' && toReturn.length > 1) {
+    toReturn = toReturn.substr(1)
+  }
+  return toReturn
+}
+/**
+ * recursively removes zeroes from the front of a string
+ * @param {string} string to be trimmed
+ * @returns {string} string with beginning zeroes removed
+ */
+function removeZeroes (string) {
+  let toReturn = string
+  while (toReturn.charAt(0) === '0' && toReturn.length > 1) {
+    toReturn = toReturn.substr(1)
+  }
+  return toReturn
 }
 /**
  * recursively removes zeroes from the front of a string
