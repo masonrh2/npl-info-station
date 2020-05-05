@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NPL Block Information Station</title>
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
     <?!= include('css')?>
 </head>
 <body onload="getDatabaseOnLoad()">
@@ -122,11 +123,11 @@
     </dl>
     <figure class="testImg" id="natLightImgFigW" style="display: none;">
       <img id="natLightImgW" height="360"/>
-      <figcaption>Wide End</figcaption>
+      <figcaption id="natLightImgFigCaption4">Wide End</figcaption>
     </figure>
     <figure class="testImg" id="natLightImgFigN" style="display: none;">
       <img id="natLightImgN" height="360"/>
-      <figcaption>Narrow End</figcaption>
+      <figcaption id="natLightImgFigCaption5">Narrow End</figcaption>
     </figure>
   </section>
   <section id="natLightNoInfo" style="display: none;">
@@ -136,7 +137,7 @@
   <section id="scintSection" style="display: none;">
     <h2>Scintillation</h2>
     <dl class='inline-flex'>
-      <dt id='scinitllationLabel'>Scintillation:</dt>
+      <dt id='scintillationLabel'>Scintillation:</dt>
       <dd id="scintillation"></dd>
       <dt id='scintRatioLabel'>Ratio:</dt>
       <dd id="scintRatio"></dd>
@@ -314,13 +315,15 @@
     function updateField(blockDataMap, id) {
       if (dataPresent(blockDataMap.get(id))) {
         document.getElementById(id).innerHTML = blockDataMap.get(id)
-        if (suffixes.has(id)) {
+        if (suffixes.has(id) || id === 'status') {
           if (id === 'status') {
             document.getElementById(id).innerHTML += ' ' + statusMap.get(blockDataMap.get('status'))
           } else {
             document.getElementById(id).innerHTML += ' ' + suffixes.get(id)
           }
         }
+        document.getElementById(id).style.display = 'inline'
+        document.getElementById(id + 'Label').style.display = 'inline'
       } else {
         if (failureMessages.has(id)) {
           document.getElementById(id).innerHTML = failureMessages.get(id)
@@ -343,18 +346,14 @@
     }
     // loads testing data, updates fields, and unhides relevant sections based on the data present
     function loadTestingData (dbn) {
-      let htmlMap
-      // check for NaN
-      if (isNaN(dbn)) {
-        // return an empty map
-        htmlMap = new Map()
-      }
+      let blockMap = new Map()
       // The dbn passed from the html doesn't seem to be an int, so make sure it is (dbn 1 would return info for dbn 10 otherwise)
       dbn = Math.floor(dbn)
       // Reject invalid dbns and choose the correct sheet and map for valid dbns
-      if (dbn < 0 || dbn > maxDbn) {
-        // Logger.log('the input dbn was out of range')
-        htmlMap = new Map()
+      if (isNaN(dbn) || dbn < 0 || dbn > maxDbn) {
+        alert('that dbn was invalid or out of range')
+        document.getElementById("loadingBlockData").style.display = 'none'
+        document.getElementById("currentDateAndTime").style.display = 'none'
       } else if (dbn < 2000) {
         var currentSheet = database[0]
         var currentRowOffset = 1
@@ -364,22 +363,18 @@
         var currentRowOffset = 1 - 2000
         var currentSheetMap = blocksSheet2Map
       }
-      if (htmlMap == null) {
-        var row = dbn + currentRowOffset
-        // Construct a cell range in A1 format for the block's row
-        var blockData = currentSheet[row]
-        // Create a new map that maps block properites to their actual values
-        var blockMap = new Map()
-        for (let pair of currentSheetMap) {
-          // Logger.log("currentSheetMap has key " + pair[0] + " -> " + blockData[pair[1]]);
-          blockMap.set(pair[0], blockData[pair[1]])
-        }
-        htmlMap = blockMap
+      // dbn is good, so pull data from the database
+      var row = dbn + currentRowOffset
+      // Construct a cell range in A1 format for the block's row
+      var blockData = currentSheet[row]
+      // Create a new map that maps block properites to their actual values
+      for (let pair of currentSheetMap) {
+        // Logger.log("currentSheetMap has key " + pair[0] + " -> " + blockData[pair[1]]);
+        blockMap.set(pair[0], blockData[pair[1]])
       }
-      // first check if ALL nulls were returned, in which case there's no information for this dbn
-      // (or loadTestingData returned all null from an INVALID dbn submission)
-      let htmlMapArray = Array.from(htmlMap)
-      let allNull = htmlMapArray.every(function(element) {
+      // first check for ALL nulls, in which case there's no information for this dbn
+      let blockMapArray = Array.from(blockMap)
+      let allNull = blockMapArray.every(function(element) {
         return element == null || !dataPresent(element[1])
       })
       if (allNull) {
@@ -393,11 +388,11 @@
       let toGetImageUrls = [blockMap.get('dbn'), blockMap.get('lightTransDate'), blockMap.get('natLightDate')]
 
       // BLOCK DETAILS  (check if data is present)
-      if (someDataPresent(htmlMap, blockDetailsKeys)) {
+      if (someDataPresent(blockMap, blockDetailsKeys)) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("blockDetailsSection").style.display = 'block'
         for (let i = 0; i < blockDetailsKeys.length; i++) {
-          updateField(htmlMap, blockDetailsKeys[i])
+          updateField(blockMap, blockDetailsKeys[i])
         }
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
@@ -408,11 +403,11 @@
       }
       
       // DENSITY  (check if data is present)
-      if (someDataPresent(htmlMap, densityKeys)) {
+      if (someDataPresent(blockMap, densityKeys)) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("densitySection").style.display = 'block'
         for (let i = 0; i < densityKeys.length; i++) {
-          updateField(htmlMap, densityKeys[i])
+          updateField(blockMap, densityKeys[i])
         }
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
@@ -423,11 +418,11 @@
       }
 
       // LIGHT TRANSMISSION (check if data is present)
-      if (someDataPresent(htmlMap, lightTransKeys)) {
+      if (someDataPresent(blockMap, lightTransKeys)) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("lightTransSection").style.display = 'block'
         for (let i = 0; i < lightTransKeys.length; i++) {
-          updateField(htmlMap, lightTransKeys[i])
+          updateField(blockMap, lightTransKeys[i])
         }
         // and run getImageUrls
         document.getElementById("imagesSelection").style.display = 'block'
@@ -448,11 +443,11 @@
       }
       
       // NATURAL LIGHT (check if data is present)
-      if (someDataPresent(htmlMap, natLightKeys)) {
+      if (someDataPresent(blockMap, natLightKeys)) {
         // some info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("natLightSection").style.display = 'block'
         for (let i = 0; i < natLightKeys.length; i++) {
-          updateField(htmlMap, natLightKeys[i])
+          updateField(blockMap, natLightKeys[i])
         }
         // run getImageUrls if it hasn't been run by light transmission
         if (!getImageUrlsRun) {
@@ -482,11 +477,11 @@
       }
       
       // SCINTILLATION (check if data is present)
-      if (someDataPresent(htmlMap, scintKeys)) {
+      if (someDataPresent(blockMap, scintKeys)) {
         // some info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("scintSection").style.display = 'block'
         for (let i = 0; i < scintKeys.length; i++) {
-          updateField(htmlMap, scintKeys[i])
+          updateField(blockMap, scintKeys[i])
         }
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
@@ -555,6 +550,8 @@
       console.log('slow method for dbn: ' + dbn)
       if (bigassArray[dbn] == null) {
         console.log('bigassArray was null at index: ' + dbn)
+        document.getElementById("loadingImages").style.display = 'none'
+        document.getElementById("noImagesFound").style.display = 'block'
       } else {
         imageUrls = bigassArray[dbn]
         if (imageUrls.every((element) => element == null)) {
@@ -577,6 +574,18 @@
           } else {
             // this section is not needed—reset its checkbox
             resetCheckbox(allImagePrefixes[i])
+          }
+        }
+        // add suffixes to figure captions on NL images (left or right) if needed
+        let imageUrlsIndexToEnd = new Map([[4, 'Wide End'], [5, 'Narrow End']])
+        let positionCodeToPosition = new Map([[1, '(pictured on left)'], [2, '(pictured on right)']])
+        for (let i = 4; i < imageUrls.length; i++) {
+          if (imageUrls[i] != null) {
+            if (imageUrls[i][2] != 0) {
+              document.getElementById('natLightImgFigCaption' + i).innerHTML = imageUrlsIndexToEnd.get(i) + ' ' + positionCodeToPosition.get(imageUrls[i][2])
+            } else {
+              document.getElementById('natLightImgFigCaption' + i). innerHTML = imageUrlsIndexToEnd.get(i)
+            }
           }
         }
         // finally, display the checkboxes section
@@ -607,7 +616,7 @@
           console.log('bigassArray was null :(')
         } else {
           bigassArray = data
-          console.log('loaded a not null bigassArray :' + data)
+          console.log('loaded bigassArray and she thicc')
         }
       }
     }

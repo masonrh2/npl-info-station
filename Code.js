@@ -448,7 +448,7 @@ function loadBigassArray () {
   if (!filesLoaded) {
     loadFiles()
   }
-  let imgTypeMap = new Map([['LT', 0], ['LTCropped', 1],['NL', 2]])
+  let imgTypeMap = new Map([['LT', 0], ['LTCropped', 1], ['NL', 2]])
   let endMap = new Map([['W', 0], ['N', 1]])
   let bigassArray = new Array(maxDbn + 1)
   /**
@@ -480,7 +480,19 @@ function loadBigassArray () {
         }
         let end = items.splice(-1, 1).toString()
         for (let i = 0; i < items.length; i++) {
+          let side
+          if (items.length > 1) {
+            side = i + 1
+          } else {
+            side = 0
+          }
           let pos
+          let date
+          if (imageType === 'LTCropped') {
+            date = null
+          } else {
+            date = subfolder.getName().substring(0, 8)
+          }
           if (imgTypeMap.has(imageType) && endMap.has(end)) {
             pos = 2 * imgTypeMap.get(imageType) + endMap.get(end)
           }
@@ -490,9 +502,15 @@ function loadBigassArray () {
           } else {
             if (bigassArray[items[i]] == null) {
               bigassArray[items[i]] = new Array(6)
+              Logger.log('added at dbn ' + items[i] + ' and pos ' + pos + ' from image type ' + imageType + ' and end ' + end)
+              bigassArray[items[i]][pos] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
+            } else if (bigassArray[items[i]][pos] == null) {
+              Logger.log('added at dbn ' + items[i] + ' and pos ' + pos + ' from image type ' + imageType + ' and end ' + end)
+              bigassArray[items[i]][pos] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
+            } else if (imageType !== 'LTCropped' && parseInt(date) > parseInt(bigassArray[items[i]][pos][2])) {
+              Logger.log('added at dbn ' + items[i] + ' and pos ' + pos + ' from image type ' + imageType + ' and end ' + end)
+              bigassArray[items[i]][pos] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
             }
-            Logger.log('added at dbn ' + items[i] + ' and pos ' + pos + ' from image type ' + imageType + ' and end ' + end)
-            bigassArray[items[i]][pos] = ['https://drive.google.com/uc?id=' + file.getId(), dateToEight(file.getDateCreated()), i]
           }
         }
       }
@@ -504,30 +522,6 @@ function loadBigassArray () {
   massIteration(naturalLightFolder, 'NL')
   massIteration(naturalLightArchiveFolder, 'NL')
   return bigassArray
-}
-/**
- * recursively removes zeroes from the front of a string
- * @param {string} string to be trimmed
- * @returns {string} string with beginning zeroes removed
- */
-function removeZeroes (string) {
-  let toReturn = string
-  while (toReturn.charAt(0) === '0' && toReturn.length > 1) {
-    toReturn = toReturn.substr(1)
-  }
-  return toReturn
-}
-/**
- * recursively removes zeroes from the front of a string
- * @param {string} string to be trimmed
- * @returns {string} string with beginning zeroes removed
- */
-function removeZeroes (string) {
-  let toReturn = string
-  while (toReturn.charAt(0) === '0' && toReturn.length > 1) {
-    toReturn = toReturn.substr(1)
-  }
-  return toReturn
 }
 /**
  * recursively removes zeroes from the front of a string
