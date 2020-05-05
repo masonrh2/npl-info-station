@@ -7,148 +7,162 @@
     <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
     <?!= include('css')?>
 </head>
-<body onload="getDatabaseOnLoad()">
-  <div class="header">
+<body onload="getDatabaseOnLoad()" style="margin: 16px;">
+  <div class="header" style="display: block; padding-bottom: 2em;">
     <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
     <h1>NPL Block Information Station</h1>
-  </div><br>
-  
-  <form action="javascript:onSubmit()" style="display: inline;">
-    <label>DBN: </label><input type="text" id="inputDBN">
-    <button id="submitDBN">Submit</button>
-  </form>
-  <button id="massIteration" onclick="madness()">do not press</button>
-
-  <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
-  
-  <section id="imagesSelection" style="display: none;  margin-top: 1em;">
-    <section id="allCheckboxes" style="display: none;">
-      <section id="CBshow-lightTransImgSection" style="display: none;">
-        <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')">
-        <label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel">Show Light Transmission Original Images</label><br>
-      </section>
-      <section id="CBshow-lightTransImgCroppedSection" style="display: none;">
-        <input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')">
-        <label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel">Show Light Transmission Cropped Images</label><br>
-      </section>
-      <section id="CBshow-natLightImgSection" style="display: none;">
-        <input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')">
-        <label for="CBshow-natLightImg" id="CBshow-natLightImgLabel">Show Natural Light Images</label>
-      </section>
+  </div>
+  <p id="loadingDatabase" style="display: none;">Loading Database...</p>
+  <section id="notHeader" style="display: none;">
+    <section style="display: inline-block; margin-left: 0em;">
+      <form action="javascript:onSubmit()" style="display: inline;">
+        <label>DBN: </label><input type="text" id="inputDBN">
+        <button id="submitDBN">Submit</button>
+      </form>
+      <button id="massIteration" onclick="madness()">do not press</button>
+      <button style="margin-left: 0;">Download as PDF</button>
     </section>
-    <div id="loadingImages" style="display: none;">Loading Images...</div>
-    <div id="noImagesFound" style="display: none;">No Images Found</div>
-  </section>
-  
-  <p id="currentDateAndTime" style="display: none;"></p>
+    <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
+    
+    <section id="imagesSelection" style="display: none;  margin-top: 1em;">
+      <section id="allCheckboxes" style="display: none;">
+        <section id="CBshow-lightTransImgSection" style="display: none;">
+          <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')">
+          <label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel">Show Light Transmission Original Images</label><br>
+        </section>
+        <section id="CBshow-lightTransImgCroppedSection" style="display: none;">
+          <input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')">
+          <label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel">Show Light Transmission Cropped Images</label><br>
+        </section>
+        <section id="CBshow-natLightImgSection" style="display: none;">
+          <input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')">
+          <label for="CBshow-natLightImg" id="CBshow-natLightImgLabel">Show Natural Light Images</label>
+        </section>
+      </section>
+      <div id="loadingImages" style="display: none;">Loading Images...</div>
+      <div id="noImagesFound" style="display: none;">No Images Found</div>
+    </section>
+    
+    <p id="currentDateAndTime" style="display: none;"></p>
 
-  <section id="blockDetailsSection" style="display: none;">
-    <h2>Block Details</h2>
-    <dl class='inline-flex'>
-      <dt id='dbnLabel'>DBN:</dt>
-      <dd id="dbn"></dd>
-      <dt id='blockLabel'>Block Design:</dt>
-      <dd id="block"></dd>
-      <dt id='statusLabel'>Status:</dt>
-      <dd id="status"></dd>
-      <dt id="shipmentLabel">BNL Shipment:</dt>
-      <dd id="shipment"></dd>
-      <dt id="sectorLabel">Sector:</dt>
-      <dd id="sector"></dd>
-      <dt id="commentLabel">Comment:</dt>
-      <dd id="comment"></dd>
-    </dl>
-  </section>
-  <section id="blockDetailsNoInfo" style="display: none;">
-    <p style="font-style: italic; font-size: 1.5em;">Unable to find any block information for this dbn</p>
-  </section>
+    <section id="blockDetailsSection" style="display: none;">
+      <h2>Block Details</h2>
+      <dl class='inline-flex'>
+        <dt id='dbnLabel'>DBN:</dt>
+        <dd id="dbn"></dd>
+        <dt id='blockLabel'>Block Design:</dt>
+        <dd id="block"></dd>
+        <dt id='statusLabel'>Status:</dt>
+        <dd id="status"></dd>
+        <dt id="shipmentLabel">BNL Shipment:</dt>
+        <dd id="shipment"></dd>
+        <dt id="sectorLabel">Sector:</dt>
+        <dd id="sector"></dd>
+        <dt id="commentLabel">Comment:</dt>
+        <dd id="comment"></dd>
+      </dl>
+    </section>
+    <section id="blockDetailsNoInfo" style="display: none;">
+      <p style="font-style: italic; font-size: 1.5em;">Unable to find any block information for this dbn</p>
+    </section>
 
-  <section id="densitySection" style="display: none;">
-    <h2>Density</h2>
-    <dl class='inline-flex'>
-      <dt id='volumeLabel'>Volume:</dt>
-      <dd id="volume"></dd>
-      <dt id='massLabel'>Mass:</dt>
-      <dd id="mass"></dd>
-      <dt id='densityLabel'>Density:</dt>
-      <dd id="density"></dd>
-      <dt id='densityDateLabel'>Date:</dt>
-      <dd id="densityDate"></dd>
-    </dl>
-  </section>
-  <section id="densityNoInfo" style="display: none;">
-    <p style="font-style: italic; font-size: 1.5em;">Unable to find any density data for this block</p>
-  </section>
+    <section id="densitySection" style="display: none;">
+      <h2>Density</h2>
+      <dl class='inline-flex'>
+        <dt id='volumeLabel'>Volume:</dt>
+        <dd id="volume"></dd>
+        <dt id='inSpecLabel'>Dimension in spec:</dt>
+        <dd id="inSpec"></dd>
+        <dt id='massLabel'>Mass:</dt>
+        <dd id="mass"></dd>
+        <dt id='densityLabel'>Density:</dt>
+        <dd id="density"></dd>
+        <dt id='densityDateLabel'>Date:</dt>
+        <dd id="densityDate"></dd>
+      </dl>
+      <button id="showDimTableBtn" onclick="toggleDimTable()">Show Tolerances</button>
+      <table class="dimension" id="dimTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+        <tr>
+          <th>ΔL</th><th>ΔBT</th><th>ΔBB</th><th>ΔBH</th><th>ΔST</th><th>ΔSB</th><th>ΔSH</th>
+        </tr>
+        <tr>
+          <td id="dL"></td><td id="dBT"></td><td id="dBB"></td><td id="dBH"></td><td id="dST"></td><td id="dSB"></td><td id="dSH"></td>
+        </tr>
+      </table>
+    </section>
+    <section id="densityNoInfo" style="display: none;">
+      <p style="font-style: italic; font-size: 1.5em;">Unable to find any density data for this block</p>
+    </section>
 
-  <section id="lightTransSection" style="display: none;">
-    <h2>Light Transmission</h2>
-    <dl class='inline-flex'>
-      <dt id='fiberPercentageLabel'>Fiber Count:</dt>
-      <dd id="fiberPercentage"></dd>
-      <dt id='goodEndLabel'>Good End:</dt>
-      <dd id="goodEnd"></dd>
-      <dt id='missingRowLabel'>Missing Row:</dt>
-      <dd id="missingRow"></dd>
-      <dt id='thirteenHolesLabel'>13 Connected Holes:</dt>
-      <dd id="thirteenHoles"></dd>
-      <dt id='lightTransDateLabel'>Date:</dt>
-      <dd id="lightTransDate"></dd>
-    </dl>
-    <figure class="testImg" id="lightTransImgFigW" style="display: none;">
-      <img id="lightTransImgW" height="360"/>
-      <figcaption>Wide End</figcaption>
-    </figure>
-    <figure class="testImg" id="lightTransImgFigN" style="display: none;">
-      <img id="lightTransImgN" height="360"/>
-      <figcaption>Narrow End</figcaption>
-    </figure>
-    <figure class="testImg" id="lightTransImgCroppedFigW" style="display: none;">
-      <img id="lightTransImgCroppedW" height="360"/>
-      <figcaption>Wide End</figcaption>
-    </figure>
-    <figure class="testImg" id="lightTransImgCroppedFigN" style="display: none;">
-      <img id="lightTransImgCroppedN" height="360"/>
-      <figcaption>Narrow End</figcaption>
-    </figure>
-  </section>
-  <section id="lightTransNoInfo" style="display: none;">
-    <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
-  </section>
+    <section id="lightTransSection" style="display: none;">
+      <h2>Light Transmission</h2>
+      <dl class='inline-flex'>
+        <dt id='fiberPercentageLabel'>Fiber Count:</dt>
+        <dd id="fiberPercentage"></dd>
+        <dt id='goodEndLabel'>Good End:</dt>
+        <dd id="goodEnd"></dd>
+        <dt id='missingRowLabel'>Missing Row:</dt>
+        <dd id="missingRow"></dd>
+        <dt id='thirteenHolesLabel'>13 Connected Holes:</dt>
+        <dd id="thirteenHoles"></dd>
+        <dt id='lightTransDateLabel'>Date:</dt>
+        <dd id="lightTransDate"></dd>
+      </dl>
+      <figure class="testImg" id="lightTransImgFigW" style="display: none;">
+        <img id="lightTransImgW" height="360"/>
+        <figcaption>Wide End</figcaption>
+      </figure>
+      <figure class="testImg" id="lightTransImgFigN" style="display: none;">
+        <img id="lightTransImgN" height="360"/>
+        <figcaption>Narrow End</figcaption>
+      </figure>
+      <figure class="testImg" id="lightTransImgCroppedFigW" style="display: none;">
+        <img id="lightTransImgCroppedW" height="360"/>
+        <figcaption>Wide End</figcaption>
+      </figure>
+      <figure class="testImg" id="lightTransImgCroppedFigN" style="display: none;">
+        <img id="lightTransImgCroppedN" height="360"/>
+        <figcaption>Narrow End</figcaption>
+      </figure>
+    </section>
+    <section id="lightTransNoInfo" style="display: none;">
+      <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
+    </section>
 
-  <section id="natLightSection" style="display: none;">
-    <h2>Natural Light</h2>
-    <dl class='inline-flex'>
-      <dt id='natLightDateLabel'>Date:</dt>
-      <dd id="natLightDate"></dd>
-    </dl>
-    <figure class="testImg" id="natLightImgFigW" style="display: none;">
-      <img id="natLightImgW" height="360"/>
-      <figcaption id="natLightImgFigCaption4">Wide End</figcaption>
-    </figure>
-    <figure class="testImg" id="natLightImgFigN" style="display: none;">
-      <img id="natLightImgN" height="360"/>
-      <figcaption id="natLightImgFigCaption5">Narrow End</figcaption>
-    </figure>
-  </section>
-  <section id="natLightNoInfo" style="display: none;">
-    <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
-  </section>
+    <section id="natLightSection" style="display: none;">
+      <h2>Natural Light</h2>
+      <dl class='inline-flex'>
+        <dt id='natLightDateLabel'>Date:</dt>
+        <dd id="natLightDate"></dd>
+      </dl>
+      <figure class="testImg" id="natLightImgFigW" style="display: none;">
+        <img id="natLightImgW" height="360"/>
+        <figcaption id="natLightImgFigCaption4">Wide End</figcaption>
+      </figure>
+      <figure class="testImg" id="natLightImgFigN" style="display: none;">
+        <img id="natLightImgN" height="360"/>
+        <figcaption id="natLightImgFigCaption5">Narrow End</figcaption>
+      </figure>
+    </section>
+    <section id="natLightNoInfo" style="display: none;">
+      <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
+    </section>
 
-  <section id="scintSection" style="display: none;">
-    <h2>Scintillation</h2>
-    <dl class='inline-flex'>
-      <dt id='scintillationLabel'>Scintillation:</dt>
-      <dd id="scintillation"></dd>
-      <dt id='scintRatioLabel'>Ratio:</dt>
-      <dd id="scintRatio"></dd>
-      <dt id='scintDateLabel'>Date:</dt>
-      <dd id="scintDate"></dd>
-    </dl>
+    <section id="scintSection" style="display: none;">
+      <h2>Scintillation</h2>
+      <dl class='inline-flex'>
+        <dt id='scintillationLabel'>Scintillation:</dt>
+        <dd id="scintillation"></dd>
+        <dt id='scintRatioLabel'>Ratio:</dt>
+        <dd id="scintRatio"></dd>
+        <dt id='scintDateLabel'>Date:</dt>
+        <dd id="scintDate"></dd>
+      </dl>
+    </section>
+    <section id="scintNoInfo" style="display: none;">
+      <p style="font-style: italic; font-size: 1.5em;">Unable to find any scintillation data for this block</p>
+    </section>
   </section>
-  <section id="scintNoInfo" style="display: none;">
-    <p style="font-style: italic; font-size: 1.5em;">Unable to find any scintillation data for this block</p>
-  </section>
-
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script>
     // store each section's ID in an array for easy iteration:
@@ -165,9 +179,7 @@
     var allTestingImgs = ['lightTransImgW', 'lightTransImgN', 'lightTransImgCroppedW', 'lightTransImgCroppedN', 'natLightImgW', 'natLightImgN']
     // IF a testing value has a key in this map, display the message when no data for that value was found
     // otherwise, hide the value and it's name by default
-    var failureMessages = new Map([
-      ['comment', '(no comment found)']
-    ])
+    var failureMessages = new Map()
     // IF a testing value has a key in this map and the block has this data, append this suffix (after a space) to the data
     // note that since status is block-specific, it is handled separately by updateField
     var suffixes = new Map([
@@ -239,10 +251,38 @@
     ])
     // [Blocks DB, Blocks1364DB]
     var database
+    // 
+    var dimensionsMap = new Map([
+    ['123', [5.5000,	2.0850,	2.0850,	1.9890,	1.8150,	1.8150,	1.9890]],
+    ['4', [5.4460,	2.0850,	2.0820,	2.2740,	1.8180,	1.8150,	1.9900]],
+    ['5', [5.3500,	2.0850,	2.0760,	2.2630,	1.8230,	1.8150,	1.9900]],
+    ['6', [5.2700,	2.0850,	2.0710,	2.2530,	1.8280,	1.8150,	1.9900]],
+    ['7', [5.2050,	2.0850,	2.0650,	2.2430,	1.8320,	1.8150,	1.9900]],
+    ['8', [5.1550,	2.0850,	2.0600,	2.2340,	1.8370,	1.8150,	1.9890]],
+    ['9', [5.1180,	2.0850,	2.0560,	2.2250,	1.8410,	1.8150,	1.9890]],
+    ['10', [5.0940,	2.0850,	2.0510,	2.2160,	1.8460,	1.8150,	1.9890]],
+    ['11', [5.0820,	2.0850,	2.0470,	2.2080,	1.8500,	1.8150,	1.9890]],
+    ['12', [5.0810,	2.0850,	2.0420,	2.2010,	1.8530,	1.8150,	1.9890]],
+    ['13', [5.0900,	2.0850,	2.0390,	2.1930,	1.8570,	1.8150,	1.9890]],
+    ['14', [5.1100,	2.0850,	2.0350,	2.1860,	1.8600,	1.8150,	1.9890]],
+    ['15', [5.1390,	2.0850,	2.0320,	2.1800,	1.8640,	1.8150,	1.9890]],
+    ['16', [5.1770,	2.0850,	2.0280,	2.1740,	1.8670,	1.8150,	1.9890]],
+    ['17', [5.2240,	2.0850,	2.0250,	2.1680,	1.8700,	1.8150,	1.9890]],
+    ['18', [5.2790,	2.0850,	2.0230,	2.1620,	1.8720,	1.8150,	1.9890]],
+    ['19', [5.3420,	2.0850,	2.0200,	2.1570,	1.8750,	1.8150,	1.9890]],
+    ['20', [5.4120,	2.0850,	2.0180,	2.1520,	1.8770,	1.8150,	1.9890]],
+    ['21', [5.4890,	2.0850,	2.0150,	2.1470,	1.8790,	1.8150,	1.9890]],
+    ['22', [5.5720,	2.0850,	2.0130,	2.1420,	1.8810,	1.8150,	1.9890]],
+    ['23', [5.6620,	2.0850,	2.0120,	2.1380,	1.8830,	1.8150,	1.9890]],
+    ['24', [5.7580,	2.0850,	2.0100,	2.1330,	1.8850,	1.8150,	1.9890]]
+    ])
+    //
+    var dimensionLabels = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
     //
     var slowMode = false
     // called when the web page is loaded—loads the database
     function getDatabaseOnLoad() {
+      document.getElementById('loadingDatabase').style.display = 'block'
       google.script.run.withSuccessHandler(onSuccess).getDatabase()
       function onSuccess (gotDatabase) {
         if (gotDatabase == null) {
@@ -251,8 +291,11 @@
         }
         database = gotDatabase
         console.log('loaded database')
+        document.getElementById('loadingDatabase').style.display = 'none'
+        document.getElementById('notHeader').style.display = 'block'
       }
     }
+    
     // called when enter is pressed in text box or submit button is clicked
     function onSubmit() {
       // load the database if it hasn't been loaded
@@ -364,9 +407,11 @@
         var currentSheetMap = blocksSheet2Map
       }
       // dbn is good, so pull data from the database
-      var row = dbn + currentRowOffset
+      let row = dbn + currentRowOffset
       // Construct a cell range in A1 format for the block's row
-      var blockData = currentSheet[row]
+      let blockData = currentSheet[row]
+      // grab each dimension measurement in an array
+      let dimensions = blockData.slice(33, 40)
       // Create a new map that maps block properites to their actual values
       for (let pair of currentSheetMap) {
         // Logger.log("currentSheetMap has key " + pair[0] + " -> " + blockData[pair[1]]);
@@ -409,6 +454,36 @@
         for (let i = 0; i < densityKeys.length; i++) {
           updateField(blockMap, densityKeys[i])
         }
+        let hasDimensionInfo = false
+        for (let i = 0; i < dimensions.length; i++) {
+          if (dataPresent(dimensions[i])) {
+            hasDimensionInfo = true
+            break
+          }
+        }
+        if (hasDimensionInfo) {
+          let block = blockMap.get('block')
+          document.getElementById('inSpec').innerHTML = inSpec(block, dimensions)
+          for (let i = 0; i < dimensions.length; i++) {
+            if (dimensions[i] - dimensionsMap.get(block)[i] < 0) {
+              document.getElementById('d' + dimensionLabels[i]).innerHTML = (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
+            } else {
+              document.getElementById('d' + dimensionLabels[i]).innerHTML = '+' + (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
+            }
+            if (Math.abs(dimensions[i] - dimensionsMap.get(block)[i]) > 0.02) {
+              document.getElementById('d' + dimensionLabels[i]).style.color = '#800000'
+            } else {
+              document.getElementById('d' + dimensionLabels[i]).style.color = '#008000'
+            }
+          }
+          document.getElementById('inSpec').style.display = 'inline'
+          document.getElementById('inSpecLabel').style.display = 'inline'
+          document.getElementById('showDimTableBtn').style.display = 'inline'
+        } else {
+          document.getElementById('inSpec').style.display = 'none'
+          document.getElementById('inSpecLabel').style.display = 'none'
+          document.getElementById('showDimTableBtn').style.display = 'none'
+        } 
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
         for (let i = 0; i < densityKeys.length; i++) {
@@ -547,7 +622,6 @@
 
     function getImageUrlsSlow (dbn) {
       // check if getImageUrls returned any urls...
-      console.log('slow method for dbn: ' + dbn)
       if (bigassArray[dbn] == null) {
         console.log('bigassArray was null at index: ' + dbn)
         document.getElementById("loadingImages").style.display = 'none'
@@ -618,6 +692,23 @@
           bigassArray = data
           console.log('loaded bigassArray and she thicc')
         }
+      }
+    }
+    function inSpec (blockDesign, dimensions) {
+      for (let i = 0; i < dimensions.length; i++) {
+        if (Math.abs(dimensions[i] - dimensionsMap.get(blockDesign)[i]) > 0.02) {
+          return 'No'
+        }
+      }
+      return 'Yes'
+    }
+    function toggleDimTable () {
+      if (document.getElementById('dimTable').style.display === 'none') {
+        document.getElementById('dimTable').style.display = 'block'
+        document.getElementById('showDimTableBtn').innerHTML = 'Hide Tolerances'
+      } else {
+        document.getElementById('dimTable').style.display = 'none'
+        document.getElementById('showDimTableBtn').innerHTML = 'Show Tolerances'
       }
     }
   </script>
