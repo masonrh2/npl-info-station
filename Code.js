@@ -15,6 +15,7 @@ var maxDbn = 3498
 
 // declare variable that will be needed by other functions after loadFiles has run
 var filesLoaded = false
+var error
 var database
 var blocksSheet1
 var blocksSheet2
@@ -23,6 +24,7 @@ var lightTransCroppedFolder
 var lightTransArchiveOriginalFolder
 var naturalLightFolder
 var naturalLightArchiveFolder
+var imageUrlsSheet
 
 /**
  * locate and save database sheets and all testing folders
@@ -30,6 +32,7 @@ var naturalLightArchiveFolder
 function loadFiles () {
   let QATestsFolder
   let lightTransTestFolder
+  let errorMessage = ''
   // Note that changing the names or locations of the folders in google drive may temporarily break this, until the paths below are chagned
   if (DriveApp.getFilesByName('Blocks database').hasNext()) {
     // ...found database, now save it
@@ -43,7 +46,13 @@ function loadFiles () {
     }
   } else {
     // ...failed to locate database
-    Logger.log('failed to locate file "Blocks Databse" in drive')
+    Logger.log('failed to locate file "Blocks Database" in drive')
+    errorMessage += 'failed to locate file "Blocks Database" in drive; '
+  }
+  if (DriveApp.getFilesByName('imageUrlsSheet').hasNext()) {
+    imageUrlsSheet = SpreadsheetApp.open(DriveApp.getFilesByName('imageUrlsSheet').next())
+  } else {
+    Logger.log('failed to locate file "imageUrlsSheet" in drive')
   }
   // Locate sPHENIX--NEW folder...
   if (DriveApp.getFoldersByName('sPHENIX--NEW').hasNext()) {
@@ -125,17 +134,24 @@ function loadFiles () {
     }
   } else {
     // ...failed to locate sPHENIX--NEW folder
-    Logger.log('failed to locate "sPHENIX--NEW" folder drive')
+    Logger.log('failed to locate "sPHENIX--NEW" folder in drive')
+    errorMessage += 'failed to locate "sPHENIX--NEW" folder in drive; '
   }
   filesLoaded = true
+  error = errorMessage
 }
 
 function getDatabase () {
   if (!filesLoaded) {
     loadFiles()
   }
+  if (error !== '') {
+    // an error occured while loading files, do don't try to pass database var to fns
+    // also pass the error to HTML so the user can be alerted
+    return [null, null, error]
+  }
   const sheets = SpreadsheetApp.open(database).getSheets()
-  return [sheets[0].getDataRange().getDisplayValues(), sheets[1].getDataRange().getDisplayValues()]
+  return [sheets[0].getDataRange().getDisplayValues(), sheets[1].getDataRange().getDisplayValues(), error]
 }
 
 /**
@@ -370,7 +386,119 @@ function getDateFolder (folderToSearch, date, dbn) {
   }
   return folderToReturnName
 }
-
+function checkBigassArraySheet (bigassArray) {
+  if (!filesLoaded) {
+    loadFiles()
+  }
+  if (bigassArray == null) {
+    bigassArray = loadBigassArray()
+  }
+  // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
+  function dataPresent (data) {
+    return (data != null && data !== '' && data !== '#NUM!' && data !== '#DIV/0!')
+  }
+  Logger.log('checking bigassArraySheet')
+  const values1 = blocksSheet1.getDataRange().getDisplayValues()
+  const values2 = blocksSheet2.getDataRange().getDisplayValues()
+  for (let i = 0; i < values1.length - 1; i++) {
+    let lightTransDateDB = values1[i + 1][64]
+    if (!dataPresent(lightTransDateDB)) {
+      lightTransDateDB = null
+    }
+    let natLightDateDB = values1[i + 1][70]
+    if (!dataPresent(natLightDateDB)) {
+      natLightDateDB = null
+    }
+    let lightTransDateBAA
+    let natLightDateBAA
+    if (bigassArray[i] != null) {
+      if (bigassArray[i][0] != null && bigassArray[i][1] != null) {
+        lightTransDateBAA = Math.max(bigassArray[i][0][1], bigassArray[i][1][1])
+      }
+      if (bigassArray[i][4] != null && bigassArray[i][5] != null) {
+        natLightDateBAA = Math.max(bigassArray[i][4][1], bigassArray[i][5][1])
+      }
+    }
+    if (lightTransDateDB == null && lightTransDateBAA == null) {
+      continue
+    } else if (lightTransDateDB != null && lightTransDateBAA == null) {
+      Logger.log('database has LT date but BAA does not for DBN ' + i)
+    } else if (lightTransDateDB == null && lightTransDateBAA != null) {
+      Logger.log('BAA has LT date but database does not for DBN ' + i)
+    } else if (parseInt(lightTransDateDB.substring(0, 8)) !== parseInt(lightTransDateBAA)) {
+      Logger.log('INCONS. at DBN ' + i + ', database has LT date ' + lightTransDateDB + ' but BAA has ' + lightTransDateBAA)
+    }
+    if (natLightDateDB == null && natLightDateBAA == null) {
+      continue
+    } else if (natLightDateDB != null && natLightDateBAA == null) {
+      Logger.log('database has NL date but BAA does not for DBN ' + i)
+    } else if (natLightDateDB == null && natLightDateBAA != null) {
+      Logger.log('BAA has NL date but database does not for DBN ' + i)
+    } else if (parseInt(natLightDateDB) !== parseInt(natLightDateBAA)) {
+      Logger.log('INCONS. at DBN ' + i + ', database has NL date ' + natLightDateDB + ' but BAA has ' + natLightDateBAA)
+    }
+  }
+  for (let j = 1; j < values2.length; j++) {
+    const i = j + 1999
+    let lightTransDateDB = values2[j][64]
+    if (!dataPresent(lightTransDateDB)) {
+      lightTransDateDB = null
+    }
+    let natLightDateDB = values2[j][70]
+    if (!dataPresent(natLightDateDB)) {
+      natLightDateDB = null
+    }
+    let lightTransDateBAA
+    let natLightDateBAA
+    if (bigassArray[i] != null) {
+      if (bigassArray[i][0] != null && bigassArray[i][1] != null) {
+        lightTransDateBAA = Math.max(bigassArray[i][0][1], bigassArray[i][1][1])
+      }
+      if (bigassArray[i][4] != null && bigassArray[i][5] != null) {
+        natLightDateBAA = Math.max(bigassArray[i][4][1], bigassArray[i][5][1])
+      }
+    }
+    if (lightTransDateDB == null && lightTransDateBAA == null) {
+      continue
+    } else if (lightTransDateDB != null && lightTransDateBAA == null) {
+      Logger.log('database has LT date but BAA does not for DBN ' + i)
+    } else if (lightTransDateDB == null && lightTransDateBAA != null) {
+      Logger.log('BAA has LT date but database does not for DBN ' + i)
+    } else if (parseInt(lightTransDateDB.substring(0, 7)) !== parseInt(lightTransDateBAA)) {
+      Logger.log('INCONS. at DBN ' + i + ', database has LT date ' + lightTransDateDB + ' but BAA has ' + lightTransDateBAA)
+    }
+    if (natLightDateDB == null && natLightDateBAA == null) {
+      continue
+    } else if (natLightDateDB != null && natLightDateBAA == null) {
+      Logger.log('database has NL date but BAA does not for DBN ' + i)
+    } else if (natLightDateDB == null && natLightDateBAA != null) {
+      Logger.log('BAA has NL date but database does not for DBN ' + i)
+    } else if (parseInt(natLightDateDB) !== parseInt(natLightDateBAA)) {
+      Logger.log('INCONS. at DBN ' + i + ', database has NL date ' + natLightDateDB + ' but BAA has ' + natLightDateBAA)
+    }
+  }
+}
+function putBigassArray(bigassArray) {
+  if (bigassArray == null) {
+    bigassArray = loadBigassArray()
+  }
+  for (let i = 0; i < bigassArray.length; i++) {
+    if (bigassArray[i] != null) {
+      const toPut = new Array(19)
+      toPut[0] = i
+      for (let j = 0; j < 6; j++) {
+        if (bigassArray[i][j] != null) {
+          for (let k = 0; k < 3; k++) {
+            toPut[1 + 3 * j + k] = bigassArray[i][j][k]
+          }
+        }
+      }
+      Logger.log('at not string ' + (i + 3) + ', put: ' + toPut)
+      // Logger.log('string?: ' + (i + 3))
+      imageUrlsSheet.getSheets()[0].getRange(i + 3, 1, 1, 19).setValues([toPut])
+    }
+  }
+}
 //
 function loadBigassArray () {
   if (!filesLoaded) {
@@ -416,7 +544,7 @@ function loadBigassArray () {
           }
           let img
           let date
-          if (imageType === 'LTCropped') {
+          if (imageType === 'LTCropped' || isNaN(subfolder.getName().substring(0, 8))) {
             date = null
           } else {
             date = subfolder.getName().substring(0, 8)
@@ -433,11 +561,11 @@ function loadBigassArray () {
               bigassArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
             } else if (bigassArray[items[i]][img] == null) {
               bigassArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
-            } else if (imageType !== 'LTCropped' && parseInt(date) > parseInt(bigassArray[items[i]][img][1])) {
-              Logger.log('OVERWROTE OLD date ' + parseInt(bigassArray[items[i]][img][1]) + ', new date ' + parseInt(date))
+            } else if (bigassArray[items[i]][img][1] == null || parseInt(date) > parseInt(bigassArray[items[i]][img][1])) {
+              // Logger.log('OVERWROTE OLD date ' + parseInt(bigassArray[items[i]][img][1]) + ', new date ' + parseInt(date))
               bigassArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
             } else {
-              Logger.log('KEPT OLD date ' + parseInt(bigassArray[items[i]][img][1]) + ', new date ' + parseInt(date))
+              // Logger.log('KEPT OLD date ' + parseInt(bigassArray[items[i]][img][1]) + ', new date ' + parseInt(date))
             }
           }
         }

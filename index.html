@@ -75,6 +75,8 @@
         <dd id="inSpec"></dd>
         <dt id='massLabel'>Mass:</dt>
         <dd id="mass"></dd>
+        <dt id='moldSeriesLabel'>Mold Series:</dt>
+        <dd id="moldSeries"></dd>
         <dt id='densityLabel'>Density:</dt>
         <dd id="density"></dd>
         <dt id='densityDateLabel'>Date:</dt>
@@ -169,7 +171,7 @@
     var allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
     // store each section's value IDs in an array for easy iteration:
     var blockDetailsKeys = ['dbn', 'block', 'status', 'shipment', 'sector', 'comment']
-    var densityKeys = ['volume', 'mass', 'density', 'densityDate']
+    var densityKeys = ['volume', 'mass', 'moldSeries', 'density', 'densityDate']
     var lightTransKeys = ['goodEnd', 'fiberPercentage', 'missingRow', 'thirteenHoles', 'lightTransDate']
     var natLightKeys = ['natLightDate']
     var scintKeys = ['scintillation', 'scintRatio', 'scintDate']
@@ -213,6 +215,7 @@
       ['shipment', 4],
       ['comment', 6],
       ['sector', 7],
+      ['moldSeries', 16],
       ['volume', 40],
       ['mass', 42],
       ['density', 44],
@@ -235,6 +238,7 @@
       ['shipment', 4],
       ['sector', 6],
       ['comment', 7],
+      ['moldSeries', 16],
       ['volume', 40],
       ['mass', 42],
       ['density', 44],
@@ -286,13 +290,19 @@
       google.script.run.withSuccessHandler(onSuccess).getDatabase()
       function onSuccess (gotDatabase) {
         if (gotDatabase == null) {
-          alert('unable to locate Blocks database in google drive!')
+          alert('oops, fn gotDatabase returned null! unable to load database and testing folders from drive')
+          document.getElementById('loadingDatabase').style.display = 'none'
           return
+        } else if (gotDatabase[2] !== '') {
+          // an error occured, so display an alert with the error message passed from script
+          alert('an error occured while loading the database and testing fodlers: ' + gotDatabase[2])
+          document.getElementById('loadingDatabase').style.display = 'none'
+        } else {
+          console.log('loaded database and testing folders without error')
+          database = gotDatabase
+          document.getElementById('loadingDatabase').style.display = 'none'
+          document.getElementById('notHeader').style.display = 'block'
         }
-        database = gotDatabase
-        console.log('loaded database')
-        document.getElementById('loadingDatabase').style.display = 'none'
-        document.getElementById('notHeader').style.display = 'block'
       }
     }
     
@@ -300,18 +310,9 @@
     function onSubmit() {
       // load the database if it hasn't been loaded
       if (database == null) {
-        console.log('loading database')
-        google.script.run.withSuccessHandler(onSuccess).getDatabase()
-      } else {
+        getDatabaseOnLoad()
         afterOnSubmit()
-      }
-      function onSuccess (returnedByGetDataBase) {
-        if (returnedByGetDataBase == null) {
-          alert('unable to locate Blocks database in google drive!')
-          return
-        }
-        database = returnedByGetDataBase
-        console.log('loaded database')
+      } else {
         afterOnSubmit()
       }
       function afterOnSubmit () {
@@ -465,7 +466,7 @@
           let block = blockMap.get('block')
           document.getElementById('inSpec').innerHTML = inSpec(block, dimensions)
           for (let i = 0; i < dimensions.length; i++) {
-            if (dimensions[i] - dimensionsMap.get(block)[i] < 0) {
+            if (dimensions[i] - dimensionsMap.get(block)[i] <= 0) {
               document.getElementById('d' + dimensionLabels[i]).innerHTML = (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
             } else {
               document.getElementById('d' + dimensionLabels[i]).innerHTML = '+' + (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
@@ -682,15 +683,17 @@
       }
     }
     function madness () {
-      alert('this may take SOME time...')
+      alert('loading ALL image urls, do not submit another dbn before this request completes (should take about 90 seconds)')
       slowMode = true
       google.script.run.withSuccessHandler(onSuccess).loadBigassArray()
       function onSuccess (data) {
         if (data == null) {
           console.log('bigassArray was null :(')
+          alert('there was an error fetching ALL image urls')
         } else {
           bigassArray = data
           console.log('loaded bigassArray and she thicc')
+          alert('loaded ALL image urls')
         }
       }
     }
