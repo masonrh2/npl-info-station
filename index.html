@@ -64,7 +64,7 @@
           <button id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
           <table class="dimension" id="tungstenTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
             <tr>
-              <th>Powder</th><th>Bucket Number</th><th>Mold Series</th><th>Empty Mold Mass</th><th>Filled Mold Mass</th><th>Tungsten Mass</th><th>Filling Date</th>
+              <th>Powder</th><th>Bucket Number</th><th>Mold Series</th><th>Empty Mold Mass (g)</th><th>Filled Mold Mass (g)</th><th>Tungsten Mass (g)</th><th>Filling Date</th>
             </tr>
             <tr>
               <td id="powder"></td><td id="bucket"></td><td id="moldSeries"></td><td id="emptyMoldMass"></td><td id="filledMoldMass"></td><td id="tungstenMass"></td><td id="tungstenFillingDate"></td>
@@ -75,7 +75,7 @@
           <button id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
           <table class="dimension" id="epoxyTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
             <tr>
-              <th>Epoxy Batch</th><th>Resin Mass</th><th>Hardener Mass</th><th>Potting Notes</th><th>Epoxy Filling Time</th><th>Filling Date</th>
+              <th>Epoxy Batch</th><th>Resin Mass (g)</th><th>Hardener Mass (g)</th><th>Potting Notes</th><th>Epoxy Filling Time (min)</th><th>Filling Date</th>
             </tr>
             <tr>
               <td id="epoxyBatch"></td><td id="resinMass"></td><td id="hardenerMass"></td><td id="pottingNotes"></td><td id="epoxyFillingTime"></td><td id="epoxyFillingDate"></td>
@@ -89,16 +89,14 @@
     </section>
 
     <section id="densitySection" style="display: none;">
-      <h2>Density</h2>
+      <h2 id="densitySectionLabel">Density</h2>
       <dl class='inline-flex'>
         <dt id='volumeLabel'>Volume:</dt>
         <dd id="volume"></dd>
-        <dt id='inSpecLabel'>Dimension in spec:</dt>
-        <dd id="inSpec"></dd>
         <dt id='massLabel'>Mass:</dt>
         <dd id="mass"></dd>
         <dt id='densityLabel'>Density:</dt>
-        <dd id="density"></dd>
+        <dd id="density" style="font-weight: bold;"></dd>
         <dt id='densityDateLabel'>Date:</dt>
         <dd id="densityDate"></dd>
       </dl>
@@ -108,7 +106,7 @@
           <th>ΔL</th><th>ΔBT</th><th>ΔBB</th><th>ΔBH</th><th>ΔST</th><th>ΔSB</th><th>ΔSH</th>
         </tr>
         <tr>
-          <td id="L"></td><td id="BT"></td><td id="BB"></td><td id="BH"></td><td id="ST"></td><td id="SB"></td><td id="SH"></td>
+          <td id="L" style="font-weight: bold;"></td><td id="BT" style="font-weight: bold;"></td><td id="BB" style="font-weight: bold;"></td><td id="BH" style="font-weight: bold;"></td><td id="ST" style="font-weight: bold;"></td><td id="SB" style="font-weight: bold;"></td><td id="SH" style="font-weight: bold;"></td>
         </tr>
       </table>
     </section>
@@ -117,16 +115,16 @@
     </section>
 
     <section id="lightTransSection" style="display: none;">
-      <h2>Light Transmission</h2>
+      <h2 id="lightTransSectionLabel">Light Transmission</h2>
       <dl class='inline-flex'>
         <dt id='fiberPercentageLabel'>Fiber Count:</dt>
-        <dd id="fiberPercentage"></dd>
+        <dd id="fiberPercentage" style="font-weight: bold;"></dd>
         <dt id='goodEndLabel'>Good End:</dt>
         <dd id="goodEnd"></dd>
         <dt id='missingRowLabel'>Missing Row:</dt>
-        <dd id="missingRow"></dd>
+        <dd id="missingRow" style="font-weight: bold;"></dd>
         <dt id='thirteenHolesLabel'>13 Connected Holes:</dt>
-        <dd id="thirteenHoles"></dd>
+        <dd id="thirteenHoles" style="font-weight: bold;"></dd>
         <dt id='lightTransDateLabel'>Date:</dt>
         <dd id="lightTransDate"></dd>
       </dl>
@@ -136,7 +134,7 @@
           <th>T1 (BL)</th><th>T2 (BR)</th><th>T3 (TL)</th><th>T3 (TR)</th>
         </tr>
         <tr>
-          <td id="tower1"></td><td id="tower2"></td><td id="tower3"></td><td id="tower4"></td>
+          <td id="tower1" style="font-weight: bold;"></td><td id="tower2" style="font-weight: bold;"></td><td id="tower3" style="font-weight: bold;"></td><td id="tower4" style="font-weight: bold;"></td>
         </tr>
       </table>
       <figure class="testImg" id="lightTransImgFigW" style="display: none;">
@@ -180,12 +178,12 @@
     </section>
 
     <section id="scintSection" style="display: none;">
-      <h2>Scintillation</h2>
+      <h2 id="scintSectionLabel">Scintillation</h2>
       <dl class='inline-flex'>
         <dt id='scintillationLabel'>Scintillation:</dt>
         <dd id="scintillation"></dd>
         <dt id='scintRatioLabel'>Ratio:</dt>
-        <dd id="scintRatio"></dd>
+        <dd id="scintRatio" style="font-weight: bold;"></dd>
         <dt id='scintDateLabel'>Date:</dt>
         <dd id="scintDate"></dd>
       </dl>
@@ -200,6 +198,8 @@
     const red = '#800000'
     const orange = '#e66000'
     const green = '#008000'
+    // color for each test (5A-grade, 5B-grade, fail)
+    const testColors = [green, orange, red]
     // store each section's ID in an array for easy iteration:
     const allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
     // store each section's value IDs in an array for easy iteration:
@@ -241,7 +241,7 @@
     // maximum DBN (reject dbns larger than this)
     var maxDbn = 3498
     // For sheet Blocks DB
-    const blocksSheet1Map = ([
+    const blocksSheet1Map = new Map([
       ['dbn', 0],
       ['block', 2],
       ['status', 3],
@@ -280,7 +280,7 @@
       ['natLightDate', 70]
     ])
     // For sheet Blocks1364DB
-    const blocksSheet2Map = ([
+    const blocksSheet2Map = new Map([
       ['dbn', 0],
       ['block', 2],
       ['status', 3],
@@ -349,6 +349,9 @@
     var slowMode = false
     // called when the web page is loaded—loads the database
     function getDatabaseOnLoad() {
+      // create a timestamp to display     
+      document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
+      document.getElementById("currentDateAndTime").style.display = 'block'
       document.getElementById('loadingDatabase').style.display = 'block'
       google.script.run.withSuccessHandler(onSuccess).getDatabase()
       function onSuccess (gotDatabase) {
@@ -379,9 +382,6 @@
         afterOnSubmit()
       }
       function afterOnSubmit () {
-        // create a timestamp to display     
-        document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
-        document.getElementById("currentDateAndTime").style.display = 'block'
         // show that we're loading the block data
         document.getElementById("loadingBlockData").style.display = 'block'
         // grab the dbn from the input box
@@ -543,6 +543,19 @@
         for (let i = 0; i < densityKeys.length; i++) {
           updateField(blockMap, densityKeys[i])
         }
+        // color coding
+        let testGrades = []
+        let tolerancesGrades = []
+        if (blockMap.get('density') > 8.8) {
+          document.getElementById('density').style.color = testColors[0]
+          testGrades.push(0)
+        } else if (blockMap.get('density') > 8.7) {
+          document.getElementById('density').style.color = testColors[1]
+          testGrades.push(1)
+        } else {
+          document.getElementById('density').style.color = testColors[2]
+          testGrades.push(2)
+        }
         let hasDimensionInfo = false
         for (let i = 0; i < dimensions.length; i++) {
           if (dataPresent(dimensions[i])) {
@@ -553,27 +566,51 @@
         if (hasDimensionInfo) {
           let block = blockMap.get('block')
           const tolerancesTableEntries = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
-          document.getElementById('inSpec').innerHTML = inSpec(block, dimensions)
           for (let i = 0; i < dimensions.length; i++) {
-            if (dimensions[i] - dimensionsMap.get(block)[i] <= 0) {
-              document.getElementById(tolerancesTableEntries[i]).innerHTML = (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
+            let deviation = dimensions[i] - dimensionsMap.get(block)[i]
+            if (deviation <= 0) {
+              document.getElementById(tolerancesTableEntries[i]).innerHTML = (deviation).toFixed(4)
             } else {
-              document.getElementById(tolerancesTableEntries[i]).innerHTML = '+' + (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
-            }
-            if (dimensions[i] - dimensionsMap.get(block)[i] > 0.02) {
-              document.getElementById(tolerancesTableEntries[i]).style.color = red
-            } else if (dimensions[i] - dimensionsMap.get(block)[i] < -0.02) { 
-              document.getElementById(tolerancesTableEntries[i]).style.color = orange
-            } else {
-              document.getElementById(tolerancesTableEntries[i]).style.color = green
+              document.getElementById(tolerancesTableEntries[i]).innerHTML = '+' + (deviation).toFixed(4)
             }
           }
-          document.getElementById('inSpec').style.display = 'inline'
-          document.getElementById('inSpecLabel').style.display = 'inline'
+          // color coding
+          for (let i = 0; i < dimensions.length; i++) {
+            let deviation = dimensions[i] - dimensionsMap.get(block)[i]
+            if (i === 0) {
+              if (Math.abs(deviation) <= 0.03) {
+                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[0]
+                testGrades.push(0)
+                tolerancesGrades.push(0)
+              } else if (deviation <= 0.05 && deviation >= -0.1) {
+                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[1]
+                testGrades.push(1)
+                tolerancesGrades.push(1)
+              } else {
+                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[2]
+                testGrades.push(2)
+                tolerancesGrades.push(2)
+              }
+            } else {
+              if (Math.abs(deviation) <= 0.02) {
+                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[0]
+                testGrades.push(0)
+                tolerancesGrades.push(0)
+              } else if (deviation <= 0.02 && deviation >= -0.04) {
+                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[1]
+                testGrades.push(1)
+                tolerancesGrades.push(1)
+              } else {
+                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[2]
+                testGrades.push(2)
+                tolerancesGrades.push(2)
+              }
+            }
+          }
+          document.getElementById('densitySectionLabel').style.color = testColors[Math.max(...testGrades)]
+          document.getElementById('showTolerancesTableBtn').style.color = testColors[Math.max(...tolerancesGrades)]
           document.getElementById('showTolerancesTableBtn').style.display = 'inline'
         } else {
-          document.getElementById('inSpec').style.display = 'none'
-          document.getElementById('inSpecLabel').style.display = 'none'
           document.getElementById('showTolerancesTableBtn').style.display = 'none'
           document.getElementById('tolerancesTable').style.display = 'none'
         } 
@@ -595,6 +632,62 @@
         for (let i = 0; i < lightTransKeys.length; i++) {
           updateField(blockMap, lightTransKeys[i])
         }
+        const towerTableEntries = ['tower1', 'tower2', 'tower3', 'tower4']
+        if (someDataPresent(blockMap, towerTableEntries)) {
+          for (let i = 0; i < towerTableEntries.length; i++) {
+            let entry = towerTableEntries[i]
+            document.getElementById(entry).innerHTML = blockMap.get(entry)
+          }
+          document.getElementById('showTowerTableBtn').style.display = 'inline'
+        } else {
+          document.getElementById('showTowerTableBtn').style.display = 'inline'
+          document.getElementById('towerTable').style.display = 'inline'
+        }
+        // color coding
+        let testGrades = []
+        let towerGrades = []
+        if (blockMap.get('fiberPercentage') >= 98) {
+          document.getElementById('fiberPercentage').style.color = testColors[0]
+          testGrades.push(0)
+        } else if (blockMap.get('fiberPercentage') >= 97) {
+          document.getElementById('fiberPercentage').style.color = testColors[1]
+          testGrades.push(1)
+        } else {
+          document.getElementById('fiberPercentage').style.color = testColors[2]
+          testGrades.push(2)
+        }
+        for (let i = 0; i < towerTableEntries.length; i++) {
+          let tower = towerTableEntries[i]
+          if (blockMap.get(tower) >= 96) {
+            document.getElementById(tower).style.color = testColors[0]
+            testGrades.push(0)
+            towerGrades.push(0)
+          } else if (blockMap.get(tower) >= 94) {
+            document.getElementById(tower).style.color = testColors[1]
+            testGrades.push(1)
+            towerGrades.push(1)
+          } else {
+            document.getElementById(tower).style.color = testColors[2]
+            testGrades.push(2)
+            towerGrades.push(2)
+          }
+        }
+        document.getElementById('showTowerTableBtn').style.color = testColors[Math.max(...towerGrades)]
+        if (blockMap.get('missingRow') === 'Y') {
+          document.getElementById('missingRow').style.color = testColors[2]
+          testGrades.push(2)
+        } else {
+          document.getElementById('missingRow').style.color = testColors[0]
+          testGrades.push(0)
+        }
+        if (blockMap.get('thirteenHoles') === 'Y') {
+          document.getElementById('thirteenHoles').style.color = testColors[2]
+          testGrades.push(2)
+        } else {
+          document.getElementById('thirteenHoles').style.color = testColors[0]
+          testGrades.push(0)
+        }
+        document.getElementById('lightTransSectionLabel').style.color = testColors[Math.max(...testGrades)]
         // and run getImageUrls
         document.getElementById("imagesSelection").style.display = 'block'
         document.getElementById("loadingImages").style.display = 'block'
@@ -619,17 +712,6 @@
         document.getElementById("natLightSection").style.display = 'block'
         for (let i = 0; i < natLightKeys.length; i++) {
           updateField(blockMap, natLightKeys[i])
-        }
-        const towerTableEntries = ['tower1', 'tower2', 'tower3', 'tower4']
-        if (someDataPresent(blockMap, towerTableEntries)) {
-          for (let i = 0; i < towerTableEntries.length; i++) {
-            let entry = towerTableEntries[i]
-            document.getElementById(entry).innerHTML = blockMap.get(entry)
-          }
-          document.getElementById('showTowerTableBtn').style.display = 'inline'
-        } else {
-          document.getElementById('showTowerTableBtn').style.display = 'inline'
-          document.getElementById('towerTable').style.display = 'inline'
         }
         // run getImageUrls if it hasn't been run by light transmission
         if (!getImageUrlsRun) {
@@ -664,6 +746,14 @@
         document.getElementById("scintSection").style.display = 'block'
         for (let i = 0; i < scintKeys.length; i++) {
           updateField(blockMap, scintKeys[i])
+        }
+        // color coding
+        if (blockMap.get('scintRatio') > 0.7) {
+          document.getElementById('scintRatio').style.color = testColors[0]
+          document.getElementById('scintSectionLabel').style.color = testColors[0]
+        } else {
+          document.getElementById('scintRatio').style.color = testColors[2]
+          document.getElementById('scintSectionLabel').style.color = testColors[2]
         }
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
@@ -803,15 +893,6 @@
           alert('loaded ALL image urls')
         }
       }
-    }
-    // determines if ALL of a block's dimensions are in spec (within 0.02 inch of expected)
-    function inSpec (blockDesign, dimensions) {
-      for (let i = 0; i < dimensions.length; i++) {
-        if (Math.abs(dimensions[i] - dimensionsMap.get(blockDesign)[i]) > 0.02) {
-          return 'No'
-        }
-      }
-      return 'Yes'
     }
     // hides/shows the tungsten table
     function toggleTungstenTable () {
