@@ -1,19 +1,22 @@
 /**
- * Load the html page (function with name doGet is called automatically by google web app)
+ * Load the HTML page (called automatically when the web app url page is loaded)
  */
 function doGet () {
   return HtmlService.createTemplateFromFile('index').evaluate()
 }
+/**
+ * Allows index.html to access other files (such as css.html)
+ * Includes the specified file in the HTML when called in the HTML
+ * @param {string} filename
+ */
 function include (filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent()
 }
-// Create maps that will take a key (e.g. density) and return the corresponding column that contains that data depending on which sheet contains the desired dbn
-// Note that adding or deleting a column will temporarily break this, until the values below are changed
 
-// maximum DBN (reject dbns larger than this)
+// Maximum DBN (reject dbns larger than this)
 var maxDbn = 3498
 
-// declare variable that will be needed by other functions after loadFiles has run
+// Declare variables that will be needed by other functions after loadFiles has run
 var filesLoaded = false
 var error
 var database
@@ -27,7 +30,7 @@ var naturalLightArchiveFolder
 var imageUrlsSheet
 
 /**
- * locate and save database sheets and all testing folders
+ * Locates and saves database sheets and all testing folders as variables to be used by other functions
  */
 function loadFiles () {
   let QATestsFolder
@@ -149,13 +152,17 @@ function getDatabase () {
     // an error occured while loading files, do don't try to pass database var to fns
     // also pass the error to HTML so the user can be alerted
     return [null, null, error]
+  } else {
+    const sheets = SpreadsheetApp.open(database).getSheets()
+    return [sheets[0].getDataRange().getDisplayValues(), sheets[1].getDataRange().getDisplayValues(), error]
   }
-  const sheets = SpreadsheetApp.open(database).getSheets()
-  return [sheets[0].getDataRange().getDisplayValues(), sheets[1].getDataRange().getDisplayValues(), error]
 }
 
 /**
  * Get urls for each of this block's test images
+ * This is the default method of finding images, which grabs the image urls from the date folder specified in database
+ * (if images of the specified dbn exist in these folders)
+ * Called by HTML to retrieve image urls when LT or NL data is present for a given dbn
  * @param {number} dbn The block's DBN
  * @return {string[]} Array of image urls [LT_W, LT_N, LT_cropped_W, LT_cropped_N, NL_W, NL_N]
  */
@@ -202,14 +209,12 @@ function getImageUrls (blockMap) {
     array[index] = element + '-N'
   })
   // Locate the light transmission date folder
-  // Assumes that the date in database matches the date folder name always (though getDateFolder could be adapted to handle LT as well...)
+  // Assumes that the date in database matches the date folder name (i.e. including "-1" or "".2" suffix)
   if (currentlightTransOriginalFolder.getFoldersByName(blockMap[1]).hasNext()) {
     // ...found light transmission date folder, now locate wide and narrow images
     const dateFolder = currentlightTransOriginalFolder.getFoldersByName(blockMap[1]).next()
     lightTransImgWId = searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionWide)
-    // Logger.log('tried to set lightTransImgWId to ' + searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionWide) + ' for names ' + lightTransImgNamesWithoutExtensionWide)
     lightTransImgNId = searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionNarrow)
-    // Logger.log('tried to set lightTransImgNId to ' + searchFolderForFiles(dateFolder, lightTransImgNamesWithoutExtensionNarrow) + ' for names ' + lightTransImgNamesWithoutExtensionNarrow)
   } else {
     // ...failed to locate light transmission date folder
     // Logger.log('could not locate ' + blockMap[1] + ' in ' + currentlightTransOriginalFolder.getName())
@@ -229,8 +234,8 @@ function getImageUrls (blockMap) {
       while (fileIterator.hasNext()) {
         const file = fileIterator.next()
         const splitName = file.getName().split(/[._-]/)
-        splitName.shift() // discard first element of array ('DBN')
-        splitName.pop() // discard last element of array ('JPG')
+        splitName.shift() // discard first element of array (assumedly 'DBN')
+        splitName.pop() // discard last element of array (assumedly 'JPG')
         if (splitName.includes(dbn.toString())) {
           // This is one of the files we need!
           // Check if it's N or W and save it's file Id to whichever it is
@@ -251,15 +256,16 @@ function getImageUrls (blockMap) {
     // getDateFolder failed to find a suitable folder
     Logger.log('getDateFolder failed to find a suitable folder for dbn ' + dbn + ' with date ' + blockMap[2] + ' in ' + currentNatLightFolder.getName())
   }
-  // Logger.log('!our new function returned ' + getDateFolder(naturalLightFolder, '20200305', 811))
+  // Construct an array with the file IDs from google drive
   var imageUrls = [
     lightTransImgWId,
     lightTransImgNId,
     lightTransCroppedImgWId,
     lightTransCroppedImgNId,
-    natLightImgWId, // currentNatLightFolder.getFoldersByName(blockMap[2]).next().getFilesByName(lightTransImgNameWide).next().getId(),
-    natLightImgNId // currentNatLightFolder.getFoldersByName(blockMap[2]).next().getFilesByName(lightTransImgNameNarrow).next().getId()
+    natLightImgWId,
+    natLightImgNId
   ]
+  // Add the appropriate prefix to make these file IDs urls accessable by anyone who has the testing folders shared
   imageUrls.forEach(function (element, index, array) {
     if (element != null) {
       array[index] = 'https://drive.google.com/uc?id=' + element
@@ -268,8 +274,9 @@ function getImageUrls (blockMap) {
   Logger.log('getImageUrls returned: ' + imageUrls)
   return imageUrls
 }
+
 /**
- * Get file id of the first matching file in fileNameWithoutExtensionArray that appears in folderToSearch
+ * Get file ID of the first matching file in fileNameWithoutExtensionArray that appears in folderToSearch
  * @param {*} folderToSearch Folder to search
  * @param {*} fileNameWithoutExtensionArray Array of files names to search, searching for the first name first
  * @return {string} File id of the first matching file
@@ -284,10 +291,7 @@ function searchFolderForFiles (folderToSearch, fileNameWithoutExtensionArray) {
   // Logger.log('jpgArray is now ' + jpgArray)
   for (let i = 0; i < jpgArray.length; i++) {
     if (folderToSearch.getFilesByName(jpgArray[i]).hasNext()) {
-      Logger.log('correctly identified a good file name')
       return folderToSearch.getFilesByName(jpgArray[i]).next().getId()
-    } else {
-      Logger.log('rejected a good file name...')
     }
   }
   Logger.log("this probably shouldn't have happened unless you were passed weird dbn that has .png")
@@ -327,23 +331,21 @@ function formatFileNamePrefixesForLightTrans (inputDbn) {
     }
     formattedNames.push('DBN_' + zeroes + dbnString)
   }
-  // Logger.log('prefixes for dbn ' + inputDbn + ' are ' + formattedNames)
   return formattedNames
 }
 
 /**
- * Get the most recent date folder in the passed folder that contains an image of the passed dbn
- * Currently is designed only for use with natural light folders
+ * Get the most recent date folder (name) in the passed folder that contains an image of the passed dbn
+ * Ex. search NL archive for an image of the passed DBN
+ * Only for use with natural light folders
  * @param {Folder} folder Folder to search
- * @param {sting} date Date to search
+ * @param {sting} date Date to search (WITHOUT and suffixes, e.g. 20201225 not 20201225.5)
  * @param {number} dbn Block DBN
- * @return {string} Most recent matching folder
+ * @return {string} Most recent matching folder's name
  */
 function getDateFolder (folderToSearch, date, dbn) {
   let folderToReturnName
-  // Find the date folder
-  // Otherwise, search folderToSearch for candidate folders with the correct date
-  // Find folder names to add to the array by looping through all of the passed folder's subfolders
+  // Search folderToSearch for candidate folders with the correct date
   const subFolderIterator = folderToSearch.getFolders()
   while (subFolderIterator.hasNext()) {
     const folder = subFolderIterator.next()
@@ -354,12 +356,11 @@ function getDateFolder (folderToSearch, date, dbn) {
       while (fileIterator.hasNext()) {
         const file = fileIterator.next()
         const splitName = file.getName().split(/[_-]/)
-        splitName.shift()
-        splitName.pop()
+        splitName.shift() // discard first element of array (assumedly 'DBN')
+        splitName.pop() // discard last element of array (assumedly 'N.JPG', e.g.)
+        // this should leave only DBNs in the array
         if (splitName.includes(dbn.toString())) {
-          // This folder matches date and has a file with the dbn
-          Logger.log('FOUND a matching file!')
-          // Check if we've already found a folder...
+          // This folder matches date and has a file with the dbn, so check if we've already found a folder...
           if (folderToReturnName == null) {
             // ...we haven't found a folder yet, so save this one
             folderToReturnName = folder.getName()
@@ -386,18 +387,23 @@ function getDateFolder (folderToSearch, date, dbn) {
   }
   return folderToReturnName
 }
-function checkBigassArraySheet (bigassArray) {
+
+/**
+ * An experimental function that crosschecks the LT and NL dates found in the database with those found by loadBigArray
+ * @param {*} bigArray
+ */
+function checkBigArraySheet (bigArray) {
   if (!filesLoaded) {
     loadFiles()
   }
-  if (bigassArray == null) {
-    bigassArray = loadBigassArray()
+  if (bigArray == null) {
+    bigArray = loadBigArray()
   }
   // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
   function dataPresent (data) {
     return (data != null && data !== '' && data !== '#NUM!' && data !== '#DIV/0!')
   }
-  Logger.log('checking bigassArraySheet')
+  Logger.log('checking bigArraySheet')
   const values1 = blocksSheet1.getDataRange().getDisplayValues()
   const values2 = blocksSheet2.getDataRange().getDisplayValues()
   for (let i = 0; i < values1.length - 1; i++) {
@@ -411,12 +417,12 @@ function checkBigassArraySheet (bigassArray) {
     }
     let lightTransDateBAA
     let natLightDateBAA
-    if (bigassArray[i] != null) {
-      if (bigassArray[i][0] != null && bigassArray[i][1] != null) {
-        lightTransDateBAA = Math.max(bigassArray[i][0][1], bigassArray[i][1][1])
+    if (bigArray[i] != null) {
+      if (bigArray[i][0] != null && bigArray[i][1] != null) {
+        lightTransDateBAA = Math.max(bigArray[i][0][1], bigArray[i][1][1])
       }
-      if (bigassArray[i][4] != null && bigassArray[i][5] != null) {
-        natLightDateBAA = Math.max(bigassArray[i][4][1], bigassArray[i][5][1])
+      if (bigArray[i][4] != null && bigArray[i][5] != null) {
+        natLightDateBAA = Math.max(bigArray[i][4][1], bigArray[i][5][1])
       }
     }
     if (lightTransDateDB == null && lightTransDateBAA == null) {
@@ -450,12 +456,12 @@ function checkBigassArraySheet (bigassArray) {
     }
     let lightTransDateBAA
     let natLightDateBAA
-    if (bigassArray[i] != null) {
-      if (bigassArray[i][0] != null && bigassArray[i][1] != null) {
-        lightTransDateBAA = Math.max(bigassArray[i][0][1], bigassArray[i][1][1])
+    if (bigArray[i] != null) {
+      if (bigArray[i][0] != null && bigArray[i][1] != null) {
+        lightTransDateBAA = Math.max(bigArray[i][0][1], bigArray[i][1][1])
       }
-      if (bigassArray[i][4] != null && bigassArray[i][5] != null) {
-        natLightDateBAA = Math.max(bigassArray[i][4][1], bigassArray[i][5][1])
+      if (bigArray[i][4] != null && bigArray[i][5] != null) {
+        natLightDateBAA = Math.max(bigArray[i][4][1], bigArray[i][5][1])
       }
     }
     if (lightTransDateDB == null && lightTransDateBAA == null) {
@@ -478,18 +484,22 @@ function checkBigassArraySheet (bigassArray) {
     }
   }
 }
-function putBigassArray(bigassArray) {
-  if (bigassArray == null) {
-    bigassArray = loadBigassArray()
+
+/**
+ * An experimental function that writes all data from bigArray to a google sheet named "imageUrlsSheet" in the user's drive
+ */
+function putBigArray(bigArray) {
+  if (bigArray == null) {
+    bigArray = loadBigArray()
   }
-  for (let i = 0; i < bigassArray.length; i++) {
-    if (bigassArray[i] != null) {
+  for (let i = 0; i < bigArray.length; i++) {
+    if (bigArray[i] != null) {
       const toPut = new Array(19)
       toPut[0] = i
       for (let j = 0; j < 6; j++) {
-        if (bigassArray[i][j] != null) {
+        if (bigArray[i][j] != null) {
           for (let k = 0; k < 3; k++) {
-            toPut[1 + 3 * j + k] = bigassArray[i][j][k]
+            toPut[1 + 3 * j + k] = bigArray[i][j][k]
           }
         }
       }
@@ -499,18 +509,22 @@ function putBigassArray(bigassArray) {
     }
   }
 }
-//
-function loadBigassArray () {
+
+/**
+ * an experimental fucntion that loads iterates through all testing folders to find the most recent testing
+ * images for each block (takes a long time)
+ */
+function loadBigArray () {
   if (!filesLoaded) {
     loadFiles()
   }
   const imgTypeMap = new Map([['LT', 0], ['LTCropped', 1], ['NL', 2]])
   const endMap = new Map([['W', 0], ['N', 1]])
-  const bigassArray = new Array(maxDbn + 1)
+  const bigArray = new Array(maxDbn + 1)
   /**
    * @param {Folder} folder the folder that contains date folders (which contain images) to search
    * @param {string} imageType LT, LTCropped, or NL
-   * @returns {Array} bigass array indexed by dbn -> [[LT W img url, date, x], [LT N img url, date, x], [LTCropped img url, date, x], [LTCropped img url, date, x], [NL img url, date, x], [NL img url, date, x]]
+   * @returns {Array} bigArray indexed by dbn -> [[LT W img url, date, x], [LT N img url, date, x], [LTCropped img url, date, x], [LTCropped img url, date, x], [NL img url, date, x], [NL img url, date, x]]
    * where x is 0 for single-block images, 1 for 2 blocks, this one on left, and 2 for 2 blocks, this one on right
    */
   function massIteration (folder, imageType) {
@@ -556,16 +570,16 @@ function loadBigassArray () {
             Logger.log('rejected at dbn ' + items[i] + ' and img ' + img + ' from image type ' + imageType + ' and end ' + end)
             continue
           } else {
-            if (bigassArray[items[i]] == null) {
-              bigassArray[items[i]] = new Array(6)
-              bigassArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
-            } else if (bigassArray[items[i]][img] == null) {
-              bigassArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
-            } else if (bigassArray[items[i]][img][1] == null || parseInt(date) > parseInt(bigassArray[items[i]][img][1])) {
-              // Logger.log('OVERWROTE OLD date ' + parseInt(bigassArray[items[i]][img][1]) + ', new date ' + parseInt(date))
-              bigassArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
+            if (bigArray[items[i]] == null) {
+              bigArray[items[i]] = new Array(6)
+              bigArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
+            } else if (bigArray[items[i]][img] == null) {
+              bigArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
+            } else if (bigArray[items[i]][img][1] == null || parseInt(date) > parseInt(bigArray[items[i]][img][1])) {
+              // Logger.log('OVERWROTE OLD date ' + parseInt(bigArray[items[i]][img][1]) + ', new date ' + parseInt(date))
+              bigArray[items[i]][img] = ['https://drive.google.com/uc?id=' + file.getId(), date, side]
             } else {
-              // Logger.log('KEPT OLD date ' + parseInt(bigassArray[items[i]][img][1]) + ', new date ' + parseInt(date))
+              // Logger.log('KEPT OLD date ' + parseInt(bigArray[items[i]][img][1]) + ', new date ' + parseInt(date))
             }
           }
         }
@@ -577,8 +591,9 @@ function loadBigassArray () {
   massIteration(lightTransCroppedFolder, 'LTCropped')
   massIteration(naturalLightFolder, 'NL')
   massIteration(naturalLightArchiveFolder, 'NL')
-  return bigassArray
+  return bigArray
 }
+
 /**
  * recursively removes zeroes from the front of a string
  * @param {string} string to be trimmed
@@ -592,6 +607,10 @@ function removeZeroes (string) {
   return toReturn
 }
 
+/**
+ * Converts a Javascript date object to a String in format such as 20201225
+ * @param {Date} date
+ */
 function dateToEight (date) {
   const yr = date.getFullYear().toString()
   let mo = (date.getMonth() + 1).toString()

@@ -20,7 +20,7 @@
         <button id="submitDBN">Submit</button>
       </form>
       <button id="massIteration" onclick="madness()">do not press</button>
-      <button style="margin-left: 0;">Download as PDF</button>
+      <button style="margin-left: 0; display: none;">Download as PDF</button>
     </section>
     <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
     
@@ -60,6 +60,28 @@
         <dd id="sector"></dd>
         <dt id="commentLabel">Comment:</dt>
         <dd id="comment"></dd>
+        <section style="width: 100%; padding-top: 1em;">
+          <button id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
+          <table class="dimension" id="tungstenTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+            <tr>
+              <th>Powder</th><th>Bucket Number</th><th>Mold Series</th><th>Empty Mold Mass</th><th>Filled Mold Mass</th><th>Tungsten Mass</th><th>Filling Date</th>
+            </tr>
+            <tr>
+              <td id="powder"></td><td id="bucket"></td><td id="moldSeries"></td><td id="emptyMoldMass"></td><td id="filledMoldMass"></td><td id="tungstenMass"></td><td id="tungstenFillingDate"></td>
+            </tr>
+          </table>
+        </section>
+        <section style="width: 100%; padding-top: 1em;">
+          <button id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
+          <table class="dimension" id="epoxyTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+            <tr>
+              <th>Epoxy Batch</th><th>Resin Mass</th><th>Hardener Mass</th><th>Potting Notes</th><th>Epoxy Filling Time</th><th>Filling Date</th>
+            </tr>
+            <tr>
+              <td id="epoxyBatch"></td><td id="resinMass"></td><td id="hardenerMass"></td><td id="pottingNotes"></td><td id="epoxyFillingTime"></td><td id="epoxyFillingDate"></td>
+            </tr>
+          </table>
+        </section>
       </dl>
     </section>
     <section id="blockDetailsNoInfo" style="display: none;">
@@ -75,20 +97,18 @@
         <dd id="inSpec"></dd>
         <dt id='massLabel'>Mass:</dt>
         <dd id="mass"></dd>
-        <dt id='moldSeriesLabel'>Mold Series:</dt>
-        <dd id="moldSeries"></dd>
         <dt id='densityLabel'>Density:</dt>
         <dd id="density"></dd>
         <dt id='densityDateLabel'>Date:</dt>
         <dd id="densityDate"></dd>
       </dl>
-      <button id="showDimTableBtn" onclick="toggleDimTable()">Show Tolerances</button>
-      <table class="dimension" id="dimTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+      <button id="showTolerancesTableBtn" style="display: none;" onclick="toggleTolerancesTable()">Show Tolerances</button>
+      <table class="dimension" id="tolerancesTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
         <tr>
           <th>ΔL</th><th>ΔBT</th><th>ΔBB</th><th>ΔBH</th><th>ΔST</th><th>ΔSB</th><th>ΔSH</th>
         </tr>
         <tr>
-          <td id="dL"></td><td id="dBT"></td><td id="dBB"></td><td id="dBH"></td><td id="dST"></td><td id="dSB"></td><td id="dSH"></td>
+          <td id="L"></td><td id="BT"></td><td id="BB"></td><td id="BH"></td><td id="ST"></td><td id="SB"></td><td id="SH"></td>
         </tr>
       </table>
     </section>
@@ -110,6 +130,15 @@
         <dt id='lightTransDateLabel'>Date:</dt>
         <dd id="lightTransDate"></dd>
       </dl>
+      <button id="showTowerTableBtn" style="display: none;" onclick="toggleTowerTable()">Show Tower Information</button>
+      <table class="dimension" id="towerTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+        <tr>
+          <th>T1 (BL)</th><th>T2 (BR)</th><th>T3 (TL)</th><th>T3 (TR)</th>
+        </tr>
+        <tr>
+          <td id="tower1"></td><td id="tower2"></td><td id="tower3"></td><td id="tower4"></td>
+        </tr>
+      </table>
       <figure class="testImg" id="lightTransImgFigW" style="display: none;">
         <img id="lightTransImgW" height="360"/>
         <figcaption>Wide End</figcaption>
@@ -167,24 +196,28 @@
   </section>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script>
+    // color constants (in HEX)
+    const red = '#800000'
+    const orange = '#e66000'
+    const green = '#008000'
     // store each section's ID in an array for easy iteration:
-    var allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
+    const allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
     // store each section's value IDs in an array for easy iteration:
-    var blockDetailsKeys = ['dbn', 'block', 'status', 'shipment', 'sector', 'comment']
-    var densityKeys = ['volume', 'mass', 'moldSeries', 'density', 'densityDate']
-    var lightTransKeys = ['goodEnd', 'fiberPercentage', 'missingRow', 'thirteenHoles', 'lightTransDate']
-    var natLightKeys = ['natLightDate']
-    var scintKeys = ['scintillation', 'scintRatio', 'scintDate']
+    const blockDetailsKeys = ['dbn', 'block', 'status', 'shipment', 'sector', 'comment']
+    const densityKeys = ['volume', 'mass', 'density', 'densityDate']
+    const lightTransKeys = ['goodEnd', 'fiberPercentage', 'missingRow', 'thirteenHoles', 'lightTransDate']
+    const natLightKeys = ['natLightDate']
+    const scintKeys = ['scintillation', 'scintRatio', 'scintDate']
     // store all image prefixes in an array for easy iteration
-    var allImagePrefixes = ['lightTransImg', 'lightTransImgCropped', 'natLightImg']
+    const allImagePrefixes = ['lightTransImg', 'lightTransImgCropped', 'natLightImg']
     // store all testing image IDs in an array for easy iteration:
-    var allTestingImgs = ['lightTransImgW', 'lightTransImgN', 'lightTransImgCroppedW', 'lightTransImgCroppedN', 'natLightImgW', 'natLightImgN']
+    const allTestingImgs = ['lightTransImgW', 'lightTransImgN', 'lightTransImgCroppedW', 'lightTransImgCroppedN', 'natLightImgW', 'natLightImgN']
     // IF a testing value has a key in this map, display the message when no data for that value was found
     // otherwise, hide the value and it's name by default
-    var failureMessages = new Map()
+    const failureMessages = new Map()
     // IF a testing value has a key in this map and the block has this data, append this suffix (after a space) to the data
     // note that since status is block-specific, it is handled separately by updateField
-    var suffixes = new Map([
+    const suffixes = new Map([
       ['volume', 'mL'],
       ['mass', 'g'],
       ['density', 'g/mL'],
@@ -192,7 +225,7 @@
       ['scintillation', 'mV']
     ])
     // converts a status number to english so it can be added to the block information (the suffix that appears after the status number)
-    var statusMap = new Map([
+    const statusMap = new Map([
       ['0','(fiber set)'],
       ['1','(fibers in mold)'],
       ['2','(tungsten in mold)'],
@@ -208,20 +241,36 @@
     // maximum DBN (reject dbns larger than this)
     var maxDbn = 3498
     // For sheet Blocks DB
-    var blocksSheet1Map = ([
+    const blocksSheet1Map = ([
       ['dbn', 0],
       ['block', 2],
       ['status', 3],
       ['shipment', 4],
       ['comment', 6],
       ['sector', 7],
+      ['powder', 14],
+      ['bucket', 15],
       ['moldSeries', 16],
+      ['emptyMoldMass', 17],
+      ['filledMoldMass', 18],
+      ['tungstenMass', 19],
+      ['tungstenFillingDate', 21],
+      ['epoxyBatch', 23],
+      ['resinMass', 24],
+      ['hardenerMass', 25],
+      ['pottingNotes', 26],
+      ['epoxyFillingTime', 27],
+      ['epoxyFillingDate', 28],
       ['volume', 40],
       ['mass', 42],
       ['density', 44],
       ['densityDate', 45],
       ['goodEnd', 47],
       ['fiberPercentage', 49],
+      ['tower1', 55],
+      ['tower2', 56],
+      ['tower3', 57],
+      ['tower4', 58],
       ['missingRow', 59],
       ['thirteenHoles', 60],
       ['lightTransDate', 64],
@@ -231,20 +280,36 @@
       ['natLightDate', 70]
     ])
     // For sheet Blocks1364DB
-    var blocksSheet2Map = new Map([
+    const blocksSheet2Map = ([
       ['dbn', 0],
       ['block', 2],
       ['status', 3],
       ['shipment', 4],
       ['sector', 6],
       ['comment', 7],
+      ['powder', 14],
+      ['bucket', 15],
       ['moldSeries', 16],
+      ['emptyMoldMass', 17],
+      ['filledMoldMass', 18],
+      ['tungstenMass', 19],
+      ['tungstenFillingDate', 21],
+      ['epoxyBatch', 23],
+      ['resinMass', 24],
+      ['hardenerMass', 25],
+      ['pottingNotes', 26],
+      ['epoxyFillingTime', 27],
+      ['epoxyFillingDate', 28],
       ['volume', 40],
       ['mass', 42],
       ['density', 44],
       ['densityDate', 45],
       ['goodEnd', 47],
       ['fiberPercentage', 49],
+      ['tower1', 55],
+      ['tower2', 56],
+      ['tower3', 57],
+      ['tower4', 58],
       ['missingRow', 59],
       ['thirteenHoles', 60],
       ['lightTransDate', 64],
@@ -253,10 +318,10 @@
       ['scintDate', 69],
       ['natLightDate', 70]
     ])
-    // [Blocks DB, Blocks1364DB]
+    // array [Blocks DB, Blocks1364DB], where each element is a (large) 2D array
     var database
-    // 
-    var dimensionsMap = new Map([
+    // stores the expected dimensions for each block type
+    const dimensionsMap = new Map([
     ['123', [5.5000,	2.0850,	2.0850,	1.9890,	1.8150,	1.8150,	1.9890]],
     ['4', [5.4460,	2.0850,	2.0820,	2.2740,	1.8180,	1.8150,	1.9900]],
     ['5', [5.3500,	2.0850,	2.0760,	2.2630,	1.8230,	1.8150,	1.9900]],
@@ -280,9 +345,7 @@
     ['23', [5.6620,	2.0850,	2.0120,	2.1380,	1.8830,	1.8150,	1.9890]],
     ['24', [5.7580,	2.0850,	2.0100,	2.1330,	1.8850,	1.8150,	1.9890]]
     ])
-    //
-    var dimensionLabels = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
-    //
+    // changes to true when the "do not press" button is pressed, which changes the way image urls are obtained
     var slowMode = false
     // called when the web page is loaded—loads the database
     function getDatabaseOnLoad() {
@@ -434,11 +497,36 @@
       let toGetImageUrls = [blockMap.get('dbn'), blockMap.get('lightTransDate'), blockMap.get('natLightDate')]
 
       // BLOCK DETAILS  (check if data is present)
+      const tungstenTableEntries = ['powder', 'bucket', 'moldSeries', 'emptyMoldMass', 'filledMoldMass', 'tungstenMass', 'tungstenFillingDate']
+      const epoxyTableEntries = ['epoxyBatch', 'resinMass', 'hardenerMass', 'pottingNotes', 'epoxyFillingTime', 'epoxyFillingDate']
       if (someDataPresent(blockMap, blockDetailsKeys)) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("blockDetailsSection").style.display = 'block'
         for (let i = 0; i < blockDetailsKeys.length; i++) {
           updateField(blockMap, blockDetailsKeys[i])
+        }
+        let hasTungstenData = tungstenTableEntries.some(function(element) {
+          return dataPresent(blockMap.get(element)) && element !== 'tungstenMass'
+        })
+        if (hasTungstenData) {
+          for (let i = 0; i < tungstenTableEntries.length; i++) {
+            let entry = tungstenTableEntries[i]
+            document.getElementById(entry).innerHTML = blockMap.get(entry)
+          }
+          document.getElementById('showTungstenTableBtn').style.display = 'block'
+        } else {
+          document.getElementById('showTungstenTableBtn').style.display = 'none'
+          document.getElementById('tungstenTable').style.display = 'none'
+        }
+        if (someDataPresent(blockMap, epoxyTableEntries)) {
+          for (let i = 0; i < epoxyTableEntries.length; i++) {
+            let entry = epoxyTableEntries[i]
+            document.getElementById(entry).innerHTML = blockMap.get(entry)
+          }
+          document.getElementById('showEpoxyTableBtn').style.display = 'block'
+        } else {
+          document.getElementById('showEpoxyTableBtn').style.display = 'none'
+          document.getElementById('epoxyTable').style.display = 'none'
         }
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
@@ -464,26 +552,30 @@
         }
         if (hasDimensionInfo) {
           let block = blockMap.get('block')
+          const tolerancesTableEntries = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
           document.getElementById('inSpec').innerHTML = inSpec(block, dimensions)
           for (let i = 0; i < dimensions.length; i++) {
             if (dimensions[i] - dimensionsMap.get(block)[i] <= 0) {
-              document.getElementById('d' + dimensionLabels[i]).innerHTML = (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
+              document.getElementById(tolerancesTableEntries[i]).innerHTML = (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
             } else {
-              document.getElementById('d' + dimensionLabels[i]).innerHTML = '+' + (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
+              document.getElementById(tolerancesTableEntries[i]).innerHTML = '+' + (dimensions[i] - dimensionsMap.get(block)[i]).toFixed(4)
             }
-            if (Math.abs(dimensions[i] - dimensionsMap.get(block)[i]) > 0.02) {
-              document.getElementById('d' + dimensionLabels[i]).style.color = '#800000'
+            if (dimensions[i] - dimensionsMap.get(block)[i] > 0.02) {
+              document.getElementById(tolerancesTableEntries[i]).style.color = red
+            } else if (dimensions[i] - dimensionsMap.get(block)[i] < -0.02) { 
+              document.getElementById(tolerancesTableEntries[i]).style.color = orange
             } else {
-              document.getElementById('d' + dimensionLabels[i]).style.color = '#008000'
+              document.getElementById(tolerancesTableEntries[i]).style.color = green
             }
           }
           document.getElementById('inSpec').style.display = 'inline'
           document.getElementById('inSpecLabel').style.display = 'inline'
-          document.getElementById('showDimTableBtn').style.display = 'inline'
+          document.getElementById('showTolerancesTableBtn').style.display = 'inline'
         } else {
           document.getElementById('inSpec').style.display = 'none'
           document.getElementById('inSpecLabel').style.display = 'none'
-          document.getElementById('showDimTableBtn').style.display = 'none'
+          document.getElementById('showTolerancesTableBtn').style.display = 'none'
+          document.getElementById('tolerancesTable').style.display = 'none'
         } 
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
@@ -494,7 +586,10 @@
       }
 
       // LIGHT TRANSMISSION (check if data is present)
-      if (someDataPresent(blockMap, lightTransKeys)) {
+      let hasLightTransData = lightTransKeys.some(function(element) {
+        return dataPresent(blockMap.get(element)) && element !== 'fiberPercentage'
+      })
+      if (hasLightTransData) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("lightTransSection").style.display = 'block'
         for (let i = 0; i < lightTransKeys.length; i++) {
@@ -524,6 +619,17 @@
         document.getElementById("natLightSection").style.display = 'block'
         for (let i = 0; i < natLightKeys.length; i++) {
           updateField(blockMap, natLightKeys[i])
+        }
+        const towerTableEntries = ['tower1', 'tower2', 'tower3', 'tower4']
+        if (someDataPresent(blockMap, towerTableEntries)) {
+          for (let i = 0; i < towerTableEntries.length; i++) {
+            let entry = towerTableEntries[i]
+            document.getElementById(entry).innerHTML = blockMap.get(entry)
+          }
+          document.getElementById('showTowerTableBtn').style.display = 'inline'
+        } else {
+          document.getElementById('showTowerTableBtn').style.display = 'inline'
+          document.getElementById('towerTable').style.display = 'inline'
         }
         // run getImageUrls if it hasn't been run by light transmission
         if (!getImageUrlsRun) {
@@ -623,12 +729,12 @@
 
     function getImageUrlsSlow (dbn) {
       // check if getImageUrls returned any urls...
-      if (bigassArray[dbn] == null) {
-        console.log('bigassArray was null at index: ' + dbn)
+      if (bigArray[dbn] == null) {
+        console.log('bigArray was null at index: ' + dbn)
         document.getElementById("loadingImages").style.display = 'none'
         document.getElementById("noImagesFound").style.display = 'block'
       } else {
-        imageUrls = bigassArray[dbn]
+        imageUrls = bigArray[dbn]
         if (imageUrls.every((element) => element == null)) {
           // ...NO image urls were returned, so there's no image data to display
           document.getElementById("loadingImages").style.display = 'none'
@@ -682,21 +788,23 @@
         fig2.style.display = "none"
       }
     }
+    // changes the way image urls are obtained
     function madness () {
       alert('loading ALL image urls, do not submit another dbn before this request completes (should take about 90 seconds)')
       slowMode = true
-      google.script.run.withSuccessHandler(onSuccess).loadBigassArray()
+      google.script.run.withSuccessHandler(onSuccess).loadBigArray()
       function onSuccess (data) {
         if (data == null) {
-          console.log('bigassArray was null :(')
+          console.log('bigArray was null :(')
           alert('there was an error fetching ALL image urls')
         } else {
-          bigassArray = data
-          console.log('loaded bigassArray and she thicc')
+          bigArray = data
+          console.log('loaded bigArray')
           alert('loaded ALL image urls')
         }
       }
     }
+    // determines if ALL of a block's dimensions are in spec (within 0.02 inch of expected)
     function inSpec (blockDesign, dimensions) {
       for (let i = 0; i < dimensions.length; i++) {
         if (Math.abs(dimensions[i] - dimensionsMap.get(blockDesign)[i]) > 0.02) {
@@ -705,13 +813,44 @@
       }
       return 'Yes'
     }
-    function toggleDimTable () {
-      if (document.getElementById('dimTable').style.display === 'none') {
-        document.getElementById('dimTable').style.display = 'block'
-        document.getElementById('showDimTableBtn').innerHTML = 'Hide Tolerances'
+    // hides/shows the tungsten table
+    function toggleTungstenTable () {
+      if (document.getElementById('tungstenTable').style.display === 'none') {
+        document.getElementById('tungstenTable').style.display = 'block'
+        document.getElementById('showTungstenTableBtn').innerHTML = 'Hide Tungsten Powder Infomation'
       } else {
-        document.getElementById('dimTable').style.display = 'none'
-        document.getElementById('showDimTableBtn').innerHTML = 'Show Tolerances'
+        document.getElementById('tungstenTable').style.display = 'none'
+        document.getElementById('showTungstenTableBtn').innerHTML = 'Show Tungsten Powder Information'
+      }
+    }
+    // hides/shows the epoxy table
+    function toggleEpoxyTable () {
+      if (document.getElementById('epoxyTable').style.display === 'none') {
+        document.getElementById('epoxyTable').style.display = 'block'
+        document.getElementById('showEpoxyTableBtn').innerHTML = 'Hide Epoxy Information'
+      } else {
+        document.getElementById('epoxyTable').style.display = 'none'
+        document.getElementById('showEpoxyTableBtn').innerHTML = 'Show Epoxy Information'
+      }
+    }
+    // hides/shows the tolerances table
+    function toggleTolerancesTable () {
+      if (document.getElementById('tolerancesTable').style.display === 'none') {
+        document.getElementById('tolerancesTable').style.display = 'block'
+        document.getElementById('showTolerancesTableBtn').innerHTML = 'Hide Tolerances'
+      } else {
+        document.getElementById('tolerancesTable').style.display = 'none'
+        document.getElementById('showTolerancesTableBtn').innerHTML = 'Show Tolerances'
+      }
+    }
+    // hides/shows the tower table
+    function toggleTowerTable () {
+      if (document.getElementById('towerTable').style.display === 'none') {
+        document.getElementById('towerTable').style.display = 'block'
+        document.getElementById('showTowerTableBtn').innerHTML = 'Hide Tower Information'
+      } else {
+        document.getElementById('towerTable').style.display = 'none'
+        document.getElementById('showTowerTableBtn').innerHTML = 'Show Tower Information'
       }
     }
   </script>
