@@ -13,13 +13,14 @@
     <h1>NPL Block Information Station</h1>
   </div>
   <p id="loadingDatabase" style="display: none;">Loading Database...</p>
-  <section id="notHeader" style="display: none;">
+  <section id="findBlockInfo" style="display: none;">
     <section style="display: inline-block; margin-left: 0em;">
       <form action="javascript:onSubmit()" style="display: inline;">
         <label>DBN: </label><input type="text" id="inputDBN">
-        <button id="submitDBN">Submit</button>
+        <button>Submit</button>
       </form>
-      <button id="massIteration" onclick="madness()">do not press</button>
+      <button onclick="madness()">do not press</button>
+      <button onclick="loadFindBlocks()">Find Blocks</button>
       <button style="margin-left: 0; display: none;">Download as PDF</button>
     </section>
     <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
@@ -192,7 +193,120 @@
       <p style="font-style: italic; font-size: 1.5em;">Unable to find any scintillation data for this block</p>
     </section>
   </section>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <section id="findBlocks" style="display: none;">
+    <section style="display: block; margin-left: 0em;">
+      <form action="javascript:filterShipment()" style="display: inline;">
+        <label>Shipment: </label><input type="text" id="inputShipment">
+        <button>submit</button>
+      </form>
+      <button onclick="clearInputShipment()" style="margin-left: 0;">clear</button>
+    </section>
+    <section style="display: block; margin-left: 0em;">
+      <form action="javascript:filterStatus()" style="display: inline;">
+        <label>Status: </label><input type="text" id="inputStatus">
+        <button>submit</button>
+      </form>
+      <button onclick="clearInputStatus()" style="margin-left: 0;">clear</button>
+    </section>
+    <section style="display: block; margin-left: 0em;">
+      <form action="javascript:filterBlock()" style="display: inline;">
+        <label>Block Design: </label><input type="text" id="inputBlock">
+        <button>submit</button>
+      </form>
+      <button onclick="clearInputBlock()" style="margin-left: 0;">clear</button>
+    </section>
+    <button onclick="loadFindBlockInfo()">Find Block Info</button>
+    <section>
+      <section>
+        <button id="toggleTungstenCols" onclick="toggleCols('Tungsten')">Show Tungsten Info</button>
+        <label for="">showPowder_col</label>
+        <input type="checkbox" id="show_powder_col" onclick="toggleColumn('powder_col')">
+        <label for="">showBucket_col</label>
+        <input type="checkbox" id="show_bucket_col" onclick="toggleColumn('bucket_col')">
+        <label for="">showMoldSeries_col</label>
+        <input type="checkbox" id="show_moldSeries_col" onclick="toggleColumn('moldSeries_col')">
+        <label for="">showEmptyMoldMass_col</label>
+        <input type="checkbox" id="show_emptyMoldMass_col" onclick="toggleColumn('emptyMoldMass_col')">
+        <label for="">showFilledMoldMass_col</label>
+        <input type="checkbox" id="show_filledMoldMass_col" onclick="toggleColumn('filledMoldMass_col')">
+        <label for="">showTungstenMass_col</label>
+        <input type="checkbox" id="show_tungstenMass_col" onclick="toggleColumn('tungstenMass_col')">
+        <label for="">showTungstenFillingDate_col</label>
+        <input type="checkbox" id="show_tungstenFillingDate_col" onclick="toggleColumn('tungstenFillingDate_col')">
+      </section>
+      <section>
+        <button id="toggleEpoxyCols" onclick="toggleCols('Epoxy')">Show Epoxy Info</button>
+        <label for="">Show</label>
+        <input type="checkbox" id="" onclick="">
+
+      </section>
+      <section>
+        <button id="toggleDensityCols" onclick="toggleCols('Density')">Show Density Info</button>
+        <label for="">Show</label>
+        <input type="checkbox" id="" onclick="">
+
+      </section>
+      <section>
+        <button id="toggleLightTransCols" onclick="toggleCols('LightTrans')">Show LightTrans Info</button>
+        <label for="">Show</label>
+        <input type="checkbox" id="" onclick="">
+
+      </section>
+      <section>
+        <button id="toggleScintillationCols" onclick="toggleCols('Scintillation')">Show Scintillation Info</button>
+        <label for="">Show</label>
+        <input type="checkbox" id="" onclick="">
+
+      </section>
+      <section>
+        <label for="">Show</label>
+        <input type="checkbox" id="" onclick="">
+      </section>
+    </section>
+    <table id="blocksTable" class="dimension">
+      <thead>
+        <tr>
+          <th class="dbn_col">dbn</th>
+          <th class="block_col">block</th>
+          <th class="status_col">status</th>
+          <th class="shipment_col">shipment</th>
+          <th class="sector_col">sector</th>
+          <th class="powder_col">powder</th>
+          <th class="bucket_col">bucket</th>
+          <th class="moldSeries_col">moldSeries</th>
+          <th class="emptyMoldMass_col">emptyMoldMass</th>
+          <th class="filledMoldMass_col">filledMoldMass</th>
+          <th class="tungstenMass_col">tungstenMass</th>
+          <th class="tungstenFillingDate_col">tungstenFillingDate</th>
+          <th class="epoxyBatch_col">epoxyBatch</th>
+          <th class="resinMass_col">resinMass</th>
+          <th class="hardenerMass_col">hardenerMass</th>
+          <th class="pottingNotes_col">pottingNotes</th>
+          <th class="epoxyFillingTime_col">epoxyFillingTime</th>
+          <th class="epoxyFillingDate_col">epoxyFillingDate</th>
+          <th class="volume_col">volume</th>
+          <th class="mass_col">mass</th>
+          <th class="density_col">density</th>
+          <th class="densityDate_col">densityDate</th>
+          <th class="goodEnd_col">goodEnd</th>
+          <th class="fiberPercentage_col">fiberPercentage</th>
+          <th class="tower1_col">tower1</th>
+          <th class="tower2_col">tower2</th>
+          <th class="tower3_col">tower3</th>
+          <th class="tower4_col">tower4</th>
+          <th class="missingRow_col">missingRow</th>
+          <th class="thirteenHoles_col">thirteenHoles</th>
+          <th class="lightTransDate_col">lightTransDate</th>
+          <th class="scintillation_col">scintillation</th>
+          <th class="scintRatio_col">scintRatio</th>
+          <th class="scintDate_col">scintDate</th>
+          <th class="natLightDate_col">natLightDate</th>
+        </tr>
+      </thead>
+      <tbody id="blocksTableBody"></tbody>
+    </table>
+  </section>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
   <script>
     // color constants (in HEX)
     const red = '#800000'
@@ -240,6 +354,8 @@
     ])
     // maximum DBN (reject dbns larger than this)
     var maxDbn = 3498
+    //
+    const tableColumns = ['dbn', 'block', 'status', 'shipment', 'sector', 'powder', 'bucket', 'moldSeries', 'emptyMoldMass', 'filledMoldMass', 'tungstenMass', 'tungstenFillingDate', 'epoxyBatch', 'resinMass', 'hardenerMass', 'pottingNotes', 'epoxyFillingTime', 'epoxyFillingDate', 'volume', 'mass', 'density', 'densityDate', 'goodEnd', 'fiberPercentage', 'tower1', 'tower2', 'tower3', 'tower4', 'missingRow', 'thirteenHoles', 'lightTransDate', 'scintillation', 'scintRatio', 'scintDate', 'natLightDate']
     // For sheet Blocks DB
     const blocksSheet1Map = new Map([
       ['dbn', 0],
@@ -366,8 +482,10 @@
         } else {
           console.log('loaded database and testing folders without error')
           database = gotDatabase
+          loadBlocksTable()
+          updateBlocksTableColumns()
           document.getElementById('loadingDatabase').style.display = 'none'
-          document.getElementById('notHeader').style.display = 'block'
+          document.getElementById('findBlockInfo').style.display = 'block'
         }
       }
     }
@@ -933,6 +1051,132 @@
         document.getElementById('towerTable').style.display = 'none'
         document.getElementById('showTowerTableBtn').innerHTML = 'Show Tower Information'
       }
+    }
+    var filterShipmentValue
+    var filterStatusValue
+    var filterBlockValue
+    function filterShipment () {
+      filterShipmentValue = document.getElementById('inputShipment').value
+      loadBlocksTable()
+    }
+    function clearInputShipment () {
+      document.getElementById('inputShipment').value = null
+      filterShipment()
+    }
+    function filterStatus () {
+      filterStatusValue = document.getElementById('inputStatus').value
+      loadBlocksTable()
+    }
+    function clearInputStatus () {
+      document.getElementById('inputStatus').value = null
+      filterStatus()
+    }
+    function filterBlock () {
+      filterBlockValue = document.getElementById('inputBlock').value
+      loadBlocksTable()
+    }
+    function clearInputBlock () {
+      document.getElementById('inputBlock').value = null
+      filterBlock()
+    }
+    function updateBlocksTableColumns () {
+      
+    }
+    function loadBlocksTable () {
+      let table = document.getElementById('blocksTableBody')
+      $('#blocksTable tbody').empty()
+      let sheet1 = [...database[0]]
+      sheet1.shift()
+      let sheet2 = [...database[1]]
+      sheet2.shift()
+      for (let i = 0; i < sheet1.length; i++) {
+        if (dataPresent(sheet1[i][blocksSheet1Map.get('block')])
+        && (filterShipmentValue == null || filterShipmentValue == '' || filterShipmentValue === sheet1[i][blocksSheet1Map.get('shipment')])
+        && (filterStatusValue == null || filterStatusValue == '' || filterStatusValue === sheet1[i][blocksSheet1Map.get('status')])
+        && (filterBlockValue == null || filterBlockValue == '' || filterBlockValue === sheet1[i][blocksSheet1Map.get('block')])) {
+          let row = table.insertRow()
+          for (let j = 0; j < tableColumns.length; j++) {
+            let cell = row.insertCell(j)
+            cell.className = tableColumns[j] + '_col'
+            let text = document.createTextNode(sheet1[i][blocksSheet1Map.get(tableColumns[j])])
+            cell.appendChild(text)
+          }
+        }
+        
+      }
+      for (let i = 0; i < sheet2.length; i++) {
+        if (dataPresent(sheet2[i][blocksSheet2Map.get('block')])
+        && (filterShipmentValue == null || filterShipmentValue == '' || filterShipmentValue === sheet2[i][blocksSheet2Map.get('shipment')])
+        && (filterStatusValue == null || filterStatusValue == '' || filterStatusValue === sheet2[i][blocksSheet2Map.get('status')])
+        && (filterBlockValue == null || filterBlockValue == '' || filterBlockValue === sheet2[i][blocksSheet2Map.get('block')])) {
+          let row = table.insertRow()
+          for (let j = 0; j < tableColumns.length; j++) {
+            let cell = row.insertCell(j)
+            cell.className = tableColumns[j] + '_col'
+            let text = document.createTextNode(sheet2[i][blocksSheet2Map.get(tableColumns[j])])
+            cell.appendChild(text)
+          }
+        }
+        
+      }
+    }
+    function toggleColumn(column) {
+      let cells = document.getElementsByClassName(column)
+      let changeDisplayTo
+      if (cells[0].style.display === 'none') {
+        changeDisplayTo = 'table-cell'
+      } else {
+        changeDisplayTo = 'none'
+      }
+      for (let i = 0; i < cells.length; i++) {
+        cells[i].style.display = changeDisplayTo
+      }
+    }
+    const columnGroups = ['Tungsten', 'Epoxy', 'Density', 'LightTrans', 'Scintillation']
+    var columnsMap = new Map([
+      ['Tungsten', ['powder_col', 'bucket_col', 'moldSeries_col', 'emptyMoldMass_col', 'filledMoldMass_col', 'tungstenMass_col', 'tungstenFillingDate_col']],
+      ['showTungsten', false],
+      ['Epoxy', []],
+      ['showEpoxy', false],
+      ['Density', []],
+      ['showDensity', false],
+      ['LightTrans', []],
+      ['showLightTrans', false],
+      ['Scintillation', []],
+      ['showScintillation', false]
+    ])
+    function toggleCols (columnGroup) {
+      if (columnsMap.get('show' + columnGroup)) {
+        // hide them
+        for (let i = 0; i < columnsMap.get(columnGroup).length; i++) {
+          let cells = document.getElementsByClassName(columnsMap.get(columnGroup)[i])
+          if (cells[0].style.display !== 'none') {
+            toggleColumn(columnsMap.get(columnGroup)[i])
+            document.getElementById('show_' + columnsMap.get(columnGroup)[i]).checked = false
+          }
+        }
+        columnsMap.set('show' + columnGroup, false)
+        document.getElementById('toggle' + columnGroup + 'Cols').innerHTML = 'Show ' + columnGroup + ' Info'
+      } else {
+        // show them
+        for (let i = 0; i < columnsMap.get(columnGroup).length; i++) {
+          let cells = document.getElementsByClassName(columnsMap.get(columnGroup)[i])
+          if (cells[0].style.display === 'none') {
+            toggleColumn(columnsMap.get(columnGroup)[i])
+            document.getElementById('show_' + columnsMap.get(columnGroup)[i]).checked = true
+          }
+        }
+        columnsMap.set('show' + columnGroup, true)
+        document.getElementById('toggle' + columnGroup + 'Cols').innerHTML = 'Hide ' + columnGroup + ' Info'
+      }
+    }
+    function loadFindBlockInfo () {
+      document.getElementById('findBlockInfo').style.display = 'block'
+      document.getElementById('findBlocks').style.display = 'none'
+    }
+    function loadFindBlocks () {
+      document.getElementById('findBlocks').style.display = 'block'
+      document.getElementById('findBlockInfo').style.display = 'none'
     }
   </script>
 </body>
