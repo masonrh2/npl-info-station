@@ -6,6 +6,79 @@
     <title>NPL Block Information Station</title>
     <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
     <?!= include('css')?>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/fh-3.1.7/datatables.min.css"/>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/fh-3.1.7/datatables.min.js"></script>
+    
+    <script>
+      $(document).ready(function () {
+        $('#blocksTable').DataTable( {
+          paging: false,
+          fixedHeader: true,
+          dom: 'Bfrtip',
+          buttons: [
+            {extend: 'colvis', text:'columns', collectionLayout: 'fixed four-column'},
+            {extend: 'collection', text: 'tests', buttons: [
+              {extend: 'columnToggle', text: 'basicInfo', columns: '.basicInfo'},
+              {extend: 'columnToggle', text: 'hasGrade', columns: '.hasGrade'},
+              {extend: 'columnToggle', text: 'tungsten', columns: '.tungsten'},
+              {extend: 'columnToggle', text: 'epoxy', columns: '.epoxy'},
+              {extend: 'columnToggle', text: 'density', columns: '.density'},
+              {extend: 'columnToggle', text: 'tolerances', columns: '.tolerances'},
+              {extend: 'columnToggle', text: 'lightTrans', columns: '.lightTrans'},
+              {extend: 'columnToggle', text: 'towers', columns: '.towers'},
+              {extend: 'columnToggle', text: 'scint', columns: '.scint'},
+              {extend: 'columnToggle', text: 'natLight', columns: '.natLight'}]
+            }
+          ],
+          "columns": [
+            {name: "dbn", className: "basicInfo", "searchable": true, "visible": true},
+            {name: "block", className: "basicInfo", "searchable": true, "visible": true},
+            {name: "status", className: "basicInfo", "searchable": true, "visible": true},
+            {name: "shipment", className: "basicInfo", "searchable": true, "visible": true},
+            {name: "sector", className: "basicInfo", "searchable": true, "visible": true},
+            {name: "powder", className: "tungsten", "searchable": true, "visible": false},
+            {name: "bucket", className: "tungsten", "searchable": true, "visible": false},
+            {name: "moldSeries", className: "tungsten", "searchable": true, "visible": false},
+            {name: "emptyMoldMass", className: "tungsten", "searchable": true, "visible": false},
+            {name: "filledMoldMass", className: "tungsten", "searchable": true, "visible": false},
+            {name: "tungstenMass", className: "tungsten", "searchable": true, "visible": false},
+            {name: "tungstenFillingDate", className: "tungsten", "searchable": true, "visible": false},
+            {name: "epoxyBatch", className: "epoxy", "searchable": true, "visible": false},
+            {name: "resinMass", className: "epoxy", "searchable": true, "visible": false},
+            {name: "hardenerMass", className: "epoxy", "searchable": true, "visible": false},
+            {name: "epoxyFillingTime", className: "epoxy", "searchable": true, "visible": false},
+            {name: "epoxyFillingDate", className: "epoxy", "searchable": true, "visible": false},
+            {name: "dL", className: "density tolerances hasGrade", "searchable": true, "visible": false},
+            {name: "dBT", className: "density tolerances hasGrade", "searchable": true, "visible": false},
+            {name: "dBB", className: "density tolerances hasGrade", "searchable": true, "visible": false},
+            {name: "dBH", className: "density tolerances hasGrade", "searchable": true, "visible": false},
+            {name: "dST", className: "density tolerances hasGrade", "searchable": true, "visible": false},
+            {name: "dSB", className: "density tolerances hasGrade", "searchable": true, "visible": false},
+            {name: "dSH", className: "density tolerances hasGrade", "searchable": true, "visible": false},
+            {name: "volume", className: "density", "searchable": true, "visible": false},
+            {name: "mass", className: "density", "searchable": true, "visible": false},
+            {name: "density", className: "density hasGrade", "searchable": true, "visible": false},
+            {name: "densityDate", className: "density", "searchable": true, "visible": false},
+            {name: "goodEnd", className: "lightTrans hasGrade", "searchable": true, "visible": false},
+            {name: "fiberPercentage", className: "lightTrans hasGrade", "searchable": true, "visible": false},
+            {name: "tower1", className: "lightTrans towers hasGrade", "searchable": true, "visible": false},
+            {name: "tower2", className: "lightTrans towers hasGrade", "searchable": true, "visible": false},
+            {name: "tower3", className: "lightTrans towers hasGrade", "searchable": true, "visible": false},
+            {name: "tower4", className: "lightTrans towers hasGrade", "searchable": true, "visible": false},
+            {name: "missingRow", className: "lightTrans hasGrade", "searchable": true, "visible": false},
+            {name: "thirteenHoles", className: "lightTrans hasGrade", "searchable": true, "visible": false},
+            {name: "lightTransDate", className: "lightTrans", "searchable": true, "visible": false},
+            {name: "scintillation", className: "scint", "searchable": true, "visible": false},
+            {name: "scintRatio", className: "scint hasGrade", "searchable": true, "visible": false},
+            {name: "scintDate", className: "scint", "searchable": true, "visible": false},
+            {name: "natLightDate", className: "natLight", "searchable": true, "visible": false}
+          ]
+        })
+      })
+    </script>
 </head>
 <body onload="getDatabaseOnLoad()" style="margin: 16px;">
   <div class="header" style="display: block; padding-bottom: 2em;">
@@ -19,9 +92,9 @@
         <label>DBN: </label><input type="text" id="inputDBN">
         <button>Submit</button>
       </form>
-      <button onclick="madness()">do not press</button>
+      <button onclick="madness()">load all images</button>
       <button onclick="loadFindBlocks()">Find Blocks</button>
-      <button style="margin-left: 0; display: none;">Download as PDF</button>
+      <button onclick="" style="margin-left: 0; display: none;">Download as PDF</button>
     </section>
     <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
     
@@ -76,7 +149,7 @@
           <button id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
           <table class="dimension" id="epoxyTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
             <tr>
-              <th>Epoxy Batch</th><th>Resin Mass (g)</th><th>Hardener Mass (g)</th><th>Potting Notes</th><th>Epoxy Filling Time (min)</th><th>Filling Date</th>
+              <th>Epoxy Batch</th><th>Resin Mass (g)</th><th>Hardener Mass (g)</th><th>Potting Notes</th><th>Epoxy Filling Time (min)</th><th style="height: inherit;">Filling Date</th>
             </tr>
             <tr>
               <td id="epoxyBatch"></td><td id="resinMass"></td><td id="hardenerMass"></td><td id="pottingNotes"></td><td id="epoxyFillingTime"></td><td id="epoxyFillingDate"></td>
@@ -217,130 +290,56 @@
       </form>
       <button onclick="clearInputBlock()" style="margin-left: 0;">clear</button>
     </section>
-    <button onclick="loadFindBlockInfo()">Find Block Info</button>
-    <section>
-      <section>
-        <button id="toggleTungstenCols" onclick="toggleCols('Tungsten')">Show Tungsten Info</button>
-        <input type="checkbox" id="show_powder_col" onclick="toggleColumn('powder_col')" disabled>
-        <label for="show_powder_col">show_Powder_col</label>
-        <input type="checkbox" id="show_bucket_col" onclick="toggleColumn('bucket_col')" disabled>
-        <label for="show_bucket_col">show_Bucket_col</label>
-        <input type="checkbox" id="show_moldSeries_col" onclick="toggleColumn('moldSeries_col')" disabled>
-        <label for="show_moldSeries_col">show_MoldSeries_col</label>
-        <input type="checkbox" id="show_emptyMoldMass_col" onclick="toggleColumn('emptyMoldMass_col')" disabled>
-        <label for="show_emptyMoldMass_col">show_EmptyMoldMass_col</label>
-        <input type="checkbox" id="show_filledMoldMass_col" onclick="toggleColumn('filledMoldMass_col')" disabled>
-        <label for="show_filledMoldMass_col">show_FilledMoldMass_col</label>
-        <input type="checkbox" id="show_tungstenMass_col" onclick="toggleColumn('tungstenMass_col')" disabled>
-        <label for="show_tungstenMass_col">show_TungstenMass_col</label>
-        <input type="checkbox" id="show_tungstenFillingDate_col" onclick="toggleColumn('tungstenFillingDate_col')" disabled>
-        <label for="show_tungstenFillingDate_col">show_TungstenFillingDate_col</label>
-      </section>
-      <section>
-        <button id="toggleEpoxyCols" onclick="toggleCols('Epoxy')">Show Epoxy Info</button>
-        <input type="checkbox" id="show_epoxyBatch_col" onclick="toggleColumn('epoxyBatch_col')" disabled>
-        <label for="show_epoxyBatch_col">show_epoxyBatch_col</label>
-        <input type="checkbox" id="show_resinMass_col" onclick="toggleColumn('resinMass_col')" disabled>
-        <label for="show_resinMass_col">show_resinMass_col</label>
-        <input type="checkbox" id="show_hardenerMass_col" onclick="toggleColumn('hardenerMass_col')" disabled>
-        <label for="show_hardenerMass_col">show_hardenerMass_col</label>
-        <input type="checkbox" id="show_epoxyFillingTime_col" onclick="toggleColumn('epoxyFillingTime_col')" disabled>
-        <label for="show_epoxyFillingTime_col">show_epoxyFillingTime_col</label>
-        <input type="checkbox" id="show_epoxyFillingDate_col" onclick="toggleColumn('epoxyFillingDate_col')" disabled>
-        <label for="show_epoxyFillingDate_col">show_epoxyFillingDate_col</label>
-      </section>
-      <section>
-        <button id="toggleDensityCols" onclick="toggleCols('Density')">Show Density Info</button>
-        <input type="checkbox" id="show_volume_col" onclick="toggleColumn('volume_col')" disabled>
-        <label for="show_volume_col">show_volume_col</label>
-        <input type="checkbox" id="show_mass_col" onclick="toggleColumn('mass_col')" disabled>
-        <label for="show_mass_col">show_mass_col</label>
-        <input type="checkbox" id="show_density_col" onclick="toggleColumn('density_col')" disabled>
-        <label for="show_density_col">show_density_col</label>
-        <input type="checkbox" id="show_densityDate_col" onclick="toggleColumn('densityDate_col')" disabled>
-        <label for="show_densityDate_col">show_densityDate_col</label>
-        <input type="checkbox" id="show_tolerances" onclick="toggleColumn('tolerances')" disabled>
-        <label for="show_tolerances">show_tolerances</label>
-      </section>
-      <section>
-        <button id="toggleLightTransCols" onclick="toggleCols('LightTrans')">Show LightTrans Info</button>
-        <input type="checkbox" id="show_goodEnd_col" onclick="toggleColumn('goodEnd_col')" disabled>
-        <label for="show_goodEnd_col">show_goodEnd_col</label>
-        <input type="checkbox" id="show_fiberPercentage_col" onclick="toggleColumn('fiberPercentage_col')" disabled>
-        <label for="show_fiberPercentage_col">show_fiberPercentage_col</label>
-        <input type="checkbox" id="show_missingRow_col" onclick="toggleColumn('missingRow_col')" disabled>
-        <label for="show_missingRow_col">show_missingRow_col</label>
-        <input type="checkbox" id="show_thirteenHoles_col" onclick="toggleColumn('thirteenHoles_col')" disabled>
-        <label for="show_thirteenHoles_col">show_thirteenHoles_col</label>
-        <input type="checkbox" id="show_lightTransDate_col" onclick="toggleColumn('lightTransDate_col')" disabled>
-        <label for="show_lightTransDate_col">show_lightTransDate_col</label>
-        <input type="checkbox" id="show_towers" onclick="toggleColumn('towers')" disabled>
-        <label for="show_towers">show_towers</label>
-      </section>
-      <section>
-        <button id="toggleScintillationCols" onclick="toggleCols('Scintillation')">Show Scintillation Info</button>
-        <input type="checkbox" id="show_scintillation_col" onclick="toggleColumn('scintillation_col')" disabled>
-        <label for="show_scintillation_col">show_scintillation_col</label>
-        <input type="checkbox" id="show_scintRatio_col" onclick="toggleColumn('scintRatio_col')" disabled>
-        <label for="show_scintRatio_col">show_scintRatio_col</label>
-        <input type="checkbox" id="show_scintDate_col" onclick="toggleColumn('scintDate_col')" disabled>
-        <label for="show_scintDate_col">show_scintDate_col</label>
-      </section>
-      <section>
-        <input type="checkbox" id="show_natLightDate_col" onclick="toggleColumn('natLightDate_col')">
-        <label for="show_natLightDate_col">show_natLightDate_col</label>
-      </section>
-    </section>
-    <table id="blocksTable" class="dimension" style="border-collapse: collapse;">
+    <button onclick="loadFindBlockInfo()" style="margin-bottom: 1em;">back</button>
+    <table id="blocksTable" class="nowrap" style="width: 100%;">
       <thead>
         <tr>
-          <th class="dbn_col">dbn</th>
-          <th class="block_col">block</th>
-          <th class="status_col">status</th>
-          <th class="shipment_col">shipment</th>
-          <th class="sector_col">sector</th>
-          <th class="powder_col">powder</th>
-          <th class="bucket_col">bucket</th>
-          <th class="moldSeries_col">moldSeries</th>
-          <th class="emptyMoldMass_col">emptyMoldMass</th>
-          <th class="filledMoldMass_col">filledMoldMass</th>
-          <th class="tungstenMass_col">tungstenMass</th>
-          <th class="tungstenFillingDate_col">tungstenFillingDate</th>
-          <th class="epoxyBatch_col">epoxyBatch</th>
-          <th class="resinMass_col">resinMass</th>
-          <th class="hardenerMass_col">hardenerMass</th>
-          <th class="epoxyFillingTime_col">epoxyFillingTime</th>
-          <th class="epoxyFillingDate_col">epoxyFillingDate</th>
-          <th class="dL_col">dL</th>
-          <th class="dBT_col">dBT</th>
-          <th class="dBB_col">dBB</th>
-          <th class="dBH_col">dBH</th>
-          <th class="dST_col">dST</th>
-          <th class="dSB_col">dSB</th>
-          <th class="dSH_col">dSH</th>
-          <th class="volume_col">volume</th>
-          <th class="mass_col">mass</th>
-          <th class="density_col">density</th>
-          <th class="densityDate_col">densityDate</th>
-          <th class="goodEnd_col">goodEnd</th>
-          <th class="fiberPercentage_col">fiberPercentage</th>
-          <th class="tower1_col">tower1</th>
-          <th class="tower2_col">tower2</th>
-          <th class="tower3_col">tower3</th>
-          <th class="tower4_col">tower4</th>
-          <th class="missingRow_col">missingRow</th>
-          <th class="thirteenHoles_col">thirteenHoles</th>
-          <th class="lightTransDate_col">lightTransDate</th>
-          <th class="scintillation_col">scintillation</th>
-          <th class="scintRatio_col">scintRatio</th>
-          <th class="scintDate_col">scintDate</th>
-          <th class="natLightDate_col">natLightDate</th>
+          <th>dbn</th>
+          <th>block</th>
+          <th>status</th>
+          <th>shipment</th>
+          <th>sector</th>
+          <th>powder</th>
+          <th>bucket</th>
+          <th>moldSeries</th>
+          <th>emptyMoldMass</th>
+          <th>filledMoldMass</th>
+          <th>tungstenMass</th>
+          <th>tungstenFillingDate</th>
+          <th>epoxyBatch</th>
+          <th>resinMass</th>
+          <th>hardenerMass</th>
+          <th>epoxyFillingTime</th>
+          <th>epoxyFillingDate</th>
+          <th>dL</th>
+          <th>dBT</th>
+          <th>dBB</th>
+          <th>dBH</th>
+          <th>dST</th>
+          <th>dSB</th>
+          <th>dSH</th>
+          <th>volume</th>
+          <th>mass</th>
+          <th>density</th>
+          <th>densityDate</th>
+          <th>goodEnd</th>
+          <th>fiberPercentage</th>
+          <th>tower1</th>
+          <th>tower2</th>
+          <th>tower3</th>
+          <th>tower4</th>
+          <th>missingRow</th>
+          <th>thirteenHoles</th>
+          <th>lightTransDate</th>
+          <th>scintillation</th>
+          <th>scintRatio</th>
+          <th>scintDate</th>
+          <th>natLightDate</th>
         </tr>
       </thead>
       <tbody id="blocksTableBody"></tbody>
     </table>
   </section>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
   <script>
     // color constants (in HEX)
     const red = '#800000'
@@ -477,8 +476,6 @@
         } else {
           console.log('loaded database and testing folders without error')
           database = gotDatabase
-          loadBlocksTable()
-          updateBlocksTableColumns()
           document.getElementById('loadingDatabase').style.display = 'none'
           document.getElementById('findBlockInfo').style.display = 'block'
         }
@@ -1099,46 +1096,9 @@
       ['Scintillation', ['scintillation_col', 'scintRatio_col', 'scintDate_col']],
       ['showScintillation', false]
     ])
-    function updateBlocksTableColumns () {
-      function hideColumn(column) {
-        if (column === 'tolerances') {
-          for (let i = 0; i < tolerancesColumns.length; i++) {
-            hideColumn(tolerancesColumns[i])
-          }
-        } else if (column === 'towers') {
-          for (let i = 0; i < towersColumns.length; i++) {
-            hideColumn(towersColumns[i])
-          }
-        } else {
-          let cells = document.getElementsByClassName(column)
-          for (let i = 0; i < cells.length; i++) {
-            cells[i].style.display = 'none'
-          }
-        }
-      }
-      function updateColumnGroup (columnGroup) {
-        if (!columnsMap.get('show' + columnGroup)) {
-          for (let i = 0; i < columnsMap.get(columnGroup).length; i++) {
-            if (!document.getElementById('show_' + columnsMap.get(columnGroup)[i]).checked) {
-              hideColumn(columnsMap.get(columnGroup)[i])
-            }
-          }
-        }
-      }
-      for (let i = 0; i < columnGroups.length; i++) {
-        if (!columnsMap.get('show' + columnGroups[i])) {
-          updateColumnGroup(columnGroups[i])
-        }
-      }
-      for (let i = 0; i < columnsNotGrouped.length; i++) {
-        if (!document.getElementById('show_' + columnsNotGrouped[i]).checked) {
-          hideColumn(columnsNotGrouped[i])
-        }
-      }  
-    }
     function loadBlocksTable () {
-      let table = document.getElementById('blocksTableBody')
-      $('#blocksTable tbody').empty()
+      let dataTable = $('#blocksTable').DataTable()
+      dataTable.clear()
       let sheet1 = [...database[0]]
       sheet1.shift()
       let sheet2 = [...database[1]]
@@ -1149,7 +1109,7 @@
         && (filterShipmentValue == null || filterShipmentValue == '' || filterShipmentValue === mergedSheet[i][blocksSheetMap.get('shipment')])
         && (filterStatusValue == null || filterStatusValue == '' || filterStatusValue === mergedSheet[i][blocksSheetMap.get('status')])
         && (filterBlockValue == null || filterBlockValue == '' || filterBlockValue === mergedSheet[i][blocksSheetMap.get('block')])) {
-          let row = table.insertRow()
+          let rowData = []
           for (let j = 0; j < tableColumnsPrefixes.length; j++) {
             //const tolerancesColumnsPrefixes = ['dL', 'dBT', 'dBB', 'dBH', 'dST', 'dSB', 'dSH']
             if (tableColumnsPrefixes[j] === 'dL') {
@@ -1162,70 +1122,31 @@
                 } else {
                   deviation = NaN
                 }
-                let cell = row.insertCell(j)
-                cell.className = tableColumnsPrefixes[j] + '_col'
-                let text = document.createTextNode((deviation).toFixed(4))
-                cell.appendChild(text)
+                //let cell = row.insertCell(j)
+                //cell.className = tableColumnsPrefixes[j] + '_col'
+                //let text = document.createTextNode((deviation).toFixed(4))
+                //cell.appendChild(text)
+                rowData[j] = (deviation).toFixed(4)
                 j++
               }
               j--
             } else {
-              let cell = row.insertCell(j)
-              cell.className = tableColumnsPrefixes[j] + '_col'
-              let text = document.createTextNode(mergedSheet[i][blocksSheetMap.get(tableColumnsPrefixes[j])])
-              cell.appendChild(text)
+              //let cell = row.insertCell(j)
+              //cell.className = tableColumnsPrefixes[j] + '_col'
+              //let text = document.createTextNode(mergedSheet[i][blocksSheetMap.get(tableColumnsPrefixes[j])])
+              //cell.appendChild(text)
+              rowData[j] = mergedSheet[i][blocksSheetMap.get(tableColumnsPrefixes[j])]
             }
           }
+          dataTable.row.add(rowData)
         }
       }
-      updateBlocksTableColumns()
+      dataTable.draw()
     }
-    function toggleColumn(column) {
-      if (column === 'tolerances') {
-        for (let i = 0; i < tolerancesColumns.length; i++) {
-          toggleColumn(tolerancesColumns[i])
-        }
-      } else if (column === 'towers') {
-        for (let i = 0; i < towersColumns.length; i++) {
-          toggleColumn(towersColumns[i])
-        }
-      } else {
-        let cells = document.getElementsByClassName(column)
-        let changeDisplayTo
-        if (cells[0].style.display === 'none') {
-          changeDisplayTo = 'table-cell'
-        } else {
-          changeDisplayTo = 'none'
-        }
-        for (let i = 0; i < cells.length; i++) {
-          cells[i].style.display = changeDisplayTo
-        }
-      }
-    }
-    function toggleCols (columnGroup) {
-      if (columnsMap.get('show' + columnGroup)) {
-        // hide them
-        for (let i = 0; i < columnsMap.get(columnGroup).length; i++) {
-          if (document.getElementById('show_' + columnsMap.get(columnGroup)[i]).checked) {
-            toggleColumn(columnsMap.get(columnGroup)[i])
-            document.getElementById('show_' + columnsMap.get(columnGroup)[i]).checked = false
-          }
-          document.getElementById('show_' + columnsMap.get(columnGroup)[i]).disabled = true
-        }
-        columnsMap.set('show' + columnGroup, false)
-        document.getElementById('toggle' + columnGroup + 'Cols').innerHTML = 'Show ' + columnGroup + ' Info'
-      } else {
-        // show them
-        for (let i = 0; i < columnsMap.get(columnGroup).length; i++) {
-          document.getElementById('show_' + columnsMap.get(columnGroup)[i]).disabled = false
-          if (!document.getElementById('show_' + columnsMap.get(columnGroup)[i]).checked) {
-            toggleColumn(columnsMap.get(columnGroup)[i])
-            document.getElementById('show_' + columnsMap.get(columnGroup)[i]).checked = true
-          }
-        }
-        columnsMap.set('show' + columnGroup, true)
-        document.getElementById('toggle' + columnGroup + 'Cols').innerHTML = 'Hide ' + columnGroup + ' Info'
-      }
+    function setColumnVisibility (columnSelector, setVisibility) {
+      let dataTable = $('#blocksTable').DataTable()
+      dataTable.columns(columnSelector).visible(setVisibility)
+      dataTable.columns.adjust()
     }
     function loadFindBlockInfo () {
       document.getElementById('findBlockInfo').style.display = 'block'
