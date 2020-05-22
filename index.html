@@ -21,6 +21,17 @@
       const aGrade = 0
       const bGrade = 1
       const fGrade = 2
+      function grade_pregrade (grade) {
+        if (grade === '5a') {
+          return aGrade
+        } else if (grade === '5b') {
+          return bGrade
+        } else if (grade === '8') {
+          return fGrade
+        } else {
+          return null
+        }
+      }
       function grade_density (density) {
         if (density > 8.8) {
           return aGrade
@@ -102,6 +113,7 @@
         $('#blocksTable').DataTable( {
           paging: false,
           fixedHeader: true,
+          "info": false,
           dom: 'Bfrtip',
           buttons: [
             {extend: 'colvis', text:'columns', collectionLayout: 'fixed four-column'},
@@ -122,6 +134,18 @@
             {name: "dbn", className: "basicInfo", "searchable": true, "visible": true},
             {name: "block", className: "basicInfo", "searchable": true, "visible": true},
             {name: "status", className: "basicInfo", "searchable": true, "visible": true},
+            {name: "pregrade", className: "basicInfo", "searchable": true, "visible": false, render: function ( data, type, row ) {
+              if (dataPresent(data)) {
+                if (grade_pregrade(data) != null) {
+                  let color = testColors[grade_pregrade(data)]
+                  return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+                } else {
+                  return '<span>' + data + '</span>';
+                }
+              } else {
+                return '<span></span>'
+              }
+            }},
             {name: "shipment", className: "basicInfo", "searchable": true, "visible": false},
             {name: "sector", className: "basicInfo", "searchable": true, "visible": false},
             {name: "powder", className: "tungsten", "searchable": true, "visible": false},
@@ -130,10 +154,10 @@
             {name: "emptyMoldMass", className: "tungsten", "searchable": true, "visible": false},
             {name: "filledMoldMass", className: "tungsten", "searchable": true, "visible": false},
             {name: "tungstenMass", className: "tungsten", "searchable": true, "visible": false, render: function ( data, type, row ) {
-                      if (data !== '0') {
+              if (data !== '0') {
                         return '<span>' + data + '</span>';
                       } else {
-                        return '<span></span>'
+                        return '<span>' + data + '</span>'
                       }
                     }},
             {name: "tungstenFillingDate", className: "tungsten", "searchable": true, "visible": false},
@@ -564,6 +588,7 @@
           <th>dbn</th>
           <th>block</th>
           <th>status</th>
+          <th>pregrade</th>
           <th>shipment</th>
           <th>sector</th>
           <th>powder</th>
@@ -653,6 +678,7 @@
       'dbn',
       'block',
       'status',
+      'pregrade',
       'shipment',
       'sector',
       'powder',
@@ -729,7 +755,8 @@
       ['scintillation', 65],
       ['scintRatio', 67],
       ['scintDate', 69],
-      ['natLightDate', 70]
+      ['natLightDate', 70],
+      ['pregrade', 77]
     ])
     // array [Blocks DB, Blocks1364DB], where each element is a (large) 2D array
     var database
@@ -1412,6 +1439,12 @@
               }
             } else if (['tower1', 'tower2', 'tower3', 'tower4'].includes(name) && !isNaN(mergedSheet[i][blocksSheetMap.get(tableColumnsPrefixes[j])])) {
               rowData[j] = parseFloat(mergedSheet[i][blocksSheetMap.get(tableColumnsPrefixes[j])]).toFixed(2)
+            } else if (name == 'pregrade') {
+              if (i < sheet1.length) {
+                rowData[j] = mergedSheet[i][blocksSheetMap.get(tableColumnsPrefixes[j])]
+              } else {
+                rowData[j] = null
+              }
             } else {
               rowData[j] = mergedSheet[i][blocksSheetMap.get(tableColumnsPrefixes[j])]
             }
