@@ -16,6 +16,7 @@
       const red = '#800000'
       const orange = '#e66000'
       const green = '#008000'
+      const black = '#000000'
       // color for each test (5A-grade, 5B-grade, fail)
       const testColors = [green, orange, red]
       const aGrade = 0
@@ -419,6 +420,8 @@
         <dd id="block"></dd>
         <dt id='statusLabel'>Status:</dt>
         <dd id="status"></dd>
+        <dt id='pregradeLabel'>Pregrade:</dt>
+        <dd id="pregrade"></dd>
         <dt id="shipmentLabel">BNL Shipment:</dt>
         <dd id="shipment"></dd>
         <dt id="sectorLabel">Sector:</dt>
@@ -946,6 +949,7 @@
         let hasTungstenData = tungstenTableEntries.some(function(element) {
           return dataPresent(blockMap.get(element)) && element !== 'tungstenMass'
         })
+        //tungsten table
         if (hasTungstenData) {
           for (let i = 0; i < tungstenTableEntries.length; i++) {
             let entry = tungstenTableEntries[i]
@@ -956,6 +960,7 @@
           document.getElementById('showTungstenTableBtn').style.display = 'none'
           document.getElementById('tungstenTable').style.display = 'none'
         }
+        //epoxy table
         if (someDataPresent(blockMap, epoxyTableEntries)) {
           for (let i = 0; i < epoxyTableEntries.length; i++) {
             let entry = epoxyTableEntries[i]
@@ -965,6 +970,22 @@
         } else {
           document.getElementById('showEpoxyTableBtn').style.display = 'none'
           document.getElementById('epoxyTable').style.display = 'none'
+        }
+        //pregrade
+        if (dataPresent(blockMap.get('pregrade')) && dbn < 2000) {
+          document.getElementById('pregrade').innerHTML = blockMap.get('pregrade')
+          if (grade_pregrade(blockMap.get('pregrade')) != null) {
+            document.getElementById('pregrade').style.color = testColors[grade_pregrade(blockMap.get('pregrade'))]
+            document.getElementById('pregrade').style.fontWeight = 'bold'
+          } else {
+            document.getElementById('pregrade').style.color = black
+            document.getElementById('pregrade').style.fontWeight = 'normal'
+          }
+          document.getElementById('pregrade').style.display = 'inline'
+          document.getElementById('pregrade' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('pregrade').style.display = 'none'
+          document.getElementById('pregrade' + 'Label').style.display = 'none'
         }
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
