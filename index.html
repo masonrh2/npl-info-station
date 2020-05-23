@@ -1170,7 +1170,6 @@
       // now hide the loading block data text...
       document.getElementById("loadingBlockData").style.display = 'none'
     }
-
     // resets a checkbox to unchecked
     function resetCheckbox (imagePrefix) {
       // if a checkbox is checked, uncheck it and call it's toggle function to hide images
@@ -1344,6 +1343,9 @@
         document.getElementById('epoxyTable').style.display = 'none'
         document.getElementById('showEpoxyTableBtn').innerHTML = 'Show Epoxy Information'
       }
+      // finally, display the checkboxes section
+      document.getElementById("loadingImages").style.display = 'none'
+      document.getElementById("allCheckboxes").style.display = 'block'
     }
     // hides/shows the tolerances table
     function toggleTolerancesTable () {
