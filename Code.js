@@ -160,7 +160,9 @@ function getImageUrls (blockMap) {
   let lightTransCroppedImgWId
   let lightTransCroppedImgNId
   let natLightImgWId
+  let natLightWidePos
   let natLightImgNId
+  let natLightNarrowPos
   let currentlightTransOriginalFolder
   let currentNatLightFolder
   // Set the folders to search (archive or normal folder...)
@@ -222,8 +224,18 @@ function getImageUrls (blockMap) {
           // Check if it's N or W and save it's file Id to whichever it is
           if (splitName[splitName.length - 1] === 'W') {
             natLightImgWId = file.getId()
+            if (splitName.length > 2) {
+              natLightWidePos = splitName.findIndex((value) => (value) === (dbn)) + 1
+            } else {
+              natLightWidePos = 0
+            }
           } else if (splitName[splitName.length - 1] === 'N') {
             natLightImgNId = file.getId()
+            if (splitName.length > 2) {
+              natLightNarrowPos = splitName.findIndex((value) => (value) === (dbn)) + 1
+            } else {
+              natLightNarrowPos = 0
+            }
           } else {
             Logger.log('unable to identify W or N for file name ' + file.getName())
           }
@@ -252,6 +264,12 @@ function getImageUrls (blockMap) {
       array[index] = 'https://drive.google.com/uc?id=' + element
     }
   })
+  if (imageUrls[4] != null) {
+    imageUrls[4] = [imageUrls[4], natLightWidePos]
+  }
+  if (imageUrls[5] != null) {
+    imageUrls[5] = [imageUrls[5], natLightNarrowPos]
+  }
   Logger.log('getImageUrls returned: ' + imageUrls)
   return imageUrls
 }
@@ -608,10 +626,10 @@ function getHistograms (fromHTML) {
     const file = fileIterator.next()
     const name = file.getName()
     if (file.getMimeType() === 'application/pdf') {
-      const bits = name.split(/[_-]/)
+      const bits = name.split(/[._-]/)
       bits.shift() // 'DBN'
-      bits.pop() // 'histograms.pdf'
-      if (removeZeroes(bits[0]) == dbn) {
+      bits.pop() // '.pdf'
+      if (removeZeroes(bits[0]) === dbn && bits[2] === 'histograms') {
         if (bits[1] === 'W') {
           urls[0] = 'https://drive.google.com/uc?id=' + file.getId()
         } else if (bits[1] === 'N') {

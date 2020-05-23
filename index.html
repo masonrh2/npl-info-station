@@ -43,7 +43,7 @@
         }
       }
       function grade_dL (dL) {
-        if (dL <= 0.03) {
+        if (Math.abs(dL) <= 0.03) {
           return aGrade
         } else if (dL <= 0.05 && dL >= -0.1) {
           return bGrade
@@ -52,7 +52,7 @@
         }
       }
       function grade_otherDev (dev) {
-        if (dev <= 0.02) {
+        if (Math.abs(dev) <= 0.02) {
           return aGrade
         } else if (dev <= 0.02 && dev >= -0.04) {
           return bGrade
@@ -135,7 +135,7 @@
             {name: "dbn", className: "basicInfo", "searchable": true, "visible": true},
             {name: "block", className: "basicInfo", "searchable": true, "visible": true},
             {name: "status", className: "basicInfo", "searchable": true, "visible": true},
-            {name: "pregrade", className: "basicInfo", "searchable": true, "visible": false, render: function ( data, type, row ) {
+            {name: "pregrade", className: "basicInfo hasGrade", "searchable": true, "visible": false, render: function ( data, type, row ) {
               if (dataPresent(data)) {
                 if (grade_pregrade(data) != null) {
                   let color = testColors[grade_pregrade(data)]
@@ -378,6 +378,7 @@
     <h1>NPL Block Information Station</h1>
   </div>
   <p id="loadingDatabase" style="display: none;">Loading Database...</p>
+  <p id="currentDateAndTime" style="display: none;"></p>
   <section id="findBlockInfo" style="display: none;">
     <section style="display: inline-block; margin-left: 0em;">
       <form action="javascript:onSubmit()" style="display: inline;">
@@ -389,7 +390,6 @@
       <button onclick="" style="margin-left: 0; display: none;">Download as PDF</button>
     </section>
     <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
-    
     <section id="imagesSelection" style="display: none;  margin-top: 1em;">
       <section id="allCheckboxes" style="display: none;">
         <section id="CBshow-lightTransImgSection" style="display: none;">
@@ -408,9 +408,6 @@
       <div id="loadingImages" style="display: none;">Loading Images...</div>
       <div id="noImagesFound" style="display: none;">No Images Found</div>
     </section>
-    
-    <p id="currentDateAndTime" style="display: none;"></p>
-
     <section id="blockDetailsSection" style="display: none;">
       <h2>Block Details</h2>
       <dl class='inline-flex'>
@@ -455,7 +452,6 @@
     <section id="blockDetailsNoInfo" style="display: none;">
       <p style="font-style: italic; font-size: 1.5em;">Unable to find any block information for this dbn</p>
     </section>
-
     <section id="densitySection" style="display: none;">
       <h2 id="densitySectionLabel">Density</h2>
       <dl class='inline-flex'>
@@ -481,7 +477,6 @@
     <section id="densityNoInfo" style="display: none;">
       <p style="font-style: italic; font-size: 1.5em;">Unable to find any density data for this block</p>
     </section>
-
     <section id="lightTransSection" style="display: none;">
       <h2 id="lightTransSectionLabel">Light Transmission</h2>
       <dl class='inline-flex'>
@@ -527,7 +522,6 @@
     <section id="lightTransNoInfo" style="display: none;">
       <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
     </section>
-
     <section id="natLightSection" style="display: none;">
       <h2>Natural Light</h2>
       <dl class='inline-flex'>
@@ -546,7 +540,6 @@
     <section id="natLightNoInfo" style="display: none;">
       <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
     </section>
-
     <section id="scintSection" style="display: none;">
       <h2 id="scintSectionLabel">Scintillation</h2>
       <dl class='inline-flex'>
@@ -563,28 +556,26 @@
     </section>
   </section>
   <section id="findBlocks" style="display: none;">
-    <section style="display: block; margin-left: 0em;">
-      <form action="javascript:filter()" style="display: inline;">
-        <label>Shipment: </label><input type="text" id="inputShipment">
-        <button>submit</button>
-      </form>
-      <button onclick="clearInputShipment()" style="margin-left: 0;">clear</button>
+    <form action="javascript:filter()" style="display: inline;">
+      <label style="display: inline-block; width: 90px;">Shipment: </label><input style="width: 80px;" type="text" tabindex="1" id="inputShipment">
+      <button>submit</button>
+    </form>
+    <button onclick="clearInputShipment()" style="display: inline;">clear</button><br>
+    <form action="javascript:filter()" style="display: inline;">
+      <label style="display: inline-block; width: 90px;">Status: </label><input style="width: 80px;" type="text" tabindex="2" id="inputStatus">
+      <button>submit</button>
+    </form>
+    <button onclick="clearInputStatus()" style="display: inline;">clear</button><br>
+    <form action="javascript:filter()" style="display: inline;">
+      <label style="display: inline-block; width: 90px;">Block Design: </label><input style="width: 80px;" type="text" tabindex="3" id="inputBlock">
+      <button>submit</button>
+    </form>
+    <button onclick="clearInputBlock()" style="display: inline;">clear</button><br>
+    <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button>
+    <section style="margin: 1em 0em">
+      <span>Blocks Found:</span>
+      <span id="blocksCount"></span>
     </section>
-    <section style="display: block; margin-left: 0em;">
-      <form action="javascript:filter()" style="display: inline;">
-        <label>Status: </label><input type="text" id="inputStatus">
-        <button>submit</button>
-      </form>
-      <button onclick="clearInputStatus()" style="margin-left: 0;">clear</button>
-    </section>
-    <section style="display: block; margin-left: 0em;">
-      <form action="javascript:filter()" style="display: inline;">
-        <label>Block Design: </label><input type="text" id="inputBlock">
-        <button>submit</button>
-      </form>
-      <button onclick="clearInputBlock()" style="margin-left: 0;">clear</button>
-    </section>
-    <button onclick="loadFindBlockInfo()" style="margin-bottom: 1em;">back</button>
     <table id="blocksTable" class="nowrap display cell-border" style="width: 100%;">
       <thead>
         <tr>
@@ -841,6 +832,10 @@
         resetCheckboxes()
         // and reset text that isn't automatically reset in imagesSelection section
         document.getElementById("noImagesFound").style.display = 'none'
+        document.getElementById("histogramWide").style.display = 'none'
+        document.getElementById("histogramWide").href = '#'
+        document.getElementById("histogramNarrow").style.display = 'none'
+        document.getElementById("histogramNarrow").href = '#'
         // and reset the img src urls just in case one happens to be shown but on overwritten
         // (e.g. one LT cropped image returns a url and the other does not (e.g. DBN 78))
         for (let i = 0; i < allTestingImgs.length; i++) {
@@ -974,8 +969,9 @@
         //pregrade
         if (dataPresent(blockMap.get('pregrade')) && dbn < 2000) {
           document.getElementById('pregrade').innerHTML = blockMap.get('pregrade')
-          if (grade_pregrade(blockMap.get('pregrade')) != null) {
-            document.getElementById('pregrade').style.color = testColors[grade_pregrade(blockMap.get('pregrade'))]
+          let grade = grade_pregrade(blockMap.get('pregrade'))
+          if (grade != null) {
+            document.getElementById('pregrade').style.color = testColors[grade]
             document.getElementById('pregrade').style.fontWeight = 'bold'
           } else {
             document.getElementById('pregrade').style.color = black
@@ -1005,16 +1001,9 @@
         // color coding
         let testGrades = []
         let tolerancesGrades = []
-        if (blockMap.get('density') > 8.8) {
-          document.getElementById('density').style.color = testColors[0]
-          testGrades.push(0)
-        } else if (blockMap.get('density') > 8.7) {
-          document.getElementById('density').style.color = testColors[1]
-          testGrades.push(1)
-        } else {
-          document.getElementById('density').style.color = testColors[2]
-          testGrades.push(2)
-        }
+        let grade = grade_density(blockMap.get('density'))
+        document.getElementById('density').style.color = testColors[grade]
+        testGrades.push(grade)
         let hasDimensionInfo = false
         for (let i = 0; i < dimensions.length; i++) {
           if (dataPresent(dimensions[i])) {
@@ -1037,33 +1026,16 @@
           for (let i = 0; i < dimensions.length; i++) {
             let deviation = dimensions[i] - dimensionsMap.get(block)[i]
             if (i === 0) {
-              if (Math.abs(deviation) <= 0.03) {
-                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[0]
-                testGrades.push(0)
-                tolerancesGrades.push(0)
-              } else if (deviation <= 0.05 && deviation >= -0.1) {
-                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[1]
-                testGrades.push(1)
-                tolerancesGrades.push(1)
-              } else {
-                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[2]
-                testGrades.push(2)
-                tolerancesGrades.push(2)
-              }
+              let grade = grade_dL(deviation)
+              document.getElementById(tolerancesTableEntries[i]).style.color = testColors[grade]
+              testGrades.push(grade)
+              tolerancesGrades.push(grade)
             } else {
-              if (Math.abs(deviation) <= 0.02) {
-                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[0]
-                testGrades.push(0)
-                tolerancesGrades.push(0)
-              } else if (deviation <= 0.02 && deviation >= -0.04) {
-                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[1]
-                testGrades.push(1)
-                tolerancesGrades.push(1)
-              } else {
-                document.getElementById(tolerancesTableEntries[i]).style.color = testColors[2]
-                testGrades.push(2)
-                tolerancesGrades.push(2)
-              }
+              document.getElementB
+              let grade = grade_otherDev(deviation)
+              document.getElementById(tolerancesTableEntries[i]).style.color = testColors[grade]
+              testGrades.push(grade)
+              tolerancesGrades.push(grade)
             }
           }
           document.getElementById('densitySectionLabel').style.color = testColors[Math.max(...testGrades)]
@@ -1105,47 +1077,23 @@
         // color coding
         let testGrades = []
         let towerGrades = []
-        if (blockMap.get('fiberPercentage') >= 98) {
-          document.getElementById('fiberPercentage').style.color = testColors[0]
-          testGrades.push(0)
-        } else if (blockMap.get('fiberPercentage') >= 97) {
-          document.getElementById('fiberPercentage').style.color = testColors[1]
-          testGrades.push(1)
-        } else {
-          document.getElementById('fiberPercentage').style.color = testColors[2]
-          testGrades.push(2)
-        }
+        let grade = grade_fiberPercentage(blockMap.get('fiberPercentage'))
+        document.getElementById('fiberPercentage').style.color = testColors[grade]
+        testGrades.push(grade)
         for (let i = 0; i < towerTableEntries.length; i++) {
           let tower = towerTableEntries[i]
-          if (blockMap.get(tower) >= 96) {
-            document.getElementById(tower).style.color = testColors[0]
-            testGrades.push(0)
-            towerGrades.push(0)
-          } else if (blockMap.get(tower) >= 94) {
-            document.getElementById(tower).style.color = testColors[1]
-            testGrades.push(1)
-            towerGrades.push(1)
-          } else {
-            document.getElementById(tower).style.color = testColors[2]
-            testGrades.push(2)
-            towerGrades.push(2)
-          }
+          let grade = grade_tower(blockMap.get(tower))
+          document.getElementById(tower).style.color = testColors[grade]
+          testGrades.push(grade)
+          towerGrades.push(grade)
         }
         document.getElementById('showTowerTableBtn').style.color = testColors[Math.max(...towerGrades)]
-        if (blockMap.get('missingRow') === 'Y') {
-          document.getElementById('missingRow').style.color = testColors[2]
-          testGrades.push(2)
-        } else {
-          document.getElementById('missingRow').style.color = testColors[0]
-          testGrades.push(0)
-        }
-        if (blockMap.get('thirteenHoles') === 'Y') {
-          document.getElementById('thirteenHoles').style.color = testColors[2]
-          testGrades.push(2)
-        } else {
-          document.getElementById('thirteenHoles').style.color = testColors[0]
-          testGrades.push(0)
-        }
+        let gradeMR = grade_missingRow(blockMap.get('missingRow'))
+        document.getElementById('missingRow').style.color = testColors[gradeMR]
+        testGrades.push(gradeMR)
+        let gradeTH = grade_thirteenHoles(blockMap.get('thirteenHoles'))
+        document.getElementById('thirteenHoles').style.color = testColors[gradeTH]
+        testGrades.push(gradeTH)
         document.getElementById('lightTransSectionLabel').style.color = testColors[Math.max(...testGrades)]
         // and run getImageUrls
         document.getElementById("imagesSelection").style.display = 'block'
@@ -1208,14 +1156,9 @@
         for (let i = 0; i < scintKeys.length; i++) {
           updateField(blockMap, scintKeys[i])
         }
-        // color coding
-        if (blockMap.get('scintRatio') > 0.7) {
-          document.getElementById('scintRatio').style.color = testColors[0]
-          document.getElementById('scintSectionLabel').style.color = testColors[0]
-        } else {
-          document.getElementById('scintRatio').style.color = testColors[2]
-          document.getElementById('scintSectionLabel').style.color = testColors[2]
-        }
+        let grade = grade_scintRatio(blockMap.get('scintRatio'))
+        document.getElementById('scintRatio').style.color = testColors[grade]
+        document.getElementById('scintSectionLabel').style.color = testColors[grade]
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
         for (let i = 0; i < scintKeys.length; i++) {
@@ -1260,7 +1203,19 @@
       // first set all not null urls to their image srcs
       imageUrls.forEach((element, index) => {
         if (element != null) {
-          document.getElementById(allTestingImgs[index]).src = element
+          if (index < 4) {
+            document.getElementById(allTestingImgs[index]).src = element
+          } else {
+            document.getElementById(allTestingImgs[index]).src = element[0]
+            let imageUrlsIndexToEnd = new Map([[4, 'Wide End'], [5, 'Narrow End']])
+            let positionCodeToPosition = new Map([[1, '(pictured on left)'], [2, '(pictured on right)']])
+            console.log(imageUrls[index][1])
+            if (imageUrls[index][1] !== 0) {
+              document.getElementById('natLightImgFigCaption' + index).innerHTML = imageUrlsIndexToEnd.get(index) + ' ' + positionCodeToPosition.get(imageUrls[index][1])
+            } else {
+              document.getElementById('natLightImgFigCaption' + index). innerHTML = imageUrlsIndexToEnd.get(index)
+            }
+          }
         }
       });
       // determine which checkboxes / image sections need to be displayed
@@ -1474,6 +1429,7 @@
         }
       }
       dataTable.draw()
+      document.getElementById("blocksCount").innerHTML = dataTable.rows().count()
     }
     function loadFindBlockInfo () {
       document.getElementById('findBlockInfo').style.display = 'block'
