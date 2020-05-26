@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
     <?!= include('css')?>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/cr-1.5.2/fh-3.1.7/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.css"/>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/cr-1.5.2/fh-3.1.7/datatables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.js"></script>
+
     <script>
       // color constants (in HEX)
       const red = '#800000'
@@ -114,9 +115,9 @@
       // configuration for the blocks table
       const dataTableOptions = {
         paging: false,
-        fixedHeader: true,
-        colReorder: true,
-        "info": false,
+        info: false,
+        scrollX: true,
+        scrollY: "480px",
         dom: 'Bfrtip',
         buttons: [
           {extend: 'colvis', text:'columns', collectionLayout: 'fixed four-column'},
@@ -131,251 +132,195 @@
             {extend: 'columnToggle', text: 'Towers', columns: '.towers'},
             {extend: 'columnToggle', text: 'Scintillation', columns: '.scint'},
             {extend: 'columnToggle', text: 'Natural Light', columns: '.natLight'}]
-          }
+          },
+          {extend: 'copy', exportOptions: {columns: ':visible'}}
         ],
-        "columns": [
-          {name: "dbn", "title": "DBN", className: "dt-center basicInfo", "searchable": true, "type": "numericEmptyUnsorted", "visible": true},
-          {name: "block", "title": "Block", className: "dt-center basicInfo", "searchable": true, "type": "block", "visible": true},
-          {name: "status", "title": "Status", className: "dt-center basicInfo", "searchable": true, "type": "status", "visible": true},
-          {name: "pregrade", "title": "Grade", className: "dt-center basicInfo hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              if (grade_pregrade(data) != null) {
-                let color = testColors[grade_pregrade(data)]
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              } else {
-                return '<span>' + data + '</span>';
-              }
+        colReorder: true,
+        colReorder: {fixedColumnsLeft: 1},
+        fixedColumns: true,
+        select: false,
+        columns: [
+        {name: "dbn", "title": "DBN", className: "dt-center basicInfo bolded", "searchable": true, "type": "numericEmptyUnsorted", "visible": true},
+        {name: "block", "title": "Block", className: "dt-center basicInfo", "searchable": true, "type": "block", "visible": true},
+        {name: "status", "title": "Status", className: "dt-center basicInfo", "searchable": true, "type": "status", "visible": true},
+        {name: "pregrade", "title": "Grade", className: "dt-center basicInfo hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '' && grade_pregrade(data) != null) {
+            let color = testColors[grade_pregrade(data)]
+            return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>';
+          }
+        }},
+        {name: "shipment", "title": "Shipment", className: "dt-center basicInfo", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "sector", "title": "Sector", className: "dt-center basicInfo", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "powder", "title": "W Powder", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "bucket", "title": "W Bucket #", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "moldSeries", "title": "<span>Mold</span><br><span>Series</span>", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "emptyMoldMass", "title": "<span>Empty Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "filledMoldMass", "title": "<span>Filled Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "tungstenMass", "title": "W Mass (g)", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "tungstenFillingDate", "title": "W Filling Date", className: "dt-center tungsten", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
+        {name: "epoxyBatch", "title": "<span>Epoxy</span><br><span>Batch</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "resinMass", "title": "<span>Resin</span><br><span>Mass (g)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "hardenerMass", "title": "<span>Hardener</span><br><span>Mass (g)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "epoxyFillingTime", "title": "<span>Epoxy Filling</span><br><span>Time (min)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "epoxyFillingDate", "title": "<span>Epoxy</span><br><span>Filling Date</span>", className: "dt-center epoxy", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
+        {name: "dL", "title": "ΔL (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            let color = testColors[grade_dL(data)]
+            if (data > 0) {
+              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
             } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "shipment", "title": "Shipment", className: "dt-center basicInfo", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-          {name: "sector", "title": "Sector", className: "dt-center basicInfo", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-          {name: "powder", "title": "W Powder", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-          {name: "bucket", "title": "W Bucket #", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-          {name: "moldSeries", "title": "<span>Mold</span><br><span>Series</span>", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-          {name: "emptyMoldMass", "title": "<span>Empty Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-          {name: "filledMoldMass", "title": "<span>Filled Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-          {name: "tungstenMass", "title": "W Mass (g)", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (data !== '0') {
-              return '<span>' + data + '</span>';
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "tungstenFillingDate", "title": "W Filling Date", className: "dt-center tungsten", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
-          {name: "epoxyBatch", "title": "<span>Epoxy</span><br><span>Batch</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-          {name: "resinMass", "title": "<span>Resin</span><br><span>Mass (g)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-          {name: "hardenerMass", "title": "<span>Hardener</span><br><span>Mass (g)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-          {name: "epoxyFillingTime", "title": "<span>Epoxy Filling</span><br><span>Time (min)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-          {name: "epoxyFillingDate", "title": "<span>Epoxy</span><br><span>Filling Date</span>", className: "dt-center epoxy", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
-          {name: "dL", "title": "ΔL (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_dL(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "dBT", "title": "ΔBT (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "dBB", "title": "ΔBB (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "dBH", "title": "ΔBH (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "dST", "title": "ΔST (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "dSB", "title": "ΔSB (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "dSH", "title": "ΔSH (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "toleranceMse", "title": "Tolerance MSE", className:"dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              return '<span>' + data + '</span>';
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "volume", "title": "Volume (mL)", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              return '<span>' + data + '</span>';
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "mass", "title": "Mass (g)", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-          {name: "density", "title": "<span>Density</span><br><span>(g/mL)</span>", className: "dt-center density hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_density(data)]
               return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span></span>'
             }
-          }},
-          {name: "densityDate", "title": "Density Date", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              return '<span>' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "dBT", "title": "ΔBT (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            let color = testColors[grade_otherDev(data)]
+            if (data > 0) {
+              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
             } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "goodEnd", "title": "Good End", className: "dt-center lightTrans", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              return '<span>' + wToWide(data) + '</span>';
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "fiberPercentage", "title": "Fiber Count (%)", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data) && data !== '0.00') {
-              let color = testColors[grade_fiberPercentage(data)]
               return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span></span>'
             }
-          }},
-          {name: "tower1", "title": "T1 (BL) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_tower(data)]
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "dBB", "title": "ΔBB (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            let color = testColors[grade_otherDev(data)]
+            if (data > 0) {
+              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+            } else {
               return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span></span>'
             }
-          }},
-          {name: "tower2", "title": "T2 (BR) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_tower(data)]
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "dBH", "title": "ΔBH (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            let color = testColors[grade_otherDev(data)]
+            if (data > 0) {
+              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+            } else {
               return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span></span>'
             }
-          }},
-          {name: "tower3", "title": "T3 (TL) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_tower(data)]
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "dST", "title": "ΔST (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            let color = testColors[grade_otherDev(data)]
+            if (data > 0) {
+              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+            } else {
               return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span></span>'
             }
-          }},
-          {name: "tower4", "title": "T4 (TR) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_tower(data)]
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "dSB", "title": "ΔSB (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            let color = testColors[grade_otherDev(data)]
+            if (data > 0) {
+              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+            } else {
               return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span></span>'
             }
-          }},
-          {name: "missingRow", "title": "<span>Missing</span><br><span>Row</span>", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_missingRow(data)]
-              return '<span style="color:' + color + '; font-weight: bold">' + yToYes(data) + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "dSH", "title": "ΔSH (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            let color = testColors[grade_otherDev(data)]
+            if (data > 0) {
+              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
             } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "thirteenHoles", "title": "<span>13 Connected</span><br><span>Holes</span>", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_thirteenHoles(data)]
-              return '<span style="color:' + color + '; font-weight: bold">' + yToYes(data) + '</span>';
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "lightTransDate", "title": "LT Date", className: "dt-center lightTrans", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              return '<span>' + data + '</span>';
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "scintillation", "title": "<span>Scintillation</span><br><span>(mV)</span>", className: "dt-center scint", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data) && !isNaN(data)) {
-              return '<span>' + parseFloat(data).toFixed(3) + '</span>';
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "scintRatio", "title": "<span>Scintillation</span><br><span>Ratio</span>", className: "dt-center scint hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              let color = testColors[grade_scintRatio(data)]
               return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span></span>'
             }
-          }},
-          {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-            if (dataPresent(data)) {
-              return '<span>' + data + '</span>';
-            } else {
-              return '<span></span>'
-            }
-          }},
-          {name: "natLightDate", "title": "NL Date", className: "dt-center natLight", "searchable": true, "type": "numericEmptyUnsorted", "visible": false}
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "toleranceMse", "title": "Tolerance MSE", className:"dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "volume", "title": "Volume (mL)", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "mass", "title": "Mass (g)", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "density", "title": "<span>Density</span><br><span>(g/mL)</span>", className: "dt-center density hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_density(data)] + '; font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "densityDate", "title": "Density Date", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "goodEnd", "title": "Good End", className: "dt-center lightTrans", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "fiberPercentage", "title": "Fiber Count (%)", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_fiberPercentage(data)] + '; font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "tower1", "title": "T1 (BL) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "tower2", "title": "T2 (BR) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "tower3", "title": "T3 (TL) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "tower4", "title": "T4 (TR) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "missingRow", "title": "<span>Missing</span><br><span>Row</span>", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_missingRow(data)] + '; font-weight: bold">' + yToYes(data) + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "thirteenHoles", "title": "<span>13 Connected</span><br><span>Holes</span>", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_thirteenHoles(data)] + '; font-weight: bold">' + yToYes(data) + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "lightTransDate", "title": "LT Date", className: "dt-center lightTrans", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "scintillation", "title": "<span>Scintillation</span><br><span>(mV)</span>", className: "dt-center scint", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "scintRatio", "title": "<span>Scintillation</span><br><span>Ratio</span>", className: "dt-center scint hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="color:' + testColors[grade_scintRatio(data)] + '; font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>'
+          }
+        }},
+        {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "natLightDate", "title": "NL Date", className: "dt-center natLight", "searchable": true, "type": "numericEmptyUnsorted", "visible": false}
         ]
       }
       // initialize blocks table
@@ -383,8 +328,42 @@
         for (let i = 0; i < dataTableOptions.columns.length; i++) {
           $('#blocksTable').find('thead').find('tr').append($('<th />'))
         }
-        $('#blocksTable').DataTable(dataTableOptions)
+        let dataTable = $('#blocksTable').DataTable(dataTableOptions)
+        dataTable.on( 'draw', function () {
+          console.log('draw')
+        }).on( 'order', function () {
+          if (arraysEqual(arrayFromFirstElements(dataTable.order()), arrayFromFirstElements(sortConfig))) {
+            //console.log('reorder: sorting columns were not changed')
+            //console.log('current sort: ' + dataTable.order() + '; sortConfig: ' + sortConfig)
+          } else {
+            // then sorted column has changed, and we assume that this is user input, so it's safe to call filter
+            //console.log('reorder: sorting colunms were changed')
+            //console.log('current sort: ' + dataTable.order() + '; sortConfig: ' + sortConfig)
+            sortConfig = [...dataTable.order()]
+            filter()
+          }
+        })
       })
+      function arraysEqual (array1, array2) {
+        if (array1.length !== array2.length) {
+          return false
+        } else {
+          for (let i = 0; i < array1.length; i++) {
+            if (array1[i] !== array2[i]) {
+              return false
+            }
+          }
+          return true
+        }
+      }
+      function arrayFromFirstElements (array) {
+        let toReturn = []
+        for (let i = 0; i < array.length; i++) {
+          toReturn[i] = array[i][0]
+        }
+        return toReturn
+      }
+      var sortConfig = [0, 'asc']
       // custom sorting functions
       $.extend($.fn.dataTable.ext.type.order, {
         "numericEmptyUnsorted-asc": function (a, b) {
@@ -809,15 +788,14 @@
       <button>submit</button>
     </form>
     <button onclick="clearInputBlock()" style="display: inline;">clear</button><br>
-    <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button>
+    <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
+    <input id="showRowsCB" type="checkbox" onclick="toggleShowRows()"><label for="showRowsCB">Show rows with empty cells in selected column</label>
     <section style="margin: 1em 0em">
       <span>Blocks Found:</span>
       <span id="blocksCount"></span>
     </section>
     <table id="blocksTable" class="nowrap display cell-border" style="width: 100%;">
-      <thead>
-        <tr></tr>
-      </thead>
+      <thead><tr></tr></thead>
       <tbody id="blocksTableBody"></tbody>
     </table>
   </section>
@@ -1552,15 +1530,17 @@
         tableColumnsNames[dataTable.column(cols[i].name + ':name').index()] = cols[i].name
       }
       for (let i = 0; i < mergedSheet.length; i++) {
-        if (dataPresent(mergedSheet[i][blocksSheetMap.get('block')])
-        && (filterShipmentValue == null || filterShipmentValue == '' || filterShipmentValue === mergedSheet[i][blocksSheetMap.get('shipment')])
-        && (filterStatusValue == null || filterStatusValue == '' || filterStatusValue === mergedSheet[i][blocksSheetMap.get('status')])
-        && (filterBlockValue == null || filterBlockValue == '' || filterBlockValue === mergedSheet[i][blocksSheetMap.get('block')])) {
+        let rowPassesFilter = dataPresent(mergedSheet[i][blocksSheetMap.get('block')])
+          && (filterShipmentValue == null || filterShipmentValue == '' || filterShipmentValue === mergedSheet[i][blocksSheetMap.get('shipment')])
+          && (filterStatusValue == null || filterStatusValue == '' || filterStatusValue === mergedSheet[i][blocksSheetMap.get('status')])
+          && (filterBlockValue == null || filterBlockValue == '' || filterBlockValue === mergedSheet[i][blocksSheetMap.get('block')])
+        let sortColumns = arrayFromFirstElements(dataTable.order())
+        if (rowPassesFilter) {
           let rowData = new Array(tableColumnsNames.length)
           let dimensions = mergedSheet[i].slice(33, 40)
           let tolerancesNames = ['dL', 'dBT', 'dBB', 'dBH', 'dST', 'dSB', 'dSH']
           let block = mergedSheet[i][blocksSheetMap.get('block')]
-          let tolerances = [null, null, null, null, null, null, null]
+          let tolerances = ['', '', '', '', '', '', '']
           for (let j = 0; j < dimensions.length; j++) {
             if (!isNaN(dimensions[j]) && dimensions[j] !== 0 && dimensions[j] !== '') {
               tolerances[j] = (dimensions[j] - dimensionsMap.get(block)[j]).toFixed(4)
@@ -1568,43 +1548,84 @@
           }
           for (let j = 0; j < tableColumnsNames.length; j++) {
             let name = tableColumnsNames[j]
+            let data
+            if (Array.from(blocksSheetMap.keys()).includes(name)) {
+              data = mergedSheet[i][blocksSheetMap.get(tableColumnsNames[j])]
+            }
             if (tolerancesNames.includes(name)) {
               let k = tolerancesNames.findIndex((value) => name === value)
               rowData[j] = tolerances[k]
-            } else if (['tower1', 'tower2', 'tower3', 'tower4'].includes(name) && !isNaN(mergedSheet[i][blocksSheetMap.get(tableColumnsNames[j])])) {
-              rowData[j] = parseFloat(mergedSheet[i][blocksSheetMap.get(tableColumnsNames[j])]).toFixed(2)
+            } else if (['tower1', 'tower2', 'tower3', 'tower4'].includes(name)) {
+              if (dataPresent(data)) {
+                rowData[j] = parseFloat(data).toFixed(2)
+              } else {
+                rowData[j] = ''
+              }
             } else if (name == 'pregrade') {
               if (i < sheet1.length) {
-                rowData[j] = mergedSheet[i][blocksSheetMap.get(tableColumnsNames[j])]
+                rowData[j] = data
               } else {
-                rowData[j] = null
+                rowData[j] = ''
               }
             } else if (name === 'toleranceMse') {
-              if (tolerances.every((value) => value != null)) {
+              if (tolerances.every((value) => value != '')) {
                 tolerances.forEach((value, index, array) => array[index] = value * value)
                 rowData[j] = ((tolerances.reduce((a, b) => (a + b))) / 7).toFixed(9)
               } else {
-                rowData[j] = null
+                rowData[j] = ''
+              }
+            } else if (name === 'tungstenMass') {
+              if (data !== '0') {
+                rowData[j] = data
+              } else {
+                rowData[j] = ''
+              }
+            } else if (name === 'fiberPercentage') {
+              if (dataPresent(data) && data !== '0.00') {
+                rowData[j] = data
+              } else {
+                rowData[j] = ''
+              }
+            } else if (name === 'scintillation') {
+              if (dataPresent(data)) {
+                rowData[j] = parseFloat(data).toFixed(3)
+              } else {
+                rowData[j] = ''
+              }
+            } else if (name === 'volume') {
+              if (dataPresent(data) && data !== '0.0') {
+                rowData[j] = parseFloat(data).toFixed(3)
+              } else {
+                rowData[j] = ''
               }
             } else {
-              rowData[j] = mergedSheet[i][blocksSheetMap.get(tableColumnsNames[j])]
+              if (dataPresent(data)) {
+                rowData[j] = data
+              } else {
+                rowData[j] = ''
+              }
             }
           }
-          dataTable.row.add(rowData)
+          if (!hideUninterestingRows || sortColumns.every((value) => rowData[value] !== '')) {
+            dataTable.row.add(rowData)
+          }
         }
       }
-      dataTable.order(dataTable.order()).draw()
+      dataTable.columns.adjust().draw()
       document.getElementById("blocksCount").innerHTML = dataTable.rows().count()
     }
     function loadFindBlockInfo () {
       document.getElementById('findBlockInfo').style.display = 'block'
       document.getElementById('findBlocks').style.display = 'none'
-      document.getElementById('blocksTable').style.display = 'none'
     }
     function loadFindBlocks () {
       document.getElementById('findBlocks').style.display = 'block'
-      document.getElementById('blocksTable').style.display = 'block'
       document.getElementById('findBlockInfo').style.display = 'none'
+    }
+    var hideUninterestingRows = true
+    function toggleShowRows () {
+      hideUninterestingRows = !hideUninterestingRows
+      filter()
     }
   </script>
 </body>
