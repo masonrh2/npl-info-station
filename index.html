@@ -18,12 +18,18 @@
       const orange = '#e66000'
       const green = '#008000'
       const black = '#000000'
-      // color for each test (5A-grade, 5B-grade, fail)
-      const testColors = [green, orange, red]
+      const grey = '#ababab'
+      // color for each test (notStarted, 5A-grade, 5B-grade, fail)
+      const testColors = [grey, green, orange, red]
+      // color for each test (unchecked, checked)
+      const checkColors = [grey, green]
       // larger grade values are worse
-      const aGrade = 0
-      const bGrade = 1
-      const fGrade = 2
+      const aGrade = 1
+      const bGrade = 2
+      const fGrade = 3
+      const notStartedGrade = 0
+      const colorChecked = green
+      const colorUnchecked = grey
       function grade_pregrade (grade) {
         if (grade === '5a') {
           return aGrade
@@ -102,18 +108,228 @@
         }
       }
       
-      class BlockClass {
-        constructor(x) {
-          //this.x = x
+      class Block {
+        gotUrls = false
+        lightTransOriginalW
+        lightTransOriginalN
+        lightTransCroppedW
+        lightTransCroppedN
+        natLightW
+        natLightN
+        histogramsW
+        histogramsN
+        constructor(array, sheet, numericDBN) {
+          this.sheet = sheet
+          this.numericDBN = numericDBN
+          this.dbn = array[0]
+          this.block = parseInt(array[2])
+          this.status = array[3]
+          this.shipment = (!dataPresent(array[4])) ? null : parseInt(array[4])
+          this.shipmentDate = (!dataPresent(array[5])) ? null : usDateToYYYYMMDD(array[5])
+          this.comment = (!dataPresent(array[6])) ? null : array[6]
+          this.sector = (!dataPresent(array[7])) ? null : array[7]
+          this.powder = (!dataPresent(array[14])) ? null : array[14]
+          this.bucket = (!dataPresent(array[15])) ? null : array[15]
+          this.moldSeries = (!dataPresent(array[16])) ? null : array[16]
+          this.emptyMoldMass = (!dataPresent(array[17])) ? null : parseInt(array[17])
+          this.filledMoldMass = (!dataPresent(array[18])) ? null : parseInt(array[18])
+          this.tungstenMass = (array[19] === '0') ? null : parseInt(array[19])
+          this.tungstenFillingDate = (!dataPresent(array[21])) ? null : usDateToYYYYMMDD(array[21])
+          this.epoxyBatch = (!dataPresent(array[23])) ? null : parseInt(array[23])
+          this.resinMass = (!dataPresent(array[24])) ? null : parseInt(array[24])
+          this.hardenerMass = (!dataPresent(array[25])) ? null : parseInt(array[25])
+          this.pottingNotes = (!dataPresent(array[26])) ? null : array[26]
+          this.epoxyFillingTime = (!dataPresent(array[27])) ? null : parseFloat(array[27])
+          this.epoxyFillingDate = (!dataPresent(array[28])) ? null : usDateToYYYYMMDD(array[28])
+          this.l = (!dataPresent(array[33])) ? null : parseFloat(array[33])
+          this.bt = (!dataPresent(array[34])) ? null : parseFloat(array[34])
+          this.bb = (!dataPresent(array[35])) ? null : parseFloat(array[35])
+          this.bh = (!dataPresent(array[36])) ? null : parseFloat(array[36])
+          this.st = (!dataPresent(array[37])) ? null : parseFloat(array[37])
+          this.sb = (!dataPresent(array[38])) ? null : parseFloat(array[38])
+          this.sh = (!dataPresent(array[39])) ? null : parseFloat(array[39])
+          this.volume = (!dataPresent(array[40])) ? null : parseFloat(array[40])
+          this.dimensionTester = (!dataPresent(array[41])) ? null : array[41]
+          this.mass = (!dataPresent(array[42])) ? null : parseInt(array[42])
+          this.massTester = (!dataPresent(array[43])) ? null : array[43]
+          this.density = (!dataPresent(array[44])) ? null : parseFloat(array[44])
+          this.densityDate = parseInt(array[45])
+          this.goodEnd = (!dataPresent(array[47])) ? null : array[47]
+          this.fiberPercentage = (!dataPresent(array[49])) ? null : parseFloat(array[49])
+          this.tower1 = (!dataPresent(array[55])) ? null : parseFloat(array[55])
+          this.tower2 = (!dataPresent(array[56])) ? null : parseFloat(array[56])
+          this.tower3 = (!dataPresent(array[57])) ? null : parseFloat(array[57])
+          this.tower4 = (!dataPresent(array[58])) ? null : parseFloat(array[58])
+          this.missingRow = (!dataPresent(array[59])) ? null : ((array[59] === 'Y') ? true : (array[59] === 'N') ? false : null)
+          this.thirteenHoles = (!dataPresent(array[60])) ? null : ((array[60] === 'Y') ? true : (array[60] === 'N') ? false : null)
+          this.lightTransTester = (!dataPresent(array[63])) ? null : array[63]
+          this.lightTransDate = (!dataPresent(array[64])) ? null : array[64]
+          this.scintillation = (!dataPresent(array[65])) ? null : parseFloat(array[65])
+          this.scintRatio = (!dataPresent(array[67])) ? null : parseFloat(array[67])
+          this.scintDate = (!dataPresent(array[69])) ? null : array[69]
+          this.natLightDate = (!dataPresent(array[70])) ? null : parseInt(array[70])
+          this.natLightTester = (!dataPresent(array[71])) ? null : array[71]
+          this.retouch = (this.sheet === 0) ? array[72] : null
+          this.densityChecked = (this.sheet === 0) ? array[73] : null
+          this.lightTransChecked = (this.sheet === 0) ? array[74] : null
+          this.natLightChecked = (this.sheet === 0) ? array[75] : null
+          this.pregrade = (this.sheet === 0) ? array[77] : null
         }
-        toString() {
-          return this.x
+        deviations() {
+          let tols = [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
+          if (tols.every((value) => value != null)) {
+            let devs = []
+            tols.forEach((value, index) => devs[index] = value - dimensionsMap.get(this.block)[index])
+            return devs
+          } else {
+            return null
+          }
+        }
+        testingStatus() {
+          if (this.sheet === 0) { 
+            let data = []
+            let densityGrade
+            let lightTransGrade
+            let scintGrade
+            let natLightGrade
+            
+            let densityChecked
+            let lightTransChecked
+            let natLightChecked
+
+            let densityComplete
+            let lightTransComplete
+            let natLightComplete
+
+            let devs = this.deviations()
+            let dLGrade
+            let otherDevsGrade
+            if (devs == null) {
+              dLGrade = notStartedGrade
+              otherDevsGrade = notStartedGrade
+            } else {
+              dLGrade = (devs[0] == null) ? notStartedGrade : grade_dL(devs[0])
+              let grades = []
+              devs.slice(1).forEach((value, index) => grades[index] = (value == null) ? notStartedGrade : grade_otherDev(value))
+              otherDevsGrade = Math.max(...grades)
+            }
+            let densityValuesToGrade = [
+              ((this.density == null) ? notStartedGrade : grade_density(this.density)),
+              dLGrade,
+              otherDevsGrade
+            ]
+            densityGrade = Math.max(...densityValuesToGrade)
+            let towers = [this.tower1, this.tower2, this.tower3, this.tower4]
+            let towersGrade
+            if (towers.every((value) => value != null)) {
+              let grades = []
+              towers.forEach((value, index, array) => grades[index] = (value == null) ? notStartedGrade : grade_tower(value))
+              towersGrade = Math.max(...grades)
+            } else {
+              towersGrade = notStartedGrade
+            }
+            let lightTransValuesToGrade = [
+              (this.fiberPercentage == null) ? notStartedGrade : grade_fiberPercentage(this.fiberPercentage),
+              towersGrade,
+              (this.missingRow == null) ? notStartedGrade : (this.missingRow) ? 3 : 1,
+              (this.thirteenHoles == null) ? notStartedGrade : (this.missingRow) ? 3 : 1
+            ]
+            lightTransGrade = Math.max(...lightTransValuesToGrade)
+            scintGrade = (this.scintRatio == null) ? notStartedGrade : grade_scintRatio(this.scintRatio)
+            if (this.natLightDate != null || this.natLightTester != null) {
+              natLightGrade = aGrade
+            } else {
+              natLightGrade = notStartedGrade
+            }
+
+            densityChecked = (this.densityChecked == null) ? notStartedGrade : 1
+            lightTransChecked = (this.lightTransChecked == null) ? notStartedGrade : 1
+            natLightChecked = (this.natLightChecked == null) ? notStartedGrade : 1
+
+            densityComplete = (this.volume != null && this.mass != null && this.massTester != null) ? 1 : 0
+            lightTransComplete = (this.fiberPercentage != null && this.missingRow != null && this.thirteenHoles != null && this.lightTransTester != null) ? 1 : 0
+            natLightComplete  = (this.natLightDate != null && this.natLightTester != null) ? 1 : 0
+
+            data[0] = [densityGrade, densityChecked, densityComplete]
+            data[1] = [lightTransGrade, lightTransChecked, lightTransComplete]
+            data[2] = [scintGrade]
+            data[3] = [natLightGrade, natLightChecked, natLightComplete]
+
+            console.log(densityValuesToGrade)
+            console.log(lightTransValuesToGrade)
+            return data
+          } else {
+            return null
+          }
+        }
+        getUrls() {
+          let that = this
+          if (!this.gotUrls) {
+            let toGetImageUrls = [this.numericDBN.toString(), this.lightTransDate.toString(), this.natLightDate.toString()]
+            if (this.lightTransDate != null || this.natLightDate != null) {
+              google.script.run.withSuccessHandler(setImageUrls).getImageUrls(toGetImageUrls)
+            }
+            if (this.lightTransDate != null) {
+              google.script.run.withSuccessHandler(setHistogramUrls).getHistograms(toGetImageUrls)
+            }
+            function setImageUrls (imageUrls) {
+              that.lightTransOriginalW = imageUrls[0]
+              that.lightTransOriginalN = imageUrls[1]
+              that.lightTransCroppedW = imageUrls[2]
+              that.lightTransCroppedN = imageUrls[3]
+              that.natLightW = imageUrls[4]
+              that.natLightN = imageUrls[5]
+            }
+            function setHistogramUrls (histogramUrls) {
+              that.histogramsW = histogramUrls[0]
+              that.histogramsN = histogramUrls[1]
+            }
+            this.gotUrls = true
+          }
+        }
+      }
+      class BlocksCollection {
+        constructor(array) {
+          this.array = array
+        }
+        getBlockByNumericDBN (dbn) {
+          return this.array[dbn]
+        }
+        getBlockByStringDBN (dbn) {
+          this.array.forEach (function (block) {
+            if (dbn === block.dbn) {
+              return block
+            }
+          })
+        }
+        getBlocksNeedingRetouch (retouchStatus) {
+          let blocks = []
+          let devNames = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
+          let allowedStatuses = ['5', '5a', '5b', '5c']
+          this.array.forEach(function (block) {
+            if (block.deviations() != null && block.retouch === retouchStatus && allowedStatuses.includes(block.status)) {
+              let retouchDevs = []
+              block.deviations().forEach(function(dev, index) {
+                if (index === 0) {
+                  if (grade_dL(dev) === fGrade && dev > 0) {
+                    retouchDevs.push([devNames[index], dev])
+                  }
+                } else if (grade_otherDev(dev) === fGrade && dev > 0) { 
+                  retouchDevs.push([devNames[index], '+' + dev.toFixed(4)])
+                }
+              })
+              if (retouchDevs.length > 0) {
+                blocks.push([block, retouchDevs])
+              }
+            }
+          })
+          return blocks
         }
       }
     </script>
     <script>
       // configuration for the blocks table
-      const dataTableOptions = {
+      const blocksTableOptions = {
         paging: false,
         info: false,
         scrollX: true,
@@ -140,9 +356,52 @@
         fixedColumns: true,
         select: false,
         columns: [
-        {name: "dbn", "title": "DBN", className: "dt-center basicInfo bolded", "searchable": true, "type": "numericEmptyUnsorted", "visible": true},
+        {name: "dbn", "title": "DBN", className: "dt-center basicInfo bolded", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function ( data, type, row ) {
+          if (data !== '') {
+            return '<span style="font-weight: bold">' + data + '</span>';
+          } else {
+            return '<span>' + data + '</span>';
+          }
+        }},
         {name: "block", "title": "Block", className: "dt-center basicInfo", "searchable": true, "type": "block", "visible": true},
         {name: "status", "title": "Status", className: "dt-center basicInfo", "searchable": true, "type": "status", "visible": true},
+        {name: "testingStatus", title: "Testing Status", className: "dt-center basicInfo hasGrade", "searchable": false, "type": "testingStatus","visible": true, render: function ( data, type, row ) {
+          if (!dataPresent(data)) {
+            return ''
+          } else if (type === 'display') {
+            let tests = ['D', 'LT', 'S', 'NL']
+            function createSpan(text, color, underline) {
+              if (underline) {
+                return '<span style="color: ' + color + '; font-weight: bold; border-bottom: 2px solid ' + color + ';">' + text + '</span>'
+              } else {
+                return '<span style="color: ' + color + '; font-weight: bold">' + text + '</span>'
+              }
+            }
+            let spans = []
+            let display = ''
+            data.forEach(function (value, index) {
+              if (index == 2) {
+                if (value[0] === 0) {
+                  spans[index] = createSpan(tests[index], testColors[value[0]], false)
+                } else {
+                  spans[index] = createSpan(tests[index], testColors[value[0]], true)
+                }
+              } else {
+                spans[index] = createSpan(tests[index], testColors[value[0]], value[2] === 1) + createSpan('✔', checkColors[value[1]], false)
+              }
+            })
+            spans.forEach(function (span, index) {
+              if (index != spans.length - 1) {
+                display += span + '<span> | <span>'
+              } else {
+                display += span
+              }
+            })
+            return display
+          } else {
+            return data
+          }
+        }},
         {name: "pregrade", "title": "Grade", className: "dt-center basicInfo hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
           if (data !== '' && grade_pregrade(data) != null) {
             let color = testColors[grade_pregrade(data)]
@@ -310,7 +569,7 @@
             return '<span>' + data + '</span>'
           }
         }},
-        {name: "lightTransDate", "title": "LT Date", className: "dt-center lightTrans", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "lightTransDate", "title": "LT Date", className: "dt-center lightTrans", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
         {name: "scintillation", "title": "<span>Scintillation</span><br><span>(mV)</span>", className: "dt-center scint", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "scintRatio", "title": "<span>Scintillation</span><br><span>Ratio</span>", className: "dt-center scint hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
           if (data !== '') {
@@ -319,31 +578,126 @@
             return '<span>' + data + '</span>'
           }
         }},
-        {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
         {name: "natLightDate", "title": "NL Date", className: "dt-center natLight", "searchable": true, "type": "numericEmptyUnsorted", "visible": false}
-        ]
+        ],
+        initComplete: function () {
+          // Apply the search
+          this.api().columns().every( function () {
+            var that = this
+            $( 'input', this.footer() ).on( 'keyup change clear', function () {
+              if ( that.search() !== this.value ) {
+                that.search( this.value ).draw()
+              }
+            })
+          })
+        }
       }
       // initialize blocks table
       $(document).ready(function () {
-        for (let i = 0; i < dataTableOptions.columns.length; i++) {
+        for (let i = 0; i < blocksTableOptions.columns.length; i++) {
           $('#blocksTable').find('thead').find('tr').append($('<th />'))
+          $('#blocksTable').find('tfoot').find('tr').append($('<th />'))
         }
-        let dataTable = $('#blocksTable').DataTable(dataTableOptions)
+        $('#blocksTable tfoot th').each( function () {
+          $(this).html( '<input type="text" style="width: 100%" placeholder="Search" />' )
+        })
+        let dataTable = $('#blocksTable').DataTable(blocksTableOptions)
         dataTable.on( 'draw', function () {
-          console.log('draw')
+          // do something on draw
         }).on( 'order', function () {
           if (arraysEqual(arrayFromFirstElements(dataTable.order()), arrayFromFirstElements(sortConfig))) {
             //console.log('reorder: sorting columns were not changed')
             //console.log('current sort: ' + dataTable.order() + '; sortConfig: ' + sortConfig)
           } else {
             // then sorted column has changed, and we assume that this is user input, so it's safe to call filter
-            //console.log('reorder: sorting colunms were changed')
-            //console.log('current sort: ' + dataTable.order() + '; sortConfig: ' + sortConfig)
+            // console.log('reorder: sorting colunms were changed')
+            // console.log('current sort: ' + dataTable.order() + '; sortConfig: ' + sortConfig)
             sortConfig = [...dataTable.order()]
             filter()
           }
+        }).on('search', function () {
+          document.getElementById("blocksCount").innerHTML = dataTable.rows({search:'applied'}).count()
+        }).on( 'column-visibility', function ( e, settings, column, state ) {
+          if (!state) {
+            // changed to hidden, so clear the column's search bar
+            $('#blocksTable').DataTable().column(column).footer().firstElementChild.value = ''
+            console.log('attempted to clear search for column ' + column)
+          }
         })
       })
+      // configuration for candidate retouch table
+      const candidateRetouchTableOptions = {
+        paging: false,
+        info: false,
+        buttons: [],
+        scrollX: true,
+        scrollY: false,
+        dom: 'Bfrtip',
+        select: false,
+        columns: [
+          {name: "dbn", "title": "DBN", className: "dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function(data, type, row) {
+            return '<span style="font-weight: bold">' + data + '</span>'
+          }},
+          {name: "status", "title": "Status", className: "dt-center", "searchable": true, "type": "genericEmptyUnsorted", "visible": true},
+          {name: "retouchStatus", "title": "Retouch Status", className: "dt-center", "searchable": true, "type": "genericEmptyUnsorted", "visible": true},
+          {name: "retouchableDimensions", "title": "Retouchable Dimensions", className: "dt-left", "searchable": true, "type": "genericEmptyUnsorted", "visible": true, render: function (data, type, row) {
+            let html = ''
+            data.forEach(function(value, index) {
+              if (index !== data.length - 1) {
+                html += '<span style="font-weight: bold">' + value[0] + '</span>' + '<span>' + ': ' + value[1] + ', ' + '</span>'
+              } else {
+                html += '<span style="font-weight: bold">' + value[0] + '</span>' + '<span>' + ': ' + value[1] + '</span>'
+              }
+            })
+            return html
+          }}
+        ]
+      }
+      // initialize candidate retouch table
+      $(document).ready(function () {
+        for (let i = 0; i < candidateRetouchTableOptions.columns.length; i++) {
+          $('#candidateRetouchTable').find('thead').find('tr').append($('<th />'))
+          $('#candidateRetouchTable').find('tfoot').find('tr').append($('<th />'))
+        }
+        $('#candidateRetouchTable').DataTable(candidateRetouchTableOptions)
+      })
+      // configuration for sent retouch table
+      const sentRetouchTableOptions = {
+        paging: false,
+        info: false,
+        buttons: [],
+        scrollX: true,
+        scrollY: false,
+        dom: 'Bfrtip',
+        select: false,
+        columns: [
+          {name: "dbn", "title": "DBN", className: "dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function(data, type, row) {
+            return '<span style="font-weight: bold">' + data + '</span>'
+          }},
+          {name: "status", "title": "Status", className: "dt-center", "searchable": true, "type": "genericEmptyUnsorted", "visible": true},
+          {name: "retouchableDimensions", "title": "Retouchable Dimensions", className: "dt-left", "searchable": true, "type": "genericEmptyUnsorted", "visible": true, render: function (data, type, row) {
+            let html = ''
+            data.forEach(function(value, index) {
+              if (index !== data.length - 1) {
+                html += '<span style="font-weight: bold">' + value[0] + '</span>' + '<span>' + ': ' + value[1] + ', ' + '</span>'
+              } else {
+                html += '<span style="font-weight: bold">' + value[0] + '</span>' + '<span>' + ': ' + value[1] + '</span>'
+              }
+            })
+            return html
+          }}
+        ]
+      }
+      // initialize sent retouch table
+      $(document).ready(function () {
+        for (let i = 0; i < sentRetouchTableOptions.columns.length; i++) {
+          $('#sentRetouchTable').find('thead').find('tr').append($('<th />'))
+          $('#sentRetouchTable').find('tfoot').find('tr').append($('<th />'))
+        }
+        $('#sentRetouchTable').DataTable(sentRetouchTableOptions)
+      })
+
       function arraysEqual (array1, array2) {
         if (array1.length !== array2.length) {
           return false
@@ -366,6 +720,60 @@
       var sortConfig = [0, 'asc']
       // custom sorting functions
       $.extend($.fn.dataTable.ext.type.order, {
+        "YYYYMMDDwithSuffix-asc": function (a, b) {
+          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
+          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
+          if (a.includes('-')) {
+            let split = a.split('-')
+            a = parseInt(split[0]) + parseInt(split[1]) / 10
+          }
+          if (b.includes('-')) {
+            let split = b.split('-')
+            b = parseInt(split[0]) + parseInt(split[1]) / 10
+          }
+          if (a === b) {
+            return 0
+          } else if (a === '') {
+            return 1
+          } else if (b === '') {
+            return -1
+          } else if (isNaN(a)) {
+            return 1
+          } else if (isNaN(b)) {
+            return -1
+          } else {
+            a = parseFloat(a)
+            b = parseFloat(b)
+            return ((a > b) ? 1 : ((a < b) ? -1 : 0)) 
+          }
+        },
+        "YYYYMMDDwithSuffix-desc": function (a, b) {
+          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
+          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
+          if (a.includes('-')) {
+            let split = a.split('-')
+            a = parseInt(split[0]) + parseInt(split[1]) / 10
+          }
+          if (b.includes('-')) {
+            let split = b.split('-')
+            b = parseInt(split[0]) + parseInt(split[1]) / 10
+          }
+          if (a === b) {
+            return 0
+          } else if (a === '') {
+            return 1
+          } else if (b === '') {
+            return -1
+          } else if (isNaN(a)) {
+            return 1
+          } else if (isNaN(b)) {
+            return -1
+          } else {
+            a = parseFloat(a)
+            b = parseFloat(b)
+            return ((a < b) ? 1 : ((a > b) ? -1 : 0)) 
+          }
+        },
         "numericEmptyUnsorted-asc": function (a, b) {
           a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
           b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
@@ -545,6 +953,28 @@
           } else {
             return ((a === '0') ? 1 : ((b === '0') ? -1 : ((a < b) ? 1 : ((a > b) ? -1 : 0))))
           }
+        },
+        "testingStatus-asc": function (status, otherStatus) {
+          if (status === '') {
+            return 1
+          } else if (otherStatus === '') {
+            return -1
+          } else {
+            let index = indexFromTestingStatus(status)
+            let otherIndex = indexFromTestingStatus(otherStatus)
+            return (index > otherIndex) ? 1 : ((index < otherIndex) ? -1 : 0)  
+          }
+        },
+        "testingStatus-desc": function (status, otherStatus) {
+          if (status === '') {
+            return 1
+          } else if (otherStatus === '') {
+            return -1
+          } else {
+            let index = indexFromTestingStatus(status)
+            let otherIndex = indexFromTestingStatus(otherStatus)
+            return (index < otherIndex) ? 1 : ((index > otherIndex) ? -1 : 0)  
+          }
         }
       });
       // sorting helper functions
@@ -564,10 +994,15 @@
           }
         }
         let splitDate = usDate.split('/')
-        let month = to2digits(splitDate[0])
-        let day = to2digits(splitDate[1])
-        let year = splitDate[2]
-        return year + month + day
+        if (splitDate.length === 3) {
+          let month = to2digits(splitDate[0])
+          let day = to2digits(splitDate[1])
+          let year = splitDate[2]
+          return year + month + day
+        } else {
+          console.log("helpful hint of the day: '" + usDate + "' is NOT a date.")
+          return null
+        }
       }
       function wToWide (string) {
         if (string.toUpperCase() === 'W') {
@@ -587,6 +1022,31 @@
           return string
         }
       }
+      function indexFromTestingStatus (status) {
+        let hasFail
+        let testsComplete = 0
+        let testsChecked = 0
+        let testsStarted = 0
+        hasFail = !status.every((value) => value[0] !== 3)
+        status.forEach(function (value, index) {
+          if (index !== 2 && value[2] === 1) {
+            testsComplete++
+          } else if (index === 2 && value[0] !== 0) {
+            testsComplete++
+          }
+        })
+        status.forEach(function (value, index) {
+          if (index !== 2 && value[1] === 1) {
+            testsChecked++
+          }
+        })
+        status.forEach(function (value, index) {
+          if (value[0] !== 0) {
+            testsStarted++
+          }
+        })
+        return ((hasFail) ? -1 : 1) * (100 * testsComplete + 10 * testsChecked + testsStarted)
+      }
     </script>
 </head>
 <body onload="getDatabaseOnLoad()" style="margin: 16px;">
@@ -604,6 +1064,7 @@
       </form>
       <button onclick="madness()">load all images</button>
       <button onclick="loadFindBlocks()">Find Blocks</button>
+      <button onclick="loadRetouch()">Retouch Information</button>
       <button onclick="" style="margin-left: 0; display: none;">Download as PDF</button>
     </section>
     <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
@@ -789,7 +1250,7 @@
     </form>
     <button onclick="clearInputBlock()" style="display: inline;">clear</button><br>
     <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
-    <input id="showRowsCB" type="checkbox" onclick="toggleShowRows()"><label for="showRowsCB">Show rows with empty cells in selected column</label>
+    <input id="showRowsCB" type="checkbox" onclick="toggleShowRows()"><label for="showRowsCB">Show rows with empty cells in selected column(s)</label>
     <section style="margin: 1em 0em">
       <span>Blocks Found:</span>
       <span id="blocksCount"></span>
@@ -797,6 +1258,22 @@
     <table id="blocksTable" class="nowrap display cell-border" style="width: 100%;">
       <thead><tr></tr></thead>
       <tbody id="blocksTableBody"></tbody>
+      <tfoot><tr></tr></tfoot>
+    </table>
+  </section>
+  <section id="findRetouch" style="display: none;">
+    <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
+    <table id="candidateRetouchTable" class="nowrap display cell-border" style="width: 100%;">
+      <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Needing Retouch: <span id="candidateRetouchCount"></span></caption>
+      <thead><tr></tr></thead>
+      <tbody></tbody>
+      <tfoot><tr></tr></tfoot>
+    </table>
+    <table id="sentRetouchTable" class="nowrap display cell-border" style="width: 100%;">
+      <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Sent For Retouch: <span id="sentRetouchCount"></span></caption>
+      <thead><tr></tr></thead>
+      <tbody></tbody>
+      <tfoot><tr></tr></tfoot>
     </table>
   </section>
   <script>
@@ -861,8 +1338,12 @@
       ['pottingNotes', 26],
       ['epoxyFillingTime', 27],
       ['epoxyFillingDate', 28],
+      ['L', 33],
+      ['SH', 39],
       ['volume', 40],
+      ['dimensionTester', 41],
       ['mass', 42],
+      ['massTester', 43],
       ['density', 44],
       ['densityDate', 45],
       ['goodEnd', 47],
@@ -873,39 +1354,46 @@
       ['tower4', 58],
       ['missingRow', 59],
       ['thirteenHoles', 60],
+      ['lightTransTester', 63],
       ['lightTransDate', 64],
       ['scintillation', 65],
       ['scintRatio', 67],
       ['scintDate', 69],
       ['natLightDate', 70],
+      ['natLightTester', 71],
+      ['densityChecked', 73],
+      ['lightTransChecked', 74],
+      ['natLightChecked', 75],
       ['pregrade', 77]
     ])
     // array [Blocks DB, Blocks1364DB], where each element is a (large) 2D array
     var database
+    //
+    var blocksCollection
     // stores the expected dimensions for each block type
     const dimensionsMap = new Map([
-    ['123', [5.5000,	2.0850,	2.0850,	1.9890,	1.8150,	1.8150,	1.9890]],
-    ['4', [5.4460,	2.0850,	2.0820,	2.2740,	1.8180,	1.8150,	1.9900]],
-    ['5', [5.3500,	2.0850,	2.0760,	2.2630,	1.8230,	1.8150,	1.9900]],
-    ['6', [5.2700,	2.0850,	2.0710,	2.2530,	1.8280,	1.8150,	1.9900]],
-    ['7', [5.2050,	2.0850,	2.0650,	2.2430,	1.8320,	1.8150,	1.9900]],
-    ['8', [5.1550,	2.0850,	2.0600,	2.2340,	1.8370,	1.8150,	1.9890]],
-    ['9', [5.1180,	2.0850,	2.0560,	2.2250,	1.8410,	1.8150,	1.9890]],
-    ['10', [5.0940,	2.0850,	2.0510,	2.2160,	1.8460,	1.8150,	1.9890]],
-    ['11', [5.0820,	2.0850,	2.0470,	2.2080,	1.8500,	1.8150,	1.9890]],
-    ['12', [5.0810,	2.0850,	2.0420,	2.2010,	1.8530,	1.8150,	1.9890]],
-    ['13', [5.0900,	2.0850,	2.0390,	2.1930,	1.8570,	1.8150,	1.9890]],
-    ['14', [5.1100,	2.0850,	2.0350,	2.1860,	1.8600,	1.8150,	1.9890]],
-    ['15', [5.1390,	2.0850,	2.0320,	2.1800,	1.8640,	1.8150,	1.9890]],
-    ['16', [5.1770,	2.0850,	2.0280,	2.1740,	1.8670,	1.8150,	1.9890]],
-    ['17', [5.2240,	2.0850,	2.0250,	2.1680,	1.8700,	1.8150,	1.9890]],
-    ['18', [5.2790,	2.0850,	2.0230,	2.1620,	1.8720,	1.8150,	1.9890]],
-    ['19', [5.3420,	2.0850,	2.0200,	2.1570,	1.8750,	1.8150,	1.9890]],
-    ['20', [5.4120,	2.0850,	2.0180,	2.1520,	1.8770,	1.8150,	1.9890]],
-    ['21', [5.4890,	2.0850,	2.0150,	2.1470,	1.8790,	1.8150,	1.9890]],
-    ['22', [5.5720,	2.0850,	2.0130,	2.1420,	1.8810,	1.8150,	1.9890]],
-    ['23', [5.6620,	2.0850,	2.0120,	2.1380,	1.8830,	1.8150,	1.9890]],
-    ['24', [5.7580,	2.0850,	2.0100,	2.1330,	1.8850,	1.8150,	1.9890]]
+    [123, [5.5000,	2.0850,	2.0850,	1.9890,	1.8150,	1.8150,	1.9890]],
+    [4, [5.4460,	2.0850,	2.0820,	2.2740,	1.8180,	1.8150,	1.9900]],
+    [5, [5.3500,	2.0850,	2.0760,	2.2630,	1.8230,	1.8150,	1.9900]],
+    [6, [5.2700,	2.0850,	2.0710,	2.2530,	1.8280,	1.8150,	1.9900]],
+    [7, [5.2050,	2.0850,	2.0650,	2.2430,	1.8320,	1.8150,	1.9900]],
+    [8, [5.1550,	2.0850,	2.0600,	2.2340,	1.8370,	1.8150,	1.9890]],
+    [9, [5.1180,	2.0850,	2.0560,	2.2250,	1.8410,	1.8150,	1.9890]],
+    [10, [5.0940,	2.0850,	2.0510,	2.2160,	1.8460,	1.8150,	1.9890]],
+    [11, [5.0820,	2.0850,	2.0470,	2.2080,	1.8500,	1.8150,	1.9890]],
+    [12, [5.0810,	2.0850,	2.0420,	2.2010,	1.8530,	1.8150,	1.9890]],
+    [13, [5.0900,	2.0850,	2.0390,	2.1930,	1.8570,	1.8150,	1.9890]],
+    [14, [5.1100,	2.0850,	2.0350,	2.1860,	1.8600,	1.8150,	1.9890]],
+    [15, [5.1390,	2.0850,	2.0320,	2.1800,	1.8640,	1.8150,	1.9890]],
+    [16, [5.1770,	2.0850,	2.0280,	2.1740,	1.8670,	1.8150,	1.9890]],
+    [17, [5.2240,	2.0850,	2.0250,	2.1680,	1.8700,	1.8150,	1.9890]],
+    [18, [5.2790,	2.0850,	2.0230,	2.1620,	1.8720,	1.8150,	1.9890]],
+    [19, [5.3420,	2.0850,	2.0200,	2.1570,	1.8750,	1.8150,	1.9890]],
+    [20, [5.4120,	2.0850,	2.0180,	2.1520,	1.8770,	1.8150,	1.9890]],
+    [21, [5.4890,	2.0850,	2.0150,	2.1470,	1.8790,	1.8150,	1.9890]],
+    [22, [5.5720,	2.0850,	2.0130,	2.1420,	1.8810,	1.8150,	1.9890]],
+    [23, [5.6620,	2.0850,	2.0120,	2.1380,	1.8830,	1.8150,	1.9890]],
+    [24, [5.7580,	2.0850,	2.0100,	2.1330,	1.8850,	1.8150,	1.9890]]
     ])
     // changes to true when the "do not press" button is pressed, which changes the way image urls are obtained
     var slowMode = false
@@ -928,6 +1416,19 @@
         } else {
           console.log('loaded database and testing folders without error')
           database = gotDatabase
+          let blocks = []
+          for (let index = 1; index < database[0].length; index++) {
+            if (database[0][blocksSheetMap.get('block')] !== '') {
+              blocks[index - 1] = new Block(database[0][index], 0, index - 1)
+            }
+          }
+          for (let index = 1; index < database[1].length; index++) {
+            if (database[1][blocksSheetMap.get('block')] !== '') {
+              blocks[index + 1999] = new Block(database[1][index], 1, index + 1999)
+            }
+          }
+          blocksCollection = new BlocksCollection(blocks)
+          console.log(blocksCollection.getBlocksNeedingRetouch('S'))
           document.getElementById('loadingDatabase').style.display = 'none'
           document.getElementById('findBlockInfo').style.display = 'block'
         }
@@ -1026,7 +1527,6 @@
       if (isNaN(dbn) || dbn < 0 || dbn > maxDbn) {
         alert('that dbn was invalid or out of range')
         document.getElementById("loadingBlockData").style.display = 'none'
-        document.getElementById("currentDateAndTime").style.display = 'none'
       } else if (dbn < 2000) {
         var currentSheet = database[0]
         var currentRowOffset = 1
@@ -1054,7 +1554,6 @@
         // no data at all for this dbn
         document.getElementById("loadingBlockData").style.display = 'none'
         alert('no information at all was found for this DBN')
-        document.getElementById("currentDateAndTime").style.display = 'none'
         return
       }
       let getImageUrlsRun = false
@@ -1143,7 +1642,7 @@
           let block = blockMap.get('block')
           const tolerancesTableEntries = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
           for (let i = 0; i < dimensions.length; i++) {
-            let deviation = dimensions[i] - dimensionsMap.get(block)[i]
+            let deviation = dimensions[i] - dimensionsMap.get(parseInt(block))[i]
             if (deviation <= 0) {
               document.getElementById(tolerancesTableEntries[i]).innerHTML = (deviation).toFixed(4)
             } else {
@@ -1152,14 +1651,13 @@
           }
           // color coding
           for (let i = 0; i < dimensions.length; i++) {
-            let deviation = dimensions[i] - dimensionsMap.get(block)[i]
+            let deviation = dimensions[i] - dimensionsMap.get(parseInt(block))[i]
             if (i === 0) {
               let grade = grade_dL(deviation)
               document.getElementById(tolerancesTableEntries[i]).style.color = testColors[grade]
               testGrades.push(grade)
               tolerancesGrades.push(grade)
             } else {
-              document.getElementB
               let grade = grade_otherDev(deviation)
               document.getElementById(tolerancesTableEntries[i]).style.color = testColors[grade]
               testGrades.push(grade)
@@ -1537,13 +2035,13 @@
         let sortColumns = arrayFromFirstElements(dataTable.order())
         if (rowPassesFilter) {
           let rowData = new Array(tableColumnsNames.length)
-          let dimensions = mergedSheet[i].slice(33, 40)
+          let dimensions = mergedSheet[i].slice(blocksSheetMap.get('L'), blocksSheetMap.get('SH') + 1)
           let tolerancesNames = ['dL', 'dBT', 'dBB', 'dBH', 'dST', 'dSB', 'dSH']
           let block = mergedSheet[i][blocksSheetMap.get('block')]
           let tolerances = ['', '', '', '', '', '', '']
           for (let j = 0; j < dimensions.length; j++) {
             if (!isNaN(dimensions[j]) && dimensions[j] !== 0 && dimensions[j] !== '') {
-              tolerances[j] = (dimensions[j] - dimensionsMap.get(block)[j]).toFixed(4)
+              tolerances[j] = (dimensions[j] - dimensionsMap.get(parseInt(block))[j]).toFixed(4)
             }
           }
           for (let j = 0; j < tableColumnsNames.length; j++) {
@@ -1598,6 +2096,74 @@
               } else {
                 rowData[j] = ''
               }
+            } else if (name === 'testingStatus') {
+              if (i < sheet1.length) { 
+                data = []
+                let densityGrade
+                let lightTransGrade
+                let scintGrade
+                let natLightGrade
+                let densityChecked
+                let lightTransChecked
+                let natLightChecked
+                let densityComplete
+                let lightTransComplete
+                let natLightComplete
+
+                let density = mergedSheet[i][blocksSheetMap.get('density')]
+                let volume = mergedSheet[i][blocksSheetMap.get('volume')]
+                let dL = tolerances[tolerances.findIndex((value) => value === 'dL')]
+                let otherDevGrades = [...tolerances].slice(1)
+                let mass = mergedSheet[i][blocksSheetMap.get('mass')]
+                let massTester = mergedSheet[i][blocksSheetMap.get('massTester')]
+                otherDevGrades.forEach((value, index, array) => array[index] = ((!dataPresent(value)) ? notStartedGrade : grade_otherDev(value)))
+                let densityValuesToGrade = [
+                  ((!dataPresent(density)) ? notStartedGrade : grade_density(density)),
+                  ((!dataPresent(dL)) ? notStartedGrade : grade_dL(dL)),
+                  Math.max(...otherDevGrades)
+                ]
+                densityGrade = Math.max(...densityValuesToGrade)
+                let fiberPercentage = mergedSheet[i][blocksSheetMap.get('fiberPercentage')]
+                let towers = mergedSheet[i].slice(blocksSheetMap.get('tower1'), blocksSheetMap.get('tower4') + 1)
+                let towerGrades = [...towers]
+                towerGrades.forEach((value, index, array) => array[index] = ((!dataPresent(value)) ? notStartedGrade : grade_tower(value)))
+                let missingRow = mergedSheet[i][blocksSheetMap.get('missingRow')]
+                let thirteenHoles = mergedSheet[i][blocksSheetMap.get('thirteenHoles')]
+                let lightTransTester = mergedSheet[i][blocksSheetMap.get('lightTransTester')]
+                let lightTransValuesToGrade = [
+                  (!dataPresent(fiberPercentage)) ? notStartedGrade : grade_fiberPercentage(fiberPercentage),
+                  Math.max(...towerGrades),
+                  (!dataPresent(missingRow)) ? notStartedGrade : grade_missingRow(missingRow),
+                  (!dataPresent(thirteenHoles)) ? notStartedGrade : grade_thirteenHoles(thirteenHoles)
+                ]
+                lightTransGrade = Math.max(...lightTransValuesToGrade)
+                let scintRatio = mergedSheet[i][blocksSheetMap.get('scintRatio')]
+                scintGrade = (!dataPresent(scintRatio)) ? notStartedGrade : grade_scintRatio(scintRatio)
+                let natLightDate = mergedSheet[i][blocksSheetMap.get('natLightDate')]
+                let natLightTester = mergedSheet[i][blocksSheetMap.get('natLightTester')]
+                if (dataPresent(natLightDate) || dataPresent(natLightTester)) {
+                  natLightGrade = aGrade
+                } else {
+                  natLightGrade = notStartedGrade
+                }
+
+                densityChecked = (mergedSheet[i][blocksSheetMap.get('densityChecked')] === '') ? notStartedGrade : 1
+                lightTransChecked = (mergedSheet[i][blocksSheetMap.get('lightTransChecked')] === '') ? notStartedGrade : 1
+                natLightChecked = (mergedSheet[i][blocksSheetMap.get('natLightChecked')] === '') ? notStartedGrade : 1
+
+                densityComplete = (dataPresent(volume) && dataPresent(mass) && dataPresent(massTester)) ? 1 : 0
+                lightTransComplete = (dataPresent(fiberPercentage) && dataPresent(missingRow) && dataPresent(thirteenHoles) && dataPresent(lightTransTester)) ? 1 : 0
+                natLightComplete  = (dataPresent(natLightDate) && dataPresent(natLightTester)) ? 1 : 0
+
+                data[0] = [densityGrade, densityChecked, densityComplete]
+                data[1] = [lightTransGrade, lightTransChecked, lightTransComplete]
+                data[2] = [scintGrade]
+                data[3] = [natLightGrade, natLightChecked, natLightComplete]
+
+                rowData[j] = data
+              } else {
+                rowData[j] = ''
+              }
             } else {
               if (dataPresent(data)) {
                 rowData[j] = data
@@ -1612,15 +2178,58 @@
         }
       }
       dataTable.columns.adjust().draw()
-      document.getElementById("blocksCount").innerHTML = dataTable.rows().count()
+    }
+    function loadRetouchTables() {
+      if (blocksCollection == null) {
+        return
+      }
+      let candidateDataTable = $('#candidateRetouchTable').DataTable()
+      let sentDataTable = $('#sentRetouchTable').DataTable()
+      blocksCollection.getBlocksNeedingRetouch('').forEach(function(data) {
+        let rowData = []
+        rowData[0] = data[0].dbn
+        rowData[1] = data[0].status
+        rowData[2] = data[0].retouch
+        rowData[3] = data[1]
+        candidateDataTable.row.add(rowData)
+      })
+      blocksCollection.getBlocksNeedingRetouch('R').forEach(function(data) {
+        let rowData = []
+        rowData[0] = data[0].dbn
+        rowData[1] = data[0].status
+        rowData[2] = data[0].retouch
+        rowData[3] = data[1]
+        candidateDataTable.row.add(rowData)
+      })
+      blocksCollection.getBlocksNeedingRetouch('S').forEach(function(data) {
+        let rowData = []
+        rowData[0] = data[0].dbn
+        rowData[1] = data[0].status
+        rowData[2] = data[1]
+        sentDataTable.row.add(rowData)
+        //console.log(rowData)
+      })
+      candidateDataTable.columns.adjust().draw()
+      sentDataTable.columns.adjust().draw()
+      document.getElementById('candidateRetouchCount').innerHTML = candidateDataTable.rows().count()
+      document.getElementById('sentRetouchCount').innerHTML = sentDataTable.rows().count()
     }
     function loadFindBlockInfo () {
       document.getElementById('findBlockInfo').style.display = 'block'
       document.getElementById('findBlocks').style.display = 'none'
+      document.getElementById('findRetouch').style.display = 'none'
     }
     function loadFindBlocks () {
       document.getElementById('findBlocks').style.display = 'block'
       document.getElementById('findBlockInfo').style.display = 'none'
+    }
+    var loadedRetouch = false
+    function loadRetouch() {
+      document.getElementById('findRetouch').style.display = 'block'
+      document.getElementById('findBlockInfo').style.display = 'none'
+      if (!loadedRetouch) {
+        loadRetouchTables()
+      }
     }
     var hideUninterestingRows = true
     function toggleShowRows () {
