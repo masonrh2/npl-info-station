@@ -109,15 +109,6 @@
       }
       
       class Block {
-        gotUrls = false
-        lightTransOriginalW
-        lightTransOriginalN
-        lightTransCroppedW
-        lightTransCroppedN
-        natLightW
-        natLightN
-        histogramsW
-        histogramsN
         constructor(array, sheet, numericDBN) {
           this.sheet = sheet
           this.numericDBN = numericDBN
@@ -133,7 +124,7 @@
           this.moldSeries = (!dataPresent(array[16])) ? null : array[16]
           this.emptyMoldMass = (!dataPresent(array[17])) ? null : parseInt(array[17])
           this.filledMoldMass = (!dataPresent(array[18])) ? null : parseInt(array[18])
-          this.tungstenMass = (array[19] === '0') ? null : parseInt(array[19])
+          this.tungstenMass = (!dataPresent(array[19]) || parseInt(array[19])) ? null : parseInt(array[19])
           this.tungstenFillingDate = (!dataPresent(array[21])) ? null : usDateToYYYYMMDD(array[21])
           this.epoxyBatch = (!dataPresent(array[23])) ? null : parseInt(array[23])
           this.resinMass = (!dataPresent(array[24])) ? null : parseInt(array[24])
@@ -148,14 +139,14 @@
           this.st = (!dataPresent(array[37])) ? null : parseFloat(array[37])
           this.sb = (!dataPresent(array[38])) ? null : parseFloat(array[38])
           this.sh = (!dataPresent(array[39])) ? null : parseFloat(array[39])
-          this.volume = (!dataPresent(array[40])) ? null : parseFloat(array[40])
+          this.volume = (!dataPresent(array[40]) || parseInt(array[40])) ? null : parseFloat(array[40])
           this.dimensionTester = (!dataPresent(array[41])) ? null : array[41]
           this.mass = (!dataPresent(array[42])) ? null : parseInt(array[42])
           this.massTester = (!dataPresent(array[43])) ? null : array[43]
           this.density = (!dataPresent(array[44])) ? null : parseFloat(array[44])
-          this.densityDate = parseInt(array[45])
+          this.densityDate = (!dataPresent(array[45])) ? null : parseInt(array[45])
           this.goodEnd = (!dataPresent(array[47])) ? null : array[47]
-          this.fiberPercentage = (!dataPresent(array[49])) ? null : parseFloat(array[49])
+          this.fiberPercentage = (!dataPresent(array[49]) || parseInt(array[49]) === 0) ? null : parseFloat(array[49])
           this.tower1 = (!dataPresent(array[55])) ? null : parseFloat(array[55])
           this.tower2 = (!dataPresent(array[56])) ? null : parseFloat(array[56])
           this.tower3 = (!dataPresent(array[57])) ? null : parseFloat(array[57])
@@ -175,6 +166,13 @@
           this.natLightChecked = (this.sheet === 0) ? array[75] : null
           this.pregrade = (this.sheet === 0) ? array[77] : null
         }
+        getTungstenData() {return [this.powder, this.bucket, this.moldSeries, this.emptyMoldMass, this.filledMoldMass, this.tungstenMass, this.tungstenFillingDate]}
+        getEpoxyData() {return [this.epoxyBatch, this.resinMass, this.hardenerMass, this.pottingNotes, this.epoxyFillingTime, this.epoxyFillingDate]}
+        hasDensityData() {return [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh, this.volume, this.dimensionTester, this.mass, this.massTester, this.density, this.densityDate].some((value) => value != null)}
+        hasLightTransData() {return [this.goodEnd, this.fiberPercentage, this.tower1, this.tower2, this.tower3, this.tower4, this.missingRow, this.thirteenHoles, this.lightTransTester, this.lightTransDate].some((value) => value != null)}
+        hasTowerData() {return [this.tower1, this.tower2, this.tower3, this.tower4].some((value) => value != null)}
+        hasNatLightData() {return [this.natLightDate, this.natLightTester].some((value) => value != null)}
+        hasScintData() {return [this.scintillation, this.scintRatio, this.scintDate].some((value) => value != null)}
         deviations() {
           let tols = [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
           if (tols.every((value) => value != null)) {
@@ -185,106 +183,87 @@
             return null
           }
         }
-        testingStatus() {
+        testGrades() {
           if (this.sheet === 0) { 
-            let data = []
-            let densityGrade
-            let lightTransGrade
-            let scintGrade
-            let natLightGrade
-            
-            let densityChecked
-            let lightTransChecked
-            let natLightChecked
-
-            let densityComplete
-            let lightTransComplete
-            let natLightComplete
-
             let devs = this.deviations()
-            let dLGrade
-            let otherDevsGrade
+            let devGrades = new Array(7)
             if (devs == null) {
-              dLGrade = notStartedGrade
-              otherDevsGrade = notStartedGrade
+              devGrades.fill(notStartedGrade)
             } else {
-              dLGrade = (devs[0] == null) ? notStartedGrade : grade_dL(devs[0])
-              let grades = []
-              devs.slice(1).forEach((value, index) => grades[index] = (value == null) ? notStartedGrade : grade_otherDev(value))
-              otherDevsGrade = Math.max(...grades)
+              for (let i = 0; i < devs.length; i++) {
+                if (i === 0) {
+                  devGrades[0] = (devs[0] == null) ? notStartedGrade : grade_dL(devs[0])
+                } else {
+                  devGrades[i] = (devs[i] == null) ? notStartedGrade : grade_otherDev(devs[i])
+                }
+              }
             }
             let densityValuesToGrade = [
               ((this.density == null) ? notStartedGrade : grade_density(this.density)),
-              dLGrade,
-              otherDevsGrade
+              ...devGrades
             ]
-            densityGrade = Math.max(...densityValuesToGrade)
+            let densityGrade = Math.max(...densityValuesToGrade)
             let towers = [this.tower1, this.tower2, this.tower3, this.tower4]
-            let towersGrade
+            let towerGrades = new Array(4)
             if (towers.every((value) => value != null)) {
-              let grades = []
-              towers.forEach((value, index, array) => grades[index] = (value == null) ? notStartedGrade : grade_tower(value))
-              towersGrade = Math.max(...grades)
+              for (let i = 0; i < towers.length; i++) {
+                towerGrades[i] = (towers[i] == null) ? notStartedGrade : grade_tower(towers[i])
+              }
             } else {
-              towersGrade = notStartedGrade
+              towerGrades.fill(notStartedGrade)
             }
             let lightTransValuesToGrade = [
               (this.fiberPercentage == null) ? notStartedGrade : grade_fiberPercentage(this.fiberPercentage),
-              towersGrade,
+              ...towerGrades,
               (this.missingRow == null) ? notStartedGrade : (this.missingRow) ? 3 : 1,
               (this.thirteenHoles == null) ? notStartedGrade : (this.missingRow) ? 3 : 1
             ]
-            lightTransGrade = Math.max(...lightTransValuesToGrade)
-            scintGrade = (this.scintRatio == null) ? notStartedGrade : grade_scintRatio(this.scintRatio)
-            if (this.natLightDate != null || this.natLightTester != null) {
-              natLightGrade = aGrade
-            } else {
-              natLightGrade = notStartedGrade
+            let lightTransGrade = Math.max(...lightTransValuesToGrade)
+            let scintGrade = (this.scintRatio == null) ? notStartedGrade : grade_scintRatio(this.scintRatio)
+            let natLightGrade = (this.natLightDate != null || this.natLightTester != null) ? aGrade : notStartedGrade
+            return {
+              density: densityGrade,
+              tolerances: devGrades,
+              lightTrans: lightTransGrade,
+              towers: towerGrades,
+              scint: scintGrade,
+              natLight: natLightGrade
             }
-
-            densityChecked = (this.densityChecked == null) ? notStartedGrade : 1
-            lightTransChecked = (this.lightTransChecked == null) ? notStartedGrade : 1
-            natLightChecked = (this.natLightChecked == null) ? notStartedGrade : 1
-
-            densityComplete = (this.volume != null && this.mass != null && this.massTester != null) ? 1 : 0
-            lightTransComplete = (this.fiberPercentage != null && this.missingRow != null && this.thirteenHoles != null && this.lightTransTester != null) ? 1 : 0
-            natLightComplete  = (this.natLightDate != null && this.natLightTester != null) ? 1 : 0
-
-            data[0] = [densityGrade, densityChecked, densityComplete]
-            data[1] = [lightTransGrade, lightTransChecked, lightTransComplete]
-            data[2] = [scintGrade]
-            data[3] = [natLightGrade, natLightChecked, natLightComplete]
-
-            console.log(densityValuesToGrade)
-            console.log(lightTransValuesToGrade)
-            return data
           } else {
             return null
           }
         }
-        getUrls() {
+        testCompletes() {
+          return {
+            densityComplete: (this.volume != null && this.mass != null && this.massTester != null) ? 1 : 0,
+            lightTransComplete: (this.fiberPercentage != null && this.missingRow != null && this.thirteenHoles != null && this.lightTransTester != null) ? 1 : 0,
+            natLightComplete : (this.natLightDate != null && this.natLightTester != null) ? 1 : 0
+          }
+        }
+        testChecks() {
+          return {
+            densityChecked: (this.densityChecked == null) ? notStartedGrade : 1,
+            lightTransChecked: (this.lightTransChecked == null) ? notStartedGrade : 1,
+            natLightChecked: (this.natLightChecked == null) ? notStartedGrade : 1
+          }
+        }
+        getUrls(imageUrlsCallback, histogramUrlsCallback) {
           let that = this
           if (!this.gotUrls) {
-            let toGetImageUrls = [this.numericDBN.toString(), this.lightTransDate.toString(), this.natLightDate.toString()]
+            let toGetImageUrls = [this.numericDBN.toString(),
+              (this.lightTransDate == null) ? null : this.lightTransDate.toString(),
+              (this.natLightDate == null) ? null : this.natLightDate.toString()
+            ]
             if (this.lightTransDate != null || this.natLightDate != null) {
-              google.script.run.withSuccessHandler(setImageUrls).getImageUrls(toGetImageUrls)
+              google.script.run.withSuccessHandler(imageUrlsCallback).getImageUrls(toGetImageUrls)
+            } else {
+              imageUrlsCallback(null)
             }
             if (this.lightTransDate != null) {
-              google.script.run.withSuccessHandler(setHistogramUrls).getHistograms(toGetImageUrls)
+              google.script.run.withSuccessHandler(histogramUrlsCallback).getHistograms(toGetImageUrls)
+            } else {
+              histogramUrlsCallback(null)
             }
-            function setImageUrls (imageUrls) {
-              that.lightTransOriginalW = imageUrls[0]
-              that.lightTransOriginalN = imageUrls[1]
-              that.lightTransCroppedW = imageUrls[2]
-              that.lightTransCroppedN = imageUrls[3]
-              that.natLightW = imageUrls[4]
-              that.natLightN = imageUrls[5]
-            }
-            function setHistogramUrls (histogramUrls) {
-              that.histogramsW = histogramUrls[0]
-              that.histogramsN = histogramUrls[1]
-            }
-            this.gotUrls = true
           }
         }
       }
@@ -295,12 +274,14 @@
         getBlockByNumericDBN (dbn) {
           return this.array[dbn]
         }
-        getBlockByStringDBN (dbn) {
-          this.array.forEach (function (block) {
-            if (dbn === block.dbn) {
-              return block
+        getBlockByStringDBN (stringDBN) {
+          let numDBN
+          this.array.forEach (function (block, index, array) {
+            if (stringDBN === block.dbn) {
+              numDBN = index
             }
           })
+          if (numDBN != null) {return this.array[numDBN]}
         }
         getBlocksNeedingRetouch (retouchStatus) {
           let blocks = []
@@ -622,7 +603,6 @@
           if (!state) {
             // changed to hidden, so clear the column's search bar
             $('#blocksTable').DataTable().column(column).footer().firstElementChild.value = ''
-            console.log('attempted to clear search for column ' + column)
           }
         })
       })
@@ -1279,28 +1259,10 @@
   <script>
     // store each section's ID in an array for easy iteration:
     const allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
-    // store each section's value IDs in an array for easy iteration:
-    const blockDetailsKeys = ['dbn', 'block', 'status', 'shipment', 'sector', 'comment']
-    const densityKeys = ['volume', 'mass', 'density', 'densityDate']
-    const lightTransKeys = ['goodEnd', 'fiberPercentage', 'missingRow', 'thirteenHoles', 'lightTransDate']
-    const natLightKeys = ['natLightDate']
-    const scintKeys = ['scintillation', 'scintRatio', 'scintDate']
     // store all image prefixes in an array for easy iteration
     const allImagePrefixes = ['lightTransImg', 'lightTransImgCropped', 'natLightImg']
     // store all testing image IDs in an array for easy iteration:
     const allTestingImgs = ['lightTransImgW', 'lightTransImgN', 'lightTransImgCroppedW', 'lightTransImgCroppedN', 'natLightImgW', 'natLightImgN']
-    // IF a testing value has a key in this map, display the message when no data for that value was found
-    // otherwise, hide the value and it's name by default
-    const failureMessages = new Map()
-    // IF a testing value has a key in this map and the block has this data, append this suffix (after a space) to the data
-    // note that since status is block-specific, it is handled separately by updateField
-    const suffixes = new Map([
-      ['volume', 'mL'],
-      ['mass', 'g'],
-      ['density', 'g/mL'],
-      ['fiberPercentage', '%'],
-      ['scintillation', 'mV']
-    ])
     // converts a status number to english so it can be added to the block information (the suffix that appears after the status number)
     const statusMap = new Map([
       ['0','(fiber set)'],
@@ -1428,7 +1390,6 @@
             }
           }
           blocksCollection = new BlocksCollection(blocks)
-          console.log(blocksCollection.getBlocksNeedingRetouch('S'))
           document.getElementById('loadingDatabase').style.display = 'none'
           document.getElementById('findBlockInfo').style.display = 'block'
         }
@@ -1475,174 +1436,153 @@
         loadTestingData(dbn)
       }
     }
-    // takes array of string element ids and clears their innerHTML
-    function clearElements(array) {
-      for (let i = 0; i < array.length; i++) {
-        document.getElementById(array[i]).innerHTML = ''
-      }
-    }
-    // pulls the info with key id from blockDataMap and updates its innerHTML if it contains info
-    // adds a suffix if one exists in suffixes (Map), and adds status suffix if the key is 'status'
-    // (status is handle differently since it can't be integrated into status map since it's block-specific)
-    // hides the element AND its label if failureMessages does not have the key
-    // otherwise sets the innerHTML to the key's failure message
-    function updateField(blockDataMap, id) {
-      if (dataPresent(blockDataMap.get(id))) {
-        document.getElementById(id).innerHTML = blockDataMap.get(id)
-        if (suffixes.has(id) || id === 'status') {
-          if (id === 'status') {
-            document.getElementById(id).innerHTML += ' ' + statusMap.get(blockDataMap.get('status'))
-          } else {
-            document.getElementById(id).innerHTML += ' ' + suffixes.get(id)
-          }
-        }
-        document.getElementById(id).style.display = 'inline'
-        document.getElementById(id + 'Label').style.display = 'inline'
-      } else {
-        if (failureMessages.has(id)) {
-          document.getElementById(id).innerHTML = failureMessages.get(id)
-        } else {
-          document.getElementById(id).style.display = 'none'
-          document.getElementById(id + 'Label').style.display = 'none'
-        }
-      }
-    }
     // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
     function dataPresent (data) {
       return (data != null && data != '' && data != '#NUM!' && data != '#DIV/0!' && data != 'NaN')
     }
-    // takes a map and an array of string ids and checks if any map values for key ids have data
-    // "has data" is determined by function dataPresent
-    function someDataPresent(map, array) {
-      return array.some(function(element) {
-        return dataPresent(map.get(element))
-      })
-    }
     // loads testing data, updates fields, and unhides relevant sections based on the data present
-    function loadTestingData (dbn) {
-      let blockMap = new Map()
-      // The dbn passed from the html doesn't seem to be an int, so make sure it is (dbn 1 would return info for dbn 10 otherwise)
-      dbn = Math.floor(dbn)
-      // Reject invalid dbns and choose the correct sheet and map for valid dbns
-      if (isNaN(dbn) || dbn < 0 || dbn > maxDbn) {
-        alert('that dbn was invalid or out of range')
+    function loadTestingData (stringDBN) {
+      let block = blocksCollection.getBlockByStringDBN(stringDBN)
+      if (block == null) {
+        alert('unable to find that block')
         document.getElementById("loadingBlockData").style.display = 'none'
-      } else if (dbn < 2000) {
-        var currentSheet = database[0]
-        var currentRowOffset = 1
-      } else {
-        var currentSheet = database[1]
-        var currentRowOffset = 1 - 2000
-      }
-      // dbn is good, so pull data from the database
-      let row = dbn + currentRowOffset
-      // Construct a cell range in A1 format for the block's row
-      let blockData = currentSheet[row]
-      // grab each dimension measurement in an array
-      let dimensions = blockData.slice(33, 40)
-      // Create a new map that maps block properites to their actual values
-      for (let pair of blocksSheetMap) {
-        // Logger.log("blocksSheetMap has key " + pair[0] + " -> " + blockData[pair[1]]);
-        blockMap.set(pair[0], blockData[pair[1]])
-      }
-      // first check for ALL nulls, in which case there's no information for this dbn
-      let blockMapArray = Array.from(blockMap)
-      let allNull = blockMapArray.every(function(element) {
-        return element == null || !dataPresent(element[1])
-      })
-      if (allNull) {
-        // no data at all for this dbn
-        document.getElementById("loadingBlockData").style.display = 'none'
-        alert('no information at all was found for this DBN')
         return
       }
       let getImageUrlsRun = false
-      let toGetImageUrls = [blockMap.get('dbn'), blockMap.get('lightTransDate'), blockMap.get('natLightDate')]
-
-      // BLOCK DETAILS  (check if data is present)
+      // BLOCK DETAILS
       const tungstenTableEntries = ['powder', 'bucket', 'moldSeries', 'emptyMoldMass', 'filledMoldMass', 'tungstenMass', 'tungstenFillingDate']
       const epoxyTableEntries = ['epoxyBatch', 'resinMass', 'hardenerMass', 'pottingNotes', 'epoxyFillingTime', 'epoxyFillingDate']
-      if (someDataPresent(blockMap, blockDetailsKeys)) {
-        // some block info present, so make the info section visible and update its entries and hide the noInfo section
-        document.getElementById("blockDetailsSection").style.display = 'block'
-        for (let i = 0; i < blockDetailsKeys.length; i++) {
-          updateField(blockMap, blockDetailsKeys[i])
-        }
-        let hasTungstenData = tungstenTableEntries.some(function(element) {
-          return dataPresent(blockMap.get(element)) && element !== 'tungstenMass'
-        })
-        //tungsten table
-        if (hasTungstenData) {
-          for (let i = 0; i < tungstenTableEntries.length; i++) {
-            let entry = tungstenTableEntries[i]
-            document.getElementById(entry).innerHTML = blockMap.get(entry)
-          }
-          document.getElementById('showTungstenTableBtn').style.display = 'block'
-        } else {
-          document.getElementById('showTungstenTableBtn').style.display = 'none'
-          document.getElementById('tungstenTable').style.display = 'none'
-        }
-        //epoxy table
-        if (someDataPresent(blockMap, epoxyTableEntries)) {
-          for (let i = 0; i < epoxyTableEntries.length; i++) {
-            let entry = epoxyTableEntries[i]
-            document.getElementById(entry).innerHTML = blockMap.get(entry)
-          }
-          document.getElementById('showEpoxyTableBtn').style.display = 'block'
-        } else {
-          document.getElementById('showEpoxyTableBtn').style.display = 'none'
-          document.getElementById('epoxyTable').style.display = 'none'
-        }
-        //pregrade
-        if (dataPresent(blockMap.get('pregrade')) && dbn < 2000) {
-          document.getElementById('pregrade').innerHTML = blockMap.get('pregrade')
-          let grade = grade_pregrade(blockMap.get('pregrade'))
-          if (grade != null) {
-            document.getElementById('pregrade').style.color = testColors[grade]
-            document.getElementById('pregrade').style.fontWeight = 'bold'
-          } else {
-            document.getElementById('pregrade').style.color = black
-            document.getElementById('pregrade').style.fontWeight = 'normal'
-          }
-          document.getElementById('pregrade').style.display = 'inline'
-          document.getElementById('pregrade' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('pregrade').style.display = 'none'
-          document.getElementById('pregrade' + 'Label').style.display = 'none'
-        }
+      document.getElementById("blockDetailsSection").style.display = 'block'
+      //block details
+      if (block.dbn != null) {
+        document.getElementById('dbn').innerHTML = block.dbn
+        document.getElementById('dbn').style.display = 'inline'
+        document.getElementById('dbn' + 'Label').style.display = 'inline'
       } else {
-        // no block info present, so make the noInfo section visible and clear entries in info section
-        for (let i = 0; i < blockDetailsKeys.length; i++) {
-          document.getElementById(blockDetailsKeys[i]).innerHTML = ''
+        document.getElementById('dbn').style.display = 'none'
+        document.getElementById('dbn' + 'Label').style.display = 'none'
+      }
+      if (block.block != null) {
+        document.getElementById('block').innerHTML = block.block
+        document.getElementById('block').style.display = 'inline'
+        document.getElementById('block' + 'Label').style.display = 'inline'
+      } else {
+        document.getElementById('block').style.display = 'none'
+        document.getElementById('block' + 'Label').style.display = 'none'
+      }
+      if (block.status != null) {
+        document.getElementById('status').innerHTML = block.status + ' ' + statusMap.get(block.status)
+        document.getElementById('status').style.display = 'inline'
+        document.getElementById('status' + 'Label').style.display = 'inline'
+      } else {
+        document.getElementById('status').style.display = 'none'
+        document.getElementById('status' + 'Label').style.display = 'none'
+      }
+      if (block.shipment != null) {
+        document.getElementById('shipment').innerHTML = block.shipment
+        document.getElementById('shipment').style.display = 'inline'
+        document.getElementById('shipment' + 'Label').style.display = 'inline'
+      } else {
+        document.getElementById('shipment').style.display = 'none'
+        document.getElementById('shipment' + 'Label').style.display = 'none'
+      }
+      if (block.sector != null) {
+        document.getElementById('sector').innerHTML = block.sector
+        document.getElementById('sector').style.display = 'inline'
+        document.getElementById('sector' + 'Label').style.display = 'inline'
+      } else {
+        document.getElementById('sector').style.display = 'none'
+        document.getElementById('sector' + 'Label').style.display = 'none'
+      }
+      if (block.comment != null) {
+        document.getElementById('comment').innerHTML = block.comment
+        document.getElementById('comment').style.display = 'inline'
+        document.getElementById('comment' + 'Label').style.display = 'inline'
+      } else {
+        document.getElementById('comment').style.display = 'none'
+        document.getElementById('comment' + 'Label').style.display = 'none'
+      }
+      //tungsten table
+      if (block.getTungstenData().some((value) => value != null)) {
+        for (let i = 0; i < tungstenTableEntries.length; i++) {
+          document.getElementById(tungstenTableEntries[i]).innerHTML = block.getTungstenData()[i]
         }
-        document.getElementById("blockDetailsNoInfo").style.display = 'block'
+        document.getElementById('showTungstenTableBtn').style.display = 'block'
+      } else {
+        document.getElementById('showTungstenTableBtn').style.display = 'none'
+        document.getElementById('tungstenTable').style.display = 'none'
+      }
+      //epoxy table
+      if (block.getEpoxyData().some((value) => value != null)) {
+        for (let i = 0; i < epoxyTableEntries.length; i++) {
+          document.getElementById(epoxyTableEntries[i]).innerHTML = block.getEpoxyData()[i]
+        }
+        document.getElementById('showEpoxyTableBtn').style.display = 'block'
+      } else {
+        document.getElementById('showEpoxyTableBtn').style.display = 'none'
+        document.getElementById('epoxyTable').style.display = 'none'
+      }
+      //pregrade
+      if (block.pregrade != null) {
+        document.getElementById('pregrade').innerHTML = block.pregrade
+        let grade = grade_pregrade(block.pregrade)
+        if (grade != null) {
+          document.getElementById('pregrade').style.color = testColors[grade]
+          document.getElementById('pregrade').style.fontWeight = 'bold'
+        } else {
+          document.getElementById('pregrade').style.color = black
+          document.getElementById('pregrade').style.fontWeight = 'normal'
+        }
+        document.getElementById('pregrade').style.display = 'inline'
+        document.getElementById('pregrade' + 'Label').style.display = 'inline'
+      } else {
+        document.getElementById('pregrade').style.display = 'none'
+        document.getElementById('pregrade' + 'Label').style.display = 'none'
       }
       
       // DENSITY  (check if data is present)
-      if (someDataPresent(blockMap, densityKeys)) {
+      if (block.hasDensityData()) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("densitySection").style.display = 'block'
-        for (let i = 0; i < densityKeys.length; i++) {
-          updateField(blockMap, densityKeys[i])
+        //density details
+        if (block.volume != null) {
+          document.getElementById('volume').innerHTML = block.volume + ' mL'
+          document.getElementById('volume').style.display = 'inline'
+          document.getElementById('volume' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('volume').style.display = 'none'
+          document.getElementById('volume' + 'Label').style.display = 'none'
         }
-        // color coding
-        let testGrades = []
-        let tolerancesGrades = []
-        let grade = grade_density(blockMap.get('density'))
-        document.getElementById('density').style.color = testColors[grade]
-        testGrades.push(grade)
-        let hasDimensionInfo = false
-        for (let i = 0; i < dimensions.length; i++) {
-          if (dataPresent(dimensions[i])) {
-            hasDimensionInfo = true
-            break
-          }
+        if (block.mass != null) {
+          document.getElementById('mass').innerHTML = block.mass + ' g'
+          document.getElementById('mass').style.display = 'inline'
+          document.getElementById('mass' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('mass').style.display = 'none'
+          document.getElementById('mass' + 'Label').style.display = 'none'
         }
-        if (hasDimensionInfo) {
-          let block = blockMap.get('block')
+        if (block.density != null) {
+          document.getElementById('density').innerHTML = block.density + ' g/mL'
+          document.getElementById('density').style.color = testColors[grade_density(block.density)]
+          document.getElementById('density').style.display = 'inline'
+          document.getElementById('density' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('density').style.display = 'none'
+          document.getElementById('density' + 'Label').style.display = 'none'
+        }
+        if (block.densityDate != null) {
+          document.getElementById('densityDate').innerHTML = block.densityDate
+          document.getElementById('densityDate').style.display = 'inline'
+          document.getElementById('densityDate' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('densityDate').style.display = 'none'
+          document.getElementById('densityDate' + 'Label').style.display = 'none'
+        }
+        //tolerances table
+        if (block.deviations() != null) {
           const tolerancesTableEntries = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
-          for (let i = 0; i < dimensions.length; i++) {
-            let deviation = dimensions[i] - dimensionsMap.get(parseInt(block))[i]
+          for (let i = 0; i < tolerancesTableEntries.length; i++) {
+            let deviation = block.deviations()[i]
             if (deviation <= 0) {
               document.getElementById(tolerancesTableEntries[i]).innerHTML = (deviation).toFixed(4)
             } else {
@@ -1650,22 +1590,11 @@
             }
           }
           // color coding
-          for (let i = 0; i < dimensions.length; i++) {
-            let deviation = dimensions[i] - dimensionsMap.get(parseInt(block))[i]
-            if (i === 0) {
-              let grade = grade_dL(deviation)
-              document.getElementById(tolerancesTableEntries[i]).style.color = testColors[grade]
-              testGrades.push(grade)
-              tolerancesGrades.push(grade)
-            } else {
-              let grade = grade_otherDev(deviation)
-              document.getElementById(tolerancesTableEntries[i]).style.color = testColors[grade]
-              testGrades.push(grade)
-              tolerancesGrades.push(grade)
-            }
+          for (let i = 0; i < tolerancesTableEntries.length; i++) {
+            document.getElementById(tolerancesTableEntries[i]).style.color = testColors[block.testGrades().tolerances[i]]
           }
-          document.getElementById('densitySectionLabel').style.color = testColors[Math.max(...testGrades)]
-          document.getElementById('showTolerancesTableBtn').style.color = testColors[Math.max(...tolerancesGrades)]
+          document.getElementById('densitySectionLabel').style.color = testColors[block.testGrades().density]
+          document.getElementById('showTolerancesTableBtn').style.color = testColors[Math.max(...block.testGrades().tolerances)]
           document.getElementById('showTolerancesTableBtn').style.display = 'inline'
         } else {
           document.getElementById('showTolerancesTableBtn').style.display = 'none'
@@ -1673,79 +1602,100 @@
         } 
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
-        for (let i = 0; i < densityKeys.length; i++) {
-          document.getElementById(densityKeys[i]).innerHTML = ''
-        }
         document.getElementById("densityNoInfo").style.display = 'block'
       }
 
       // LIGHT TRANSMISSION (check if data is present)
-      let hasLightTransData = lightTransKeys.some(function(element) {
-        return dataPresent(blockMap.get(element)) && element !== 'fiberPercentage'
-      })
-      if (hasLightTransData) {
+      if (block.hasLightTransData()) {
         // some block info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("lightTransSection").style.display = 'block'
-        for (let i = 0; i < lightTransKeys.length; i++) {
-          updateField(blockMap, lightTransKeys[i])
+        if (block.goodEnd != null) {
+          document.getElementById('goodEnd').innerHTML = block.goodEnd
+          document.getElementById('goodEnd').style.display = 'inline'
+          document.getElementById('goodEnd' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('goodEnd').style.display = 'none'
+          document.getElementById('goodEnd' + 'Label').style.display = 'none'
+        }
+        if (block.fiberPercentage != null) {
+          document.getElementById('fiberPercentage').innerHTML = block.fiberPercentage + ' %'
+          document.getElementById('fiberPercentage').style.color = testColors[grade_fiberPercentage(block.fiberPercentage)]
+          document.getElementById('fiberPercentage').style.display = 'inline'
+          document.getElementById('fiberPercentage' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('fiberPercentage').style.display = 'none'
+          document.getElementById('fiberPercentage' + 'Label').style.display = 'none'
+        }
+        if (block.missingRow != null) {
+          let displayValue = (block.missingRow) ? 'Y' : 'N'
+          document.getElementById('missingRow').innerHTML = displayValue
+          document.getElementById('missingRow').style.color = testColors[grade_missingRow(displayValue)]
+          document.getElementById('missingRow').style.display = 'inline'
+          document.getElementById('missingRow' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('missingRow').style.display = 'none'
+          document.getElementById('missingRow' + 'Label').style.display = 'none'
+        }
+        if (block.thirteenHoles != null) {
+          let displayValue = (block.thirteenHoles) ? 'Y' : 'N'
+          document.getElementById('thirteenHoles').innerHTML = displayValue
+          document.getElementById('thirteenHoles').style.color = testColors[grade_thirteenHoles(displayValue)]
+          document.getElementById('thirteenHoles').style.display = 'inline'
+          document.getElementById('thirteenHoles' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('thirteenHoles').style.display = 'none'
+          document.getElementById('thirteenHoles' + 'Label').style.display = 'none'
+        }
+        if (block.lightTransDate != null) {
+          document.getElementById('lightTransDate').innerHTML = block.lightTransDate
+          document.getElementById('lightTransDate').style.display = 'inline'
+          document.getElementById('lightTransDate' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('lightTransDate').style.display = 'none'
+          document.getElementById('lightTransDate' + 'Label').style.display = 'none'
         }
         const towerTableEntries = ['tower1', 'tower2', 'tower3', 'tower4']
-        if (someDataPresent(blockMap, towerTableEntries)) {
+        if (block.hasTowerData()) {
+          let towers = [block.tower1, block.tower2, block.tower3, block.tower4]
           for (let i = 0; i < towerTableEntries.length; i++) {
-            let entry = towerTableEntries[i]
-            document.getElementById(entry).innerHTML = blockMap.get(entry)
+            document.getElementById(towerTableEntries[i]).innerHTML = towers[i]
+            document.getElementById(towerTableEntries[i]).style.color = testColors[grade_tower(towers[i])]
+
           }
           document.getElementById('showTowerTableBtn').style.display = 'inline'
         } else {
-          document.getElementById('showTowerTableBtn').style.display = 'inline'
-          document.getElementById('towerTable').style.display = 'inline'
+          document.getElementById('showTowerTableBtn').style.display = 'none'
+          document.getElementById('towerTable').style.display = 'none'
         }
         // color coding
-        let testGrades = []
-        let towerGrades = []
-        let grade = grade_fiberPercentage(blockMap.get('fiberPercentage'))
-        document.getElementById('fiberPercentage').style.color = testColors[grade]
-        testGrades.push(grade)
-        for (let i = 0; i < towerTableEntries.length; i++) {
-          let tower = towerTableEntries[i]
-          let grade = grade_tower(blockMap.get(tower))
-          document.getElementById(tower).style.color = testColors[grade]
-          testGrades.push(grade)
-          towerGrades.push(grade)
-        }
-        document.getElementById('showTowerTableBtn').style.color = testColors[Math.max(...towerGrades)]
-        let gradeMR = grade_missingRow(blockMap.get('missingRow'))
-        document.getElementById('missingRow').style.color = testColors[gradeMR]
-        testGrades.push(gradeMR)
-        let gradeTH = grade_thirteenHoles(blockMap.get('thirteenHoles'))
-        document.getElementById('thirteenHoles').style.color = testColors[gradeTH]
-        testGrades.push(gradeTH)
-        document.getElementById('lightTransSectionLabel').style.color = testColors[Math.max(...testGrades)]
+        document.getElementById('showTowerTableBtn').style.color = testColors[Math.max(...block.testGrades().towers)]
+        document.getElementById('lightTransSectionLabel').style.color = testColors[block.testGrades().lightTrans]
         // and run getImageUrls
         document.getElementById("imagesSelection").style.display = 'block'
         document.getElementById("loadingImages").style.display = 'block'
         console.log('fetching image urls')
         if (slowMode) {
-          getImageUrlsSlow(toGetImageUrls[0])
+          getImageUrlsSlow(block.numericDBN)
         } else {
-          google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(toGetImageUrls)
-          google.script.run.withSuccessHandler(onGetHistogramsSuccess).getHistograms(toGetImageUrls)
+          block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess)
         }
         getImageUrlsRun = true
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
-        for (let i = 0; i < lightTransKeys.length; i++) {
-          document.getElementById(lightTransKeys[i]).innerHTML = ''
-        }
         document.getElementById("lightTransNoInfo").style.display = 'block'
       }
       
       // NATURAL LIGHT (check if data is present)
-      if (someDataPresent(blockMap, natLightKeys)) {
+      if (block.hasNatLightData()) {
         // some info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("natLightSection").style.display = 'block'
-        for (let i = 0; i < natLightKeys.length; i++) {
-          updateField(blockMap, natLightKeys[i])
+        if (block.natLightDate != null) {
+          document.getElementById('natLightDate').innerHTML = block.natLightDate
+          document.getElementById('natLightDate').style.display = 'inline'
+          document.getElementById('natLightDate' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('natLightDate').style.display = 'none'
+          document.getElementById('natLightDate' + 'Label').style.display = 'none'
         }
         // run getImageUrls if it hasn't been run by light transmission
         if (!getImageUrlsRun) {
@@ -1754,45 +1704,57 @@
           document.getElementById("loadingImages").style.display = 'block'
           console.log('fetching image urls')
           if (slowMode) {
-            getImageUrlsSlow(toGetImageUrls[0])
+            getImageUrlsSlow(block.numericDBN)
           } else {
-            google.script.run.withSuccessHandler(onGetImageUrlsSuccess).getImageUrls(toGetImageUrls)
-            google.script.run.withSuccessHandler(onGetHistogramsSuccess).getHistograms(toGetImageUrls)
+            block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess)
           }
           getImageUrlsRun = true
         }
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
-        for (let i = 0; i < natLightKeys.length; i++) {
-          document.getElementById(natLightKeys[i]).innerHTML = ''
-        }
         document.getElementById("natLightNoInfo").style.display = 'block'
         // I don't need to run getImageUrls, so if light transmission didn't run it, then we don't need any of the image checkboxes
         // AND we need to reset them (if they are checked, uncheck them and toggle)
         if (!getImageUrlsRun) {
           console.log('determined there was no need to search for images')
-          resetCheckboxes();
+          resetCheckboxes()
         }
       }
       
       // SCINTILLATION (check if data is present)
-      if (someDataPresent(blockMap, scintKeys)) {
+      if (block.hasScintData()) {
         // some info present, so make the info section visible and update its entries and hide the noInfo section
         document.getElementById("scintSection").style.display = 'block'
-        for (let i = 0; i < scintKeys.length; i++) {
-          updateField(blockMap, scintKeys[i])
+        if (block.scintillation != null) {
+          document.getElementById('scintillation').innerHTML = block.scintillation + ' mV'
+          document.getElementById('scintillation').style.display = 'inline'
+          document.getElementById('scintillation' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('scintillation').style.display = 'none'
+          document.getElementById('scintillation' + 'Label').style.display = 'none'
         }
-        let grade = grade_scintRatio(blockMap.get('scintRatio'))
-        document.getElementById('scintRatio').style.color = testColors[grade]
-        document.getElementById('scintSectionLabel').style.color = testColors[grade]
+        if (block.scintRatio != null) {
+          document.getElementById('scintRatio').innerHTML = block.scintRatio
+          document.getElementById('scintRatio').style.color = testColors[grade_scintRatio(block.scintRatio)]
+          document.getElementById('scintRatio').style.display = 'inline'
+          document.getElementById('scintRatio' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('scintRatio').style.display = 'none'
+          document.getElementById('scintRatio' + 'Label').style.display = 'none'
+        }
+        if (block.scintDate != null) {
+          document.getElementById('scintDate').innerHTML = block.scintDate
+          document.getElementById('scintDate').style.display = 'inline'
+          document.getElementById('scintDate' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('scintDate').style.display = 'none'
+          document.getElementById('scintDate' + 'Label').style.display = 'none'
+        }
+        document.getElementById('scintSectionLabel').style.color = testColors[grade_scintRatio(block.scintRatio)]
       } else {
         // no block info present, so make the noInfo section visible and clear entries in info section
-        for (let i = 0; i < scintKeys.length; i++) {
-          document.getElementById(scintKeys[i]).innerHTML = ''
-        }
         document.getElementById("scintNoInfo").style.display = 'block'
       }
-      
       // now hide the loading block data text...
       document.getElementById("loadingBlockData").style.display = 'none'
     }
@@ -1806,7 +1768,6 @@
       // then hide the checkbox
       document.getElementById('CBshow-' + imagePrefix + 'Section').style.display = 'none'
     }
-
     // reset all checkboxes individually and hide checkboxes section
     function resetCheckboxes () {
       for (let i = 0; i < allImagePrefixes.length; i++) {
@@ -1819,56 +1780,59 @@
     // since this case is so rare, it tries to load both (and if one happens to not have an image, a placeholder is displayed)
     function onGetImageUrlsSuccess (imageUrls) {
       // check if getImageUrls returned any urls...
-      if (imageUrls.every((element) => element == null)) {
+      if (imageUrls == null || imageUrls.every((element) => element == null)) {
         // ...NO image urls were returned, so there's no image data to display
         document.getElementById("loadingImages").style.display = 'none'
         document.getElementById("noImagesFound").style.display = 'block'
-        return
-      }
-      // first set all not null urls to their image srcs
-      imageUrls.forEach((element, index) => {
-        if (element != null) {
-          if (index < 4) {
-            document.getElementById(allTestingImgs[index]).src = element
-          } else {
-            document.getElementById(allTestingImgs[index]).src = element[0]
-            let imageUrlsIndexToEnd = new Map([[4, 'Wide End'], [5, 'Narrow End']])
-            let positionCodeToPosition = new Map([[1, '(pictured on left)'], [2, '(pictured on right)']])
-            console.log(imageUrls[index][1])
-            if (imageUrls[index][1] !== 0) {
-              document.getElementById('natLightImgFigCaption' + index).innerHTML = imageUrlsIndexToEnd.get(index) + ' ' + positionCodeToPosition.get(imageUrls[index][1])
+      } else {
+        // first set all not null urls to their image srcs
+        imageUrls.forEach((element, index) => {
+          if (element != null) {
+            if (index < 4) {
+              document.getElementById(allTestingImgs[index]).src = element
             } else {
-              document.getElementById('natLightImgFigCaption' + index). innerHTML = imageUrlsIndexToEnd.get(index)
+              document.getElementById(allTestingImgs[index]).src = element[0]
+              let imageUrlsIndexToEnd = new Map([[4, 'Wide End'], [5, 'Narrow End']])
+              let positionCodeToPosition = new Map([[1, '(pictured on left)'], [2, '(pictured on right)']])
+              if (imageUrls[index][1] !== 0) {
+                document.getElementById('natLightImgFigCaption' + index).innerHTML = imageUrlsIndexToEnd.get(index) + ' ' + positionCodeToPosition.get(imageUrls[index][1])
+              } else {
+                document.getElementById('natLightImgFigCaption' + index). innerHTML = imageUrlsIndexToEnd.get(index)
+              }
             }
           }
+        });
+        // determine which checkboxes / image sections need to be displayed
+        for (let i = 0; i < allImagePrefixes.length; i++) {
+          if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
+            // one of this section's images is present, so display its checkbox
+            document.getElementById('CBshow-' + allImagePrefixes[i] + 'Section').style.display = 'block'
+          } else {
+            // this section is not needed—reset its checkbox
+            resetCheckbox(allImagePrefixes[i])
+          }
         }
-      });
-      // determine which checkboxes / image sections need to be displayed
-      for (let i = 0; i < allImagePrefixes.length; i++) {
-        if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
-          // one of this section's images is present, so display its checkbox
-          document.getElementById('CBshow-' + allImagePrefixes[i] + 'Section').style.display = 'block'
-        } else {
-          // this section is not needed—reset its checkbox
-          resetCheckbox(allImagePrefixes[i])
-        }
+        // finally, display the checkboxes section
+        document.getElementById("loadingImages").style.display = 'none'
+        document.getElementById("allCheckboxes").style.display = 'block'
       }
-      // finally, display the checkboxes section
-      document.getElementById("loadingImages").style.display = 'none'
-      document.getElementById("allCheckboxes").style.display = 'block'
     }
-
     function onGetHistogramsSuccess (histogramUrls) {
-      if (histogramUrls[0] != null) {
-        document.getElementById('histogramWide').href = histogramUrls[0]
-        document.getElementById('histogramWide').style.display = 'block'
+      if (histogramUrls != null) {
+        if (histogramUrls[0] != null) {
+          document.getElementById('histogramWide').href = histogramUrls[0]
+          document.getElementById('histogramWide').style.display = 'block'
+        } else {
+          document.getElementById('histogramWide').style.display = 'none'
+        }
+        if (histogramUrls[1] != null) {
+          document.getElementById('histogramNarrow').href = histogramUrls[1]
+          document.getElementById('histogramNarrow').style.display = 'block'
+        } else {
+          document.getElementById('histogramNarrow').style.display = 'none'
+        }
       } else {
         document.getElementById('histogramWide').style.display = 'none'
-      }
-      if (histogramUrls[1] != null) {
-        document.getElementById('histogramNarrow').href = histogramUrls[1]
-        document.getElementById('histogramNarrow').style.display = 'block'
-      } else {
         document.getElementById('histogramNarrow').style.display = 'none'
       }
     }
@@ -2229,6 +2193,7 @@
       document.getElementById('findBlockInfo').style.display = 'none'
       if (!loadedRetouch) {
         loadRetouchTables()
+        loadedRetouch = true
       }
     }
     var hideUninterestingRows = true
