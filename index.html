@@ -155,9 +155,11 @@
           this.thirteenHoles = (!dataPresent(array[60])) ? null : ((array[60] === 'Y') ? true : (array[60] === 'N') ? false : null)
           this.lightTransTester = (!dataPresent(array[63])) ? null : array[63]
           this.lightTransDate = (!dataPresent(array[64])) ? null : array[64]
+          this.lightTransDateActual = (!dataPresent(array[64]) || isNaN(parseInt(removeSuffix(array[64])))) ? null : parseInt(removeSuffix(array[64]))
           this.scintillation = (!dataPresent(array[65])) ? null : parseFloat(array[65])
           this.scintRatio = (!dataPresent(array[67])) ? null : parseFloat(array[67])
           this.scintDate = (!dataPresent(array[69])) ? null : array[69]
+          this.scintDateActual = (!dataPresent(array[69]) || isNaN(parseInt(removeSuffix(array[69])))) ? null : parseInt(removeSuffix(array[69]))
           this.natLightDate = (!dataPresent(array[70])) ? null : parseInt(array[70])
           this.natLightTester = (!dataPresent(array[71])) ? null : array[71]
           this.retouch = (this.sheet === 0) ? array[72] : null
@@ -298,6 +300,65 @@
             }
           })
           return blocks
+        }
+        getBlocksModifiedInDateRange(fromDate, toDate) {
+          let dates = []
+          let current = fromDate
+          while (current <= toDate) {
+            dates.push(current)
+            current++
+          }
+          let tungstenFilled = []
+          let epoxyFilled = []
+          let machined = []
+          let densityTested = []
+          let lightTransTested = []
+          let scintTested = []
+          let natLightTested = []
+          this.array.forEach(function(block) {
+            if (dates.includes(block.tungstenFillingDate)) {
+              tungstenFilled.push(block)
+            }
+          })
+          this.array.forEach(function(block) {
+            if (dates.includes(block.epoxyFillingDate)) {
+              epoxyFilled.push(block)
+            }
+          })
+          this.array.forEach(function(block) {
+            if (dates.includes(block.machiningDate)) {
+              machined.push(block)
+            }
+          })
+          this.array.forEach(function(block) {
+            if (dates.includes(block.densityDate)) {
+              densityTested.push(block)
+            }
+          })
+          this.array.forEach(function(block) {
+            if (dates.includes(block.lightTransDateActual)) {
+              lightTransTested.push(block)
+            }
+          })
+          this.array.forEach(function(block) {
+            if (dates.includes(block.scintDateActual)) {
+              scintTested.push(block)
+            }
+          })
+          this.array.forEach(function(block) {
+            if (dates.includes(block.natLightDate)) {
+              natLightTested.push(block)
+            }
+          })
+          return {
+            tungstenFilled: tungstenFilled,
+            epoxyFilled: epoxyFilled,
+            machined: machined,
+            densityTested: densityTested,
+            lightTransTested: lightTransTested,
+            scintTested: scintTested,
+            natLightTested: natLightTested
+          }
         }
       }
     </script>
@@ -643,33 +704,34 @@
         }
         let dataTable = $('#blocksTable').DataTable(blocksTableOptions)
         dataTable.columns('.search').every(function () {
-          let col = this
-          $(col.footer()).html('<input class="search" type="text" style="width: 100%" placeholder="Search" data-index="'+ col.index() +'"/>')
-          let input = $(col.footer()).find('input.search')
+          let colInitial = this
+          $(colInitial.footer()).html('<input class="search" type="text" style="width: 100%" placeholder="Search" data-index="' + colInitial.index() + '"/>')
+          let input = $(colInitial.footer()).find('input.search')
           input.keyup(function() {
-            col.search(this.value).draw()
+            let currentIndex = dataTable.colReorder.transpose(parseInt(this.dataset.index))
+            dataTable.column(currentIndex).search(this.value).draw()
           })
         }).columns('.searchExact').every(function() {
-          let col = this
-          $(col.footer()).html('<input class="searchExact" type="text" style="width: 100%" placeholder="Search" data-index="'+ col.index() +'"/>')
-          let input = $(col.footer()).find('input.searchExact')
+          let colInitial = this
+          $(colInitial.footer()).html('<input class="searchExact" type="text" style="width: 100%" placeholder="Search" data-index="' + colInitial.index() + '"/>')
+          let input = $(colInitial.footer()).find('input.searchExact')
           input.keyup(function() {
+            let currentIndex = dataTable.colReorder.transpose(parseInt(this.dataset.index))
+            console.log('this inputs init index is ' + this.dataset.index + ' and its current index is ' + currentIndex)
             if (this.value === '') {
-              col.search('').draw()
-              console.log("searchExact keyup for empty input")
+              dataTable.column(currentIndex).search('').draw()
             } else {
-              col.search('^' + this.value + '$', true, false).draw()
-              console.log("searchExact keyup for nonempty input")
+              dataTable.column(currentIndex).search('^' + this.value + '$', true, false).draw()
             }
           })
         }).columns('.range').every(function () {
-          let col = this
-          $(col.footer()).html(
-            '<input class="min" type="text" style="width: 100%" placeholder="min" data-index="'+ col.index() +'"/>' + '<br>' + 
-            '<input class="max" type="text" style="width: 100%" placeholder="max" data-index="'+ col.index() +'"/>'
+          let colInitial = this
+          $(colInitial.footer()).html(
+            '<input class="min" type="text" style="width: 100%" placeholder="min"/>' + '<br>' + 
+            '<input class="max" type="text" style="width: 100%" placeholder="max"/>'
           )
-          $(col.footer()).find('input.min').keyup(function() {dataTable.draw()})
-          $(col.footer()).find('input.max').keyup(function() {dataTable.draw()})
+          $(colInitial.footer()).find('input.min').keyup(function() {dataTable.draw()})
+          $(colInitial.footer()).find('input.max').keyup(function() {dataTable.draw()})
         })
         $('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
         dataTable.on( 'draw', function () {
@@ -960,8 +1022,8 @@
           } else if (b === '') {
             return -1
           } else {
-            a = parseInt(usDateToYYYYMMDD(a))
-            b = parseInt(usDateToYYYYMMDD(b))
+            a = usDateToYYYYMMDD(a)
+            b = usDateToYYYYMMDD(b)
             return ((a > b) ? 1 : ((a < b) ? -1 : 0)) 
           }
         },
@@ -975,8 +1037,8 @@
           } else if (b === '') {
             return -1
           } else {
-            a = parseInt(usDateToYYYYMMDD(a))
-            b = parseInt(usDateToYYYYMMDD(b))
+            a = usDateToYYYYMMDD(a)
+            b = usDateToYYYYMMDD(b)
             return ((a < b) ? 1 : ((a > b) ? -1 : 0)) 
           }
         },
@@ -1133,11 +1195,19 @@
           let month = to2digits(splitDate[0])
           let day = to2digits(splitDate[1])
           let year = splitDate[2]
-          return year + month + day
+          return parseInt(year + month + day)
         } else {
           console.log("helpful hint of the day: '" + usDate + "' is NOT a date.")
           return null
         }
+      }
+      function dateToYYYYMMDD (date) {
+        var y = date.getFullYear().toString()
+        var m = (date.getMonth() + 1).toString()
+        var d = date.getDate().toString()
+        (d.length == 1) && (d = '0' + d)
+        (m.length == 1) && (m = '0' + m)
+        return y + m + d
       }
       function makeFileFriendly (date) {
         return date.getFullYear() + '-' + to2digits((date.getMonth() + 1).toString()) + '-' +  to2digits(date.getDate().toString())
@@ -1145,6 +1215,14 @@
       }
       function removeSuffix(string) {
         return string.split(/[.-]/)[0]
+      }
+      function arrayToStringList (array) {
+        let string = ''
+        for (let i = 0; i < array.length - 1; i++) {
+          string += array[i] + ', '
+        }
+        string += array[array.length - 1]
+        return string
       }
       function wToWide (string) {
         if (string.toUpperCase() === 'W') {
@@ -1208,6 +1286,7 @@
         <button id="printButton" onclick="toPrint()" style="margin-left: 0;">Print</button>
         <button id="loadFindBlocksButton" onclick="loadFindBlocks()">Find Blocks</button>
         <button id="loadRetouchButton" onclick="loadRetouch()">Retouch Information</button>
+        <button id="loadDateRangeButton" onclick="loadDateRange()">Date Range</button>
       </section>
       <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
       <section id="imagesSelection" style="display: none;  margin-top: 1em;">
@@ -1422,6 +1501,46 @@
         <tbody></tbody>
         <tfoot><tr></tr></tfoot>
       </table>
+    </section>
+    <section id="dateRange" style="display: none;">
+      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
+      <form action="javascript:calcDateRange()" style="display: inline;">
+        <label>From: </label><input type="text" id="fromDate">
+        <label>To: </label><input type="text" id="toDate">
+        <button id="dateRangeSubmitButton">Submit</button>
+      </form><br>
+      <form action="javascript:calcLastDays()" style="display: inline;">
+        <label>Last </label><input type="text" id="lastDays"><label> Days</label>
+        <button id="lastDaysSubmitButton">Submit</button>
+      </form>
+      <div>
+        <span>tungstenFilled: </span><p id="tungstenFilledDateBlocks"></p>
+        <button onclick="">copy</button><button onclick="">get info</button>
+      </div>
+      <div>
+        <span>epoxyFilled: </span><p id="epoxyFilledDateBlocks"></p>
+        <button onclick="">copy</button><button onclick="">get info</button>
+      </div>
+      <div>
+        <span>machined: </span><p id="machinedDateBlocks"></p>
+        <button onclick="">copy</button><button onclick="">get info</button>
+      </div>
+      <div>
+        <span>densityTested: </span><p id="densityTestedDateBlocks"></p>
+        <button onclick="">copy</button><button onclick="">get info</button>
+      </div>
+      <div>
+        <span>lightTransTested: </span><p id="lightTransTestedDateBlocks"></p>
+        <button onclick="">copy</button><button onclick="">get info</button>
+      </div>
+      <div>
+        <span>scintTested: </span><p id="scintTestedDateBlocks"></p>
+        <button onclick="">copy</button><button onclick="">get info</button>
+      </div>
+      <div>
+        <span>natLightTested: </span><p id="natLightTestedDateBlocks"></p>
+        <button onclick="">copy</button><button onclick="">get info</button>
+      </div>
     </section>
     <script>
       function toPrint() {
@@ -2401,10 +2520,42 @@
         document.getElementById('candidateRetouchCount').innerHTML = candidateDataTable.rows().count()
         document.getElementById('sentRetouchCount').innerHTML = sentDataTable.rows().count()
       }
+      function calcDateRange() {
+        let fromInput = document.getElementById('fromDate').value
+        let toInput = document.getElementById('toDate').value
+        if ((isNaN(fromInput) && fromInput !== '') || (isNaN(toInput) && toInput !== '')) {
+          alert('please enter integers only or leave input dates blank')
+          return
+        }
+        function elementsToDBN (array) {
+          array.forEach((value, index, array) => array[index] = value.dbn)
+        }
+        let from = (fromInput === '') ? 0 : parseInt(fromInput)
+        let to = (toInput === '') ? 0 : parseInt(toInput)
+        let dateRangeBlocks = blocksCollection.getBlocksModifiedInDateRange(from, to)
+        elementsToDBN(dateRangeBlocks.tungstenFilled)
+        elementsToDBN(dateRangeBlocks.epoxyFilled)
+        elementsToDBN(dateRangeBlocks.machined)
+        elementsToDBN(dateRangeBlocks.densityTested)
+        elementsToDBN(dateRangeBlocks.lightTransTested)
+        elementsToDBN(dateRangeBlocks.scintTested)
+        elementsToDBN(dateRangeBlocks.natLightTested)
+        document.getElementById('tungstenFilledDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.tungstenFilled)
+        document.getElementById('epoxyFilledDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.epoxyFilled)
+        document.getElementById('machinedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.machined)
+        document.getElementById('densityTestedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.densityTested)
+        document.getElementById('lightTransTestedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.lightTransTested)
+        document.getElementById('scintTestedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.scintTested)
+        document.getElementById('natLightTestedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.natLightTested)
+      }
+      function calcLastDays() {
+
+      }
       function loadFindBlockInfo () {
         document.getElementById('findBlockInfo').style.display = 'block'
         document.getElementById('findBlocks').style.display = 'none'
         document.getElementById('findRetouch').style.display = 'none'
+        document.getElementById('dateRange').style.display = 'none'
       }
       function loadFindBlocks () {
         document.getElementById('findBlocks').style.display = 'block'
@@ -2418,6 +2569,10 @@
           loadRetouchTables()
           loadedRetouch = true
         }
+      }
+      function loadDateRange () {
+        document.getElementById('dateRange').style.display = 'block'
+        document.getElementById('findBlockInfo').style.display = 'none'
       }
       var hideUninterestingRows = true
       function toggleShowRows () {
