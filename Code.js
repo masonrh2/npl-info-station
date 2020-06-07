@@ -487,7 +487,7 @@ function checkBigArraySheet (bigArray) {
 /**
  * An experimental function that writes all data from bigArray to a google sheet named "imageUrlsSheet" in the user's drive
  */
-function putBigArray(bigArray) {
+function putBigArray (bigArray) {
   if (bigArray == null) {
     bigArray = loadBigArray()
   }

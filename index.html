@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NPL Block Information Station</title>
@@ -11,7 +11,6 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.js"></script>
-
     <script>
       // color constants (in HEX)
       const red = '#800000'
@@ -28,8 +27,8 @@
       const bGrade = 2
       const fGrade = 3
       const notStartedGrade = 0
-      const colorChecked = green
-      const colorUnchecked = grey
+      //const colorChecked = green
+      //const colorUnchecked = grey
       function grade_pregrade (grade) {
         if (grade === '5a') {
           return aGrade
@@ -132,6 +131,7 @@
           this.pottingNotes = (!dataPresent(array[26])) ? null : array[26]
           this.epoxyFillingTime = (!dataPresent(array[27])) ? null : parseFloat(array[27])
           this.epoxyFillingDate = (!dataPresent(array[28])) ? null : usDateToYYYYMMDD(array[28])
+          this.machiningDate = (!dataPresent(array[31])) ? null : usDateToYYYYMMDD(array[31])
           this.l = (!dataPresent(array[33])) ? null : parseFloat(array[33])
           this.bt = (!dataPresent(array[34])) ? null : parseFloat(array[34])
           this.bb = (!dataPresent(array[35])) ? null : parseFloat(array[35])
@@ -139,7 +139,7 @@
           this.st = (!dataPresent(array[37])) ? null : parseFloat(array[37])
           this.sb = (!dataPresent(array[38])) ? null : parseFloat(array[38])
           this.sh = (!dataPresent(array[39])) ? null : parseFloat(array[39])
-          this.volume = (!dataPresent(array[40]) || parseInt(array[40])) ? null : parseFloat(array[40])
+          this.volume = (!dataPresent(array[40]) || parseInt(array[40]) === 0) ? null : parseFloat(array[40])
           this.dimensionTester = (!dataPresent(array[41])) ? null : array[41]
           this.mass = (!dataPresent(array[42])) ? null : parseInt(array[42])
           this.massTester = (!dataPresent(array[43])) ? null : array[43]
@@ -165,6 +165,13 @@
           this.lightTransChecked = (this.sheet === 0) ? array[74] : null
           this.natLightChecked = (this.sheet === 0) ? array[75] : null
           this.pregrade = (this.sheet === 0) ? array[77] : null
+          //other calculations
+          this.densityComplete = (this.volume != null && this.mass != null && this.massTester != null) ? true : false
+          this.lightTransComplete = (this.fiberPercentage != null && this.missingRow != null && this.thirteenHoles != null && this.lightTransTester != null) ? true : false
+          this.scintComplete = (this.scintillation != null && this.scintRatio != null) ? true : false
+          this.natLightComplete = (this.natLightDate != null && this.natLightTester != null) ? true : false
+          this.testsComplete = this.densityComplete && this.lightTransComplete && this.scintComplete && this.natLightComplete
+          this.testsChecked = this.densityChecked && this.lightTransChecked && this.natLightChecked
         }
         getTungstenData() {return [this.powder, this.bucket, this.moldSeries, this.emptyMoldMass, this.filledMoldMass, this.tungstenMass, this.tungstenFillingDate]}
         getEpoxyData() {return [this.epoxyBatch, this.resinMass, this.hardenerMass, this.pottingNotes, this.epoxyFillingTime, this.epoxyFillingDate]}
@@ -233,20 +240,6 @@
             return null
           }
         }
-        testCompletes() {
-          return {
-            densityComplete: (this.volume != null && this.mass != null && this.massTester != null) ? 1 : 0,
-            lightTransComplete: (this.fiberPercentage != null && this.missingRow != null && this.thirteenHoles != null && this.lightTransTester != null) ? 1 : 0,
-            natLightComplete : (this.natLightDate != null && this.natLightTester != null) ? 1 : 0
-          }
-        }
-        testChecks() {
-          return {
-            densityChecked: (this.densityChecked == null) ? notStartedGrade : 1,
-            lightTransChecked: (this.lightTransChecked == null) ? notStartedGrade : 1,
-            natLightChecked: (this.natLightChecked == null) ? notStartedGrade : 1
-          }
-        }
         getUrls(imageUrlsCallback, histogramUrlsCallback) {
           let that = this
           if (!this.gotUrls) {
@@ -312,10 +305,9 @@
       // configuration for the blocks table
       const blocksTableOptions = {
         paging: false,
-        info: false,
         scrollX: true,
         scrollY: "480px",
-        dom: 'Bfrtip',
+        dom: 'Brtp',
         buttons: [
           {extend: 'colvis', text:'columns', collectionLayout: 'fixed four-column'},
           {extend: 'collection', text: 'tests', buttons: [
@@ -337,15 +329,19 @@
         fixedColumns: true,
         select: false,
         columns: [
-        {name: "dbn", "title": "DBN", className: "dt-center basicInfo bolded", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="font-weight: bold">' + data + '</span>';
+        {name: "dbn", "title": "DBN", className: "dt-center basicInfo bolded searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '') {
+              return '<span style="font-weight: bold">' + data + '</span>';
+            } else {
+              return '<span>' + data + '</span>';
+            }
           } else {
-            return '<span>' + data + '</span>';
+            return data
           }
         }},
-        {name: "block", "title": "Block", className: "dt-center basicInfo", "searchable": true, "type": "block", "visible": true},
-        {name: "status", "title": "Status", className: "dt-center basicInfo", "searchable": true, "type": "status", "visible": true},
+        {name: "block", "title": "Block", className: "dt-center basicInfo searchExact", "searchable": true, "type": "block", "visible": true},
+        {name: "status", "title": "Status", className: "dt-center basicInfo searchExact", "searchable": true, "type": "status", "visible": true},
         {name: "testingStatus", title: "Testing Status", className: "dt-center basicInfo hasGrade", "searchable": false, "type": "testingStatus","visible": true, render: function ( data, type, row ) {
           if (!dataPresent(data)) {
             return ''
@@ -383,217 +379,306 @@
             return data
           }
         }},
-        {name: "pregrade", "title": "Grade", className: "dt-center basicInfo hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '' && grade_pregrade(data) != null) {
-            let color = testColors[grade_pregrade(data)]
-            return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+        {name: "readyToGrade", "title": "<span>Ready To</span><br><span>Grade</span>", className: "dt-center hasGrade search", "searchable": true, "type": "readyToGrade", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            return '<span style="color:' + data.color + '; font-weight: bold">' + data.text + '</span>'
           } else {
-            return '<span>' + data + '</span>';
+            return data.text
           }
         }},
-        {name: "shipment", "title": "Shipment", className: "dt-center basicInfo", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "sector", "title": "Sector", className: "dt-center basicInfo", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "powder", "title": "W Powder", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "bucket", "title": "W Bucket #", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "moldSeries", "title": "<span>Mold</span><br><span>Series</span>", className: "dt-center tungsten", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "emptyMoldMass", "title": "<span>Empty Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "filledMoldMass", "title": "<span>Filled Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "tungstenMass", "title": "W Mass (g)", className: "dt-center tungsten", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "tungstenFillingDate", "title": "W Filling Date", className: "dt-center tungsten", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
-        {name: "epoxyBatch", "title": "<span>Epoxy</span><br><span>Batch</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "resinMass", "title": "<span>Resin</span><br><span>Mass (g)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "hardenerMass", "title": "<span>Hardener</span><br><span>Mass (g)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "epoxyFillingTime", "title": "<span>Epoxy Filling</span><br><span>Time (min)</span>", className: "dt-center epoxy", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "epoxyFillingDate", "title": "<span>Epoxy</span><br><span>Filling Date</span>", className: "dt-center epoxy", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
-        {name: "dL", "title": "ΔL (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            let color = testColors[grade_dL(data)]
-            if (data > 0) {
-              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+        {name: "pregrade", "title": "Grade", className: "dt-center basicInfo hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '' && grade_pregrade(data) != null) {
+              let color = testColors[grade_pregrade(data)]
+              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>'
             } else {
-              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+              return '<span>' + data + '</span>'
             }
           } else {
-            return '<span>' + data + '</span>'
+            return data
           }
         }},
-        {name: "dBT", "title": "ΔBT (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            let color = testColors[grade_otherDev(data)]
-            if (data > 0) {
-              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-            } else {
-              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            }
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "dBB", "title": "ΔBB (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            let color = testColors[grade_otherDev(data)]
-            if (data > 0) {
-              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-            } else {
-              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            }
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "dBH", "title": "ΔBH (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            let color = testColors[grade_otherDev(data)]
-            if (data > 0) {
-              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-            } else {
-              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            }
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "dST", "title": "ΔST (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            let color = testColors[grade_otherDev(data)]
-            if (data > 0) {
-              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-            } else {
-              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            }
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "dSB", "title": "ΔSB (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            let color = testColors[grade_otherDev(data)]
-            if (data > 0) {
-              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-            } else {
-              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            }
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "dSH", "title": "ΔSH (in)", className: "dt-center density tolerances hasGrade", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            let color = testColors[grade_otherDev(data)]
-            if (data > 0) {
-              return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-            } else {
-              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-            }
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "toleranceMse", "title": "Tolerance MSE", className:"dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "volume", "title": "Volume (mL)", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "mass", "title": "Mass (g)", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "density", "title": "<span>Density</span><br><span>(g/mL)</span>", className: "dt-center density hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_density(data)] + '; font-weight: bold">' + data + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "densityDate", "title": "Density Date", className: "dt-center density", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "goodEnd", "title": "Good End", className: "dt-center lightTrans", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "fiberPercentage", "title": "Fiber Count (%)", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_fiberPercentage(data)] + '; font-weight: bold">' + data + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "tower1", "title": "T1 (BL) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "tower2", "title": "T2 (BR) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "tower3", "title": "T3 (TL) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "tower4", "title": "T4 (TR) (%)", className: "dt-center lightTrans towers hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "missingRow", "title": "<span>Missing</span><br><span>Row</span>", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_missingRow(data)] + '; font-weight: bold">' + yToYes(data) + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "thirteenHoles", "title": "<span>13 Connected</span><br><span>Holes</span>", className: "dt-center lightTrans hasGrade", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_thirteenHoles(data)] + '; font-weight: bold">' + yToYes(data) + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "lightTransDate", "title": "LT Date", className: "dt-center lightTrans", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
-        {name: "scintillation", "title": "<span>Scintillation</span><br><span>(mV)</span>", className: "dt-center scint", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "scintRatio", "title": "<span>Scintillation</span><br><span>Ratio</span>", className: "dt-center scint hasGrade", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (data !== '') {
-            return '<span style="color:' + testColors[grade_scintRatio(data)] + '; font-weight: bold">' + data + '</span>';
-          } else {
-            return '<span>' + data + '</span>'
-          }
-        }},
-        {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
-        {name: "natLightDate", "title": "NL Date", className: "dt-center natLight", "searchable": true, "type": "numericEmptyUnsorted", "visible": false}
-        ],
-        initComplete: function () {
-          // Apply the search
-          this.api().columns().every( function () {
-            var that = this
-            $( 'input', this.footer() ).on( 'keyup change clear', function () {
-              if ( that.search() !== this.value ) {
-                that.search( this.value ).draw()
+        {name: "shipment", "title": "Shipment", className: "dt-center basicInfo searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "sector", "title": "Sector", className: "dt-center basicInfo search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "powder", "title": "W Powder", className: "dt-center tungsten search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "bucket", "title": "W Bucket #", className: "dt-center tungsten searchExact", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "moldSeries", "title": "<span>Mold</span><br><span>Series</span>", className: "dt-center  searchExact", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "emptyMoldMass", "title": "<span>Empty Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "filledMoldMass", "title": "<span>Filled Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "tungstenMass", "title": "W Mass (g)", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "tungstenFillingDate", "title": "W Filling Date", className: "dt-center tungsten search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
+        {name: "epoxyBatch", "title": "<span>Epoxy</span><br><span>Batch</span>", className: "dt-center epoxy searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "resinMass", "title": "<span>Resin</span><br><span>Mass (g)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "hardenerMass", "title": "<span>Hardener</span><br><span>Mass (g)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "epoxyFillingTime", "title": "<span>Epoxy Filling</span><br><span>Time (min)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "epoxyFillingDate", "title": "<span>Epoxy</span><br><span>Filling Date</span>", className: "dt-center epoxy search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
+        {name: "machiningDate", "title": "<span>Machining</span><br><span>Date</span>", className: "dt-center search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
+        {name: "dL", "title": "ΔL (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '') {
+              let color = testColors[grade_dL(data)]
+              if (data > 0) {
+                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+              } else {
+                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
               }
-            })
-          })
-        }
+            } else {
+              return '<span>' + data + '</span>'
+            }
+          } else {
+            return data
+          }
+        }},
+        {name: "dBT", "title": "ΔBT (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '') {
+              let color = testColors[grade_otherDev(data)]
+              if (data > 0) {
+                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+              } else {
+                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+              }
+            } else {
+              return '<span>' + data + '</span>'
+            }
+          } else {
+            return data
+          }
+        }},
+        {name: "dBB", "title": "ΔBB (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '') {
+              let color = testColors[grade_otherDev(data)]
+              if (data > 0) {
+                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+              } else {
+                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+              }
+            } else {
+              return '<span>' + data + '</span>'
+            }
+          } else {
+            return data
+          }
+        }},
+        {name: "dBH", "title": "ΔBH (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '') {
+              let color = testColors[grade_otherDev(data)]
+              if (data > 0) {
+                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+              } else {
+                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+              }
+            } else {
+              return '<span>' + data + '</span>'
+            }
+          } else {
+            return data
+          }
+        }},
+        {name: "dST", "title": "ΔST (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '') {
+              let color = testColors[grade_otherDev(data)]
+              if (data > 0) {
+                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+              } else {
+                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+              }
+            } else {
+              return '<span>' + data + '</span>'
+            }
+          } else {
+            return data
+          }
+        }},
+        {name: "dSB", "title": "ΔSB (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '') {
+              let color = testColors[grade_otherDev(data)]
+              if (data > 0) {
+                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+              } else {
+                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+              }
+            } else {
+              return '<span>' + data + '</span>'
+            }
+          } else {
+            return data
+          }
+        }},
+        {name: "dSH", "title": "ΔSH (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+            if (data !== '') {
+              let color = testColors[grade_otherDev(data)]
+              if (data > 0) {
+                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
+              } else {
+                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
+              }
+            } else {
+              return '<span>' + data + '</span>'
+            }
+          } else {
+            return data
+          }
+        }},
+        {name: "toleranceMse", "title": "Tolerance MSE", className:"dt-center range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "volume", "title": "Volume (mL)", className: "dt-center density range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "mass", "title": "Mass (g)", className: "dt-center density range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "density", "title": "<span>Density</span><br><span>(g/mL)</span>", className: "dt-center density hasGrade range range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_density(data)] + '; font-weight: bold">' + data + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return data
+          }
+        }},
+        {name: "densityDate", "title": "Density Date", className: "dt-center density searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "goodEnd", "title": "Good End", className: "dt-center lightTrans search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
+        {name: "fiberPercentage", "title": "Fiber Count (%)", className: "dt-center lightTrans hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_fiberPercentage(data)] + '; font-weight: bold">' + data + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return data
+          }
+        }},
+        {name: "tower1", "title": "T1 (BL) (%)", className: "dt-center lightTrans towers hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return data
+          }
+        }},
+        {name: "tower2", "title": "T2 (BR) (%)", className: "dt-center lightTrans towers hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return data
+          }
+        }},
+        {name: "tower3", "title": "T3 (TL) (%)", className: "dt-center lightTrans towers hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return data
+          }
+        }},
+        {name: "tower4", "title": "T4 (TR) (%)", className: "dt-center lightTrans towers hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return data
+          }
+        }},
+        {name: "missingRow", "title": "<span>Missing</span><br><span>Row</span>", className: "dt-center lightTrans hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_missingRow(data)] + '; font-weight: bold">' + yToYes(data) + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return yToYes(data)
+          }
+        }},
+        {name: "thirteenHoles", "title": "<span>13 Connected</span><br><span>Holes</span>", className: "dt-center lightTrans hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_thirteenHoles(data)] + '; font-weight: bold">' + yToYes(data) + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return yToYes(data)
+          }
+        }},
+        {name: "lightTransDate", "title": "LT Date", className: "dt-center lightTrans searchExact", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
+        {name: "scintillation", "title": "<span>Scintillation</span><br><span>(mV)</span>", className: "dt-center scint range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "scintRatio", "title": "<span>Scintillation</span><br><span>Ratio</span>", className: "dt-center scint hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+          if (type === 'display') {
+              if (data !== '') {
+              return '<span style="color:' + testColors[grade_scintRatio(data)] + '; font-weight: bold">' + data + '</span>';
+            } else {
+              return '<span>' + data + '</span>'
+            } 
+          } else {
+            return data
+          }
+        }},
+        {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint searchExact", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
+        {name: "natLightDate", "title": "NL Date", className: "dt-center natLight searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false}
+        ]
       }
       // initialize blocks table
       $(document).ready(function () {
         for (let i = 0; i < blocksTableOptions.columns.length; i++) {
-          $('#blocksTable').find('thead').find('tr').append($('<th />'))
-          $('#blocksTable').find('tfoot').find('tr').append($('<th />'))
+          $('#blocksTable thead tr').append($('<th />'))
+          $('#blocksTable tfoot tr').append($('<th />'))
         }
-        $('#blocksTable tfoot th').each( function () {
-          $(this).html( '<input type="text" style="width: 100%" placeholder="Search" />' )
-        })
         let dataTable = $('#blocksTable').DataTable(blocksTableOptions)
+        dataTable.columns('.search').every(function () {
+          let col = this
+          $(col.footer()).html('<input class="search" type="text" style="width: 100%" placeholder="Search" data-index="'+ col.index() +'"/>')
+          let input = $(col.footer()).find('input.search')
+          input.keyup(function() {
+            col.search(this.value).draw()
+          })
+        }).columns('.searchExact').every(function() {
+          let col = this
+          $(col.footer()).html('<input class="searchExact" type="text" style="width: 100%" placeholder="Search" data-index="'+ col.index() +'"/>')
+          let input = $(col.footer()).find('input.searchExact')
+          input.keyup(function() {
+            if (this.value === '') {
+              col.search('').draw()
+              console.log("searchExact keyup for empty input")
+            } else {
+              col.search('^' + this.value + '$', true, false).draw()
+              console.log("searchExact keyup for nonempty input")
+            }
+          })
+        }).columns('.range').every(function () {
+          let col = this
+          $(col.footer()).html(
+            '<input class="min" type="text" style="width: 100%" placeholder="min" data-index="'+ col.index() +'"/>' + '<br>' + 
+            '<input class="max" type="text" style="width: 100%" placeholder="max" data-index="'+ col.index() +'"/>'
+          )
+          $(col.footer()).find('input.min').keyup(function() {dataTable.draw()})
+          $(col.footer()).find('input.max').keyup(function() {dataTable.draw()})
+        })
+        $('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
         dataTable.on( 'draw', function () {
-          // do something on draw
+          //$('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
         }).on( 'order', function () {
           if (arraysEqual(arrayFromFirstElements(dataTable.order()), arrayFromFirstElements(sortConfig))) {
             //console.log('reorder: sorting columns were not changed')
-            //console.log('current sort: ' + dataTable.order() + '; sortConfig: ' + sortConfig)
           } else {
-            // then sorted column has changed, and we assume that this is user input, so it's safe to call filter
             // console.log('reorder: sorting colunms were changed')
-            // console.log('current sort: ' + dataTable.order() + '; sortConfig: ' + sortConfig)
             sortConfig = [...dataTable.order()]
             filter()
           }
@@ -601,19 +686,67 @@
           document.getElementById("blocksCount").innerHTML = dataTable.rows({search:'applied'}).count()
         }).on( 'column-visibility', function ( e, settings, column, state ) {
           if (!state) {
-            // changed to hidden, so clear the column's search bar
-            $('#blocksTable').DataTable().column(column).footer().firstElementChild.value = ''
+            //changed to hidden, so clear the column's search bar
+            let col = dataTable.column(column)
+            if ($(col.nodes()).hasClass('search')) {
+              $(col.footer()).find('input.search').get(0).value = ''
+              $(col.footer()).find('input.search').keyup()
+            } else if ($(col.nodes()).hasClass('searchExact')) {
+              $(col.footer()).find('input.searchExact').get(0).value = ''
+              $(col.footer()).find('input.searchExact').keyup()
+            } else if ($(col.nodes()).hasClass('range')) {
+              $(col.footer()).find('input.min').get(0).value = ''
+              $(col.footer()).find('input.max').get(0).value = ''
+              dataTable.draw()
+            }
           }
+          $('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
         })
+        /*
+        $(document).on({
+          mouseenter: function (event) {
+            var table = $(event.target).parents('.dataTables_wrapper').find('table.dataTable');
+            trIndex = $(this).index() + 2;
+            table.find("tr:eq(" + trIndex + ")").addClass("hover");
+          },
+          mouseleave: function (event) {
+            var table = $(event.target).parents('.dataTables_wrapper').find('table.dataTable');
+            trIndex = $(this).index() + 2;
+            table.find("tr:eq(" + trIndex + ")").removeClass("hover");
+          }
+        }, ".dataTables_wrapper tbody tr");
+        */
       })
+      $.fn.dataTable.ext.search.push(
+        function( settings, data, dataIndex ) {
+          if (settings.sTableId === 'blocksTable') {
+            for (let i = 0; i < settings.aoColumns.length; i++) {
+              let col = settings.aoColumns[i]
+              if (col.sClass.split(" ").includes('range')) {
+                let min = parseFloat(col.nTf.children[0].value)
+                let max = parseFloat(col.nTf.children[2].value)
+                let val = parseFloat(data[i])
+                if (!((isNaN(min) && isNaN(max)) ||
+                  (isNaN(min) && val <= max) ||
+                  (min <= val && isNaN( max)) ||
+                  (min <= val && val <= max))) {
+                  return false
+                }
+              }
+            }
+            return true
+          } else {
+            return true
+          }
+        }
+      )
       // configuration for candidate retouch table
       const candidateRetouchTableOptions = {
         paging: false,
-        info: false,
         buttons: [],
         scrollX: true,
         scrollY: false,
-        dom: 'Bfrtip',
+        dom: 'Brtp',
         select: false,
         columns: [
           {name: "dbn", "title": "DBN", className: "dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function(data, type, row) {
@@ -645,11 +778,10 @@
       // configuration for sent retouch table
       const sentRetouchTableOptions = {
         paging: false,
-        info: false,
         buttons: [],
         scrollX: true,
         scrollY: false,
-        dom: 'Bfrtip',
+        dom: 'Brtp',
         select: false,
         columns: [
           {name: "dbn", "title": "DBN", className: "dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function(data, type, row) {
@@ -934,7 +1066,7 @@
             return ((a === '0') ? 1 : ((b === '0') ? -1 : ((a < b) ? 1 : ((a > b) ? -1 : 0))))
           }
         },
-        "testingStatus-asc": function (status, otherStatus) {
+        "testingStatus-desc": function (status, otherStatus) {
           if (status === '') {
             return 1
           } else if (otherStatus === '') {
@@ -945,7 +1077,7 @@
             return (index > otherIndex) ? 1 : ((index < otherIndex) ? -1 : 0)  
           }
         },
-        "testingStatus-desc": function (status, otherStatus) {
+        "testingStatus-asc": function (status, otherStatus) {
           if (status === '') {
             return 1
           } else if (otherStatus === '') {
@@ -955,9 +1087,32 @@
             let otherIndex = indexFromTestingStatus(otherStatus)
             return (index < otherIndex) ? 1 : ((index > otherIndex) ? -1 : 0)  
           }
+        },
+        "readyToGrade-desc": function (a, b) {
+          if (a === '') {
+            return 1
+          } else if (b === '') {
+            return -1
+          } else {
+            index = readyToGradeMap.get(a)
+            otherIndex = readyToGradeMap.get(b)
+            return (index > otherIndex) ? 1 : ((index < otherIndex) ? -1 : 0)  
+          }
+        },
+        "readyToGrade-asc": function (a, b) {
+          if (a === '') {
+            return 1
+          } else if (b === '') {
+            return -1
+          } else {
+            index = readyToGradeMap.get(a)
+            otherIndex = readyToGradeMap.get(b)
+            return (index < otherIndex) ? 1 : ((index > otherIndex) ? -1 : 0)  
+          }
         }
       });
       // sorting helper functions
+      const readyToGradeMap = new Map([['Needs Tests', 1], ['Needs Checks', 2], ['Ready', 3]])
       function parseFloatRemovePlus (string) {
         if (string[0] === '+') {
           return parseFloat(string.substr(1))
@@ -965,14 +1120,14 @@
           return parseFloat(string)
         }
       }
-      function usDateToYYYYMMDD (usDate) {
-        function to2digits (string) {
-          if (string.length < 2) {
-            return '0' + string
-          } else {
-            return string
-          }
+      function to2digits (string) {
+        if (string.length < 2) {
+          return '0' + string
+        } else {
+          return string
         }
+      }
+      function usDateToYYYYMMDD (usDate) {
         let splitDate = usDate.split('/')
         if (splitDate.length === 3) {
           let month = to2digits(splitDate[0])
@@ -983,6 +1138,13 @@
           console.log("helpful hint of the day: '" + usDate + "' is NOT a date.")
           return null
         }
+      }
+      function makeFileFriendly (date) {
+        return date.getFullYear() + '-' + to2digits((date.getMonth() + 1).toString()) + '-' +  to2digits(date.getDate().toString())
+          + 'T' + date.toTimeString().substr(0, 8).replace(':', '').replace(':', '')
+      }
+      function removeSuffix(string) {
+        return string.split(/[.-]/)[0]
       }
       function wToWide (string) {
         if (string.toUpperCase() === 'W') {
@@ -1028,678 +1190,679 @@
         return ((hasFail) ? -1 : 1) * (100 * testsComplete + 10 * testsChecked + testsStarted)
       }
     </script>
-</head>
-<body onload="getDatabaseOnLoad()" style="margin: 16px;">
-  <div class="header" style="display: block; padding-bottom: 2em;">
-    <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
-    <h1>NPL Block Information Station</h1>
-  </div>
-  <p id="loadingDatabase" style="display: none;">Loading Database...</p>
-  <p id="currentDateAndTime" style="display: none;"></p>
-  <section id="findBlockInfo" style="display: none;">
-    <section style="display: inline-block; margin-left: 0em;">
-      <form action="javascript:onSubmit()" style="display: inline;">
-        <label>DBN: </label><input type="text" id="inputDBN">
-        <button>Submit</button>
-      </form>
-      <button onclick="madness()">load all images</button>
-      <button onclick="loadFindBlocks()">Find Blocks</button>
-      <button onclick="loadRetouch()">Retouch Information</button>
-      <button onclick="" style="margin-left: 0; display: none;">Download as PDF</button>
-    </section>
-    <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
-    <section id="imagesSelection" style="display: none;  margin-top: 1em;">
-      <section id="allCheckboxes" style="display: none;">
-        <section id="CBshow-lightTransImgSection" style="display: none;">
-          <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')">
-          <label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel">Show Light Transmission Original Images</label><br>
-        </section>
-        <section id="CBshow-lightTransImgCroppedSection" style="display: none;">
-          <input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')">
-          <label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel">Show Light Transmission Cropped Images</label><br>
-        </section>
-        <section id="CBshow-natLightImgSection" style="display: none;">
-          <input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')">
-          <label for="CBshow-natLightImg" id="CBshow-natLightImgLabel">Show Natural Light Images</label>
-        </section>
+  </head>
+  <body onload="getDatabaseOnLoad()" style="margin: 16px;">
+    <div class="header" style="display: block; padding-bottom: 2em;">
+      <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
+      <h1>NPL Block Information Station</h1>
+    </div>
+    <p id="loadingDatabase" style="display: none;">Loading Database...</p>
+    <p id="currentDateAndTime" style="display: none;"></p>
+    <section id="findBlockInfo" style="display: none;">
+      <section style="display: inline-block; margin-left: 0em;">
+        <form action="javascript:onSubmit()" style="display: inline;">
+          <label>DBN: </label><input type="text" id="inputDBN">
+          <button id="dbnSubmitButton">Submit</button>
+        </form>
+        <button id="loadAllImagesButton" onclick="madness()">Load All Images</button>
+        <button id="printButton" onclick="toPrint()" style="margin-left: 0;">Print</button>
+        <button id="loadFindBlocksButton" onclick="loadFindBlocks()">Find Blocks</button>
+        <button id="loadRetouchButton" onclick="loadRetouch()">Retouch Information</button>
       </section>
-      <div id="loadingImages" style="display: none;">Loading Images...</div>
-      <div id="noImagesFound" style="display: none;">No Images Found</div>
-    </section>
-    <section id="blockDetailsSection" style="display: none;">
-      <h2>Block Details</h2>
-      <dl class='inline-flex'>
-        <dt id='dbnLabel'>DBN:</dt>
-        <dd id="dbn"></dd>
-        <dt id='blockLabel'>Block Design:</dt>
-        <dd id="block"></dd>
-        <dt id='statusLabel'>Status:</dt>
-        <dd id="status"></dd>
-        <dt id='pregradeLabel'>Pregrade:</dt>
-        <dd id="pregrade"></dd>
-        <dt id="shipmentLabel">BNL Shipment:</dt>
-        <dd id="shipment"></dd>
-        <dt id="sectorLabel">Sector:</dt>
-        <dd id="sector"></dd>
-        <dt id="commentLabel">Comment:</dt>
-        <dd id="comment"></dd>
-        <section style="width: 100%; padding-top: 1em;">
-          <button id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
-          <table class="dimension" id="tungstenTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
-            <tr>
-              <th style="white-space: nowrap;">Powder</th><th style="white-space: nowrap;">Bucket Number</th><th style="white-space: nowrap;">Mold Series</th><th style="white-space: nowrap;">Empty Mold Mass (g)</th><th style="white-space: nowrap;">Filled Mold Mass (g)</th><th style="white-space: nowrap;">Tungsten Mass (g)</th><th style="white-space: nowrap;">Filling Date</th>
-            </tr>
-            <tr>
-              <td id="powder"></td><td id="bucket"></td><td id="moldSeries"></td><td id="emptyMoldMass"></td><td id="filledMoldMass"></td><td id="tungstenMass"></td><td id="tungstenFillingDate"></td>
-            </tr>
-          </table>
+      <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
+      <section id="imagesSelection" style="display: none;  margin-top: 1em;">
+        <section id="allCheckboxes" style="display: none;">
+          <section id="CBshow-lightTransImgSection" style="display: none;">
+            <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')">
+            <label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel">Show Light Transmission Original Images</label><br>
+          </section>
+          <section id="CBshow-lightTransImgCroppedSection" style="display: none;">
+            <input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')">
+            <label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel">Show Light Transmission Cropped Images</label><br>
+          </section>
+          <section id="CBshow-natLightImgSection" style="display: none;">
+            <input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')">
+            <label for="CBshow-natLightImg" id="CBshow-natLightImgLabel">Show Natural Light Images</label>
+          </section>
         </section>
-        <section style="width: 100%; padding-top: 1em;">
-          <button id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
-          <table class="dimension" id="epoxyTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
-            <tr>
-              <th style="white-space: nowrap;">Epoxy Batch</th><th style="white-space: nowrap;">Resin Mass (g)</th><th style="white-space: nowrap;">Hardener Mass (g)</th><th style="white-space: nowrap;">Potting Notes</th><th style="white-space: nowrap;">Epoxy Filling Time (min)</th><th style="white-space: nowrap;">Filling Date</th>
-            </tr>
-            <tr>
-              <td id="epoxyBatch"></td><td id="resinMass"></td><td id="hardenerMass"></td><td id="pottingNotes"></td><td id="epoxyFillingTime"></td><td id="epoxyFillingDate"></td>
-            </tr>
-          </table>
-        </section>
-      </dl>
+        <div id="loadingImages" style="display: none;">Loading Images...</div>
+        <div id="noImagesFound" style="display: none;">No Images Found</div>
+      </section>
+      <section id="blockDetailsSection" style="display: none;">
+        <h2>Block Details</h2>
+        <dl class='inline-flex'>
+          <dt id='dbnLabel'>DBN:</dt>
+          <dd id="dbn"></dd>
+          <dt id='blockLabel'>Block Design:</dt>
+          <dd id="block"></dd>
+          <dt id='statusLabel'>Status:</dt>
+          <dd id="status"></dd>
+          <dt id='pregradeLabel'>Pregrade:</dt>
+          <dd id="pregrade"></dd>
+          <dt id="shipmentLabel">BNL Shipment:</dt>
+          <dd id="shipment"></dd>
+          <dt id="sectorLabel">Sector:</dt>
+          <dd id="sector"></dd>
+          <dt id="commentLabel">Comment:</dt>
+          <dd id="comment"></dd>
+          <section style="width: 100%; padding-top: 1em;">
+            <button id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
+            <table class="dimension" id="tungstenTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+              <tr>
+                <th style="white-space: nowrap;">Powder</th><th style="white-space: nowrap;">Bucket Number</th><th style="white-space: nowrap;">Mold Series</th><th style="white-space: nowrap;">Empty Mold Mass (g)</th><th style="white-space: nowrap;">Filled Mold Mass (g)</th><th style="white-space: nowrap;">Tungsten Mass (g)</th><th style="white-space: nowrap;">Filling Date</th>
+              </tr>
+              <tr>
+                <td id="powder"></td><td id="bucket"></td><td id="moldSeries"></td><td id="emptyMoldMass"></td><td id="filledMoldMass"></td><td id="tungstenMass"></td><td id="tungstenFillingDate"></td>
+              </tr>
+            </table>
+          </section>
+          <section style="width: 100%; padding-top: 1em;">
+            <button id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
+            <table class="dimension" id="epoxyTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+              <tr>
+                <th style="white-space: nowrap;">Epoxy Batch</th><th style="white-space: nowrap;">Resin Mass (g)</th><th style="white-space: nowrap;">Hardener Mass (g)</th><th style="white-space: nowrap;">Potting Notes</th><th style="white-space: nowrap;">Epoxy Filling Time (min)</th><th style="white-space: nowrap;">Filling Date</th>
+              </tr>
+              <tr>
+                <td id="epoxyBatch"></td><td id="resinMass"></td><td id="hardenerMass"></td><td id="pottingNotes"></td><td id="epoxyFillingTime"></td><td id="epoxyFillingDate"></td>
+              </tr>
+            </table>
+          </section>
+        </dl>
+      </section>
+      <section id="blockDetailsNoInfo" style="display: none;">
+        <p style="font-style: italic; font-size: 1.5em;">Unable to find any block information for this dbn</p>
+      </section>
+      <section id="densitySection" style="display: none;">
+        <h2 id="densitySectionLabel">Density</h2>
+        <dl class='inline-flex'>
+          <dt id='volumeLabel'>Volume:</dt>
+          <dd id="volume"></dd>
+          <dt id='massLabel'>Mass:</dt>
+          <dd id="mass"></dd>
+          <dt id='densityLabel'>Density:</dt>
+          <dd id="density" style="font-weight: bold;"></dd>
+          <dt id='densityDateLabel'>Date:</dt>
+          <dd id="densityDate"></dd>
+        </dl>
+        <button id="showTolerancesTableBtn" style="display: none;" onclick="toggleTolerancesTable()">Show Tolerances</button>
+        <table class="dimension" id="tolerancesTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+          <tr>
+            <th>ΔL</th><th>ΔBT</th><th>ΔBB</th><th>ΔBH</th><th>ΔST</th><th>ΔSB</th><th>ΔSH</th>
+          </tr>
+          <tr>
+            <td id="L" style="font-weight: bold;"></td><td id="BT" style="font-weight: bold;"></td><td id="BB" style="font-weight: bold;"></td><td id="BH" style="font-weight: bold;"></td><td id="ST" style="font-weight: bold;"></td><td id="SB" style="font-weight: bold;"></td><td id="SH" style="font-weight: bold;"></td>
+          </tr>
+        </table>
+      </section>
+      <section id="densityNoInfo" style="display: none;">
+        <p style="font-style: italic; font-size: 1.5em;">Unable to find any density data for this block</p>
+      </section>
+      <section id="lightTransSection" style="display: none;">
+        <h2 id="lightTransSectionLabel">Light Transmission</h2>
+        <dl class='inline-flex'>
+          <dt id='fiberPercentageLabel'>Fiber Count:</dt>
+          <dd id="fiberPercentage" style="font-weight: bold;"></dd>
+          <dt id='goodEndLabel'>Good End:</dt>
+          <dd id="goodEnd"></dd>
+          <dt id='missingRowLabel'>Missing Row:</dt>
+          <dd id="missingRow" style="font-weight: bold;"></dd>
+          <dt id='thirteenHolesLabel'>13 Connected Holes:</dt>
+          <dd id="thirteenHoles" style="font-weight: bold;"></dd>
+          <dt id='lightTransDateLabel'>Date:</dt>
+          <dd id="lightTransDate"></dd>
+        </dl>
+        <button id="showTowerTableBtn" style="display: none; margin-bottom: 1em;" onclick="toggleTowerTable()">Show Tower Information</button>
+        <table class="dimension" id="towerTable" style="display: none; margin-bottom: 1em; border-collapse: collapse; fill: #333;">
+          <tr>
+            <th>T1 (BL)</th><th>T2 (BR)</th><th>T3 (TL)</th><th>T3 (TR)</th>
+          </tr>
+          <tr>
+            <td id="tower1" style="font-weight: bold;"></td><td id="tower2" style="font-weight: bold;"></td><td id="tower3" style="font-weight: bold;"></td><td id="tower4" style="font-weight: bold;"></td>
+          </tr>
+        </table>
+        <a id="histogramWide" target="_blank" style="display: none;">Histograms (Wide)<br></a>
+        <a id="histogramNarrow" target="_blank" style="display: none;;">Histograms (Narrow)</a>
+        <figure class="testImg" id="lightTransImgFigW" style="display: none;">
+          <img id="lightTransImgW" height="360"/>
+          <figcaption>Wide End</figcaption>
+        </figure>
+        <figure class="testImg" id="lightTransImgFigN" style="display: none;">
+          <img id="lightTransImgN" height="360"/>
+          <figcaption>Narrow End</figcaption>
+        </figure>
+        <figure class="testImg" id="lightTransImgCroppedFigW" style="display: none;">
+          <img id="lightTransImgCroppedW" height="360"/>
+          <figcaption>Wide End</figcaption>
+        </figure>
+        <figure class="testImg" id="lightTransImgCroppedFigN" style="display: none;">
+          <img id="lightTransImgCroppedN" height="360"/>
+          <figcaption>Narrow End</figcaption>
+        </figure>
+      </section>
+      <section id="lightTransNoInfo" style="display: none;">
+        <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
+      </section>
+      <section id="natLightSection" style="display: none;">
+        <h2>Natural Light</h2>
+        <dl class='inline-flex'>
+          <dt id='natLightDateLabel'>Date:</dt>
+          <dd id="natLightDate"></dd>
+        </dl>
+        <figure class="testImg" id="natLightImgFigW" style="display: none;">
+          <img id="natLightImgW" height="360"/>
+          <figcaption id="natLightImgFigCaption4">Wide End</figcaption>
+        </figure>
+        <figure class="testImg" id="natLightImgFigN" style="display: none;">
+          <img id="natLightImgN" height="360"/>
+          <figcaption id="natLightImgFigCaption5">Narrow End</figcaption>
+        </figure>
+      </section>
+      <section id="natLightNoInfo" style="display: none;">
+        <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
+      </section>
+      <section id="scintSection" style="display: none;">
+        <h2 id="scintSectionLabel">Scintillation</h2>
+        <dl class='inline-flex'>
+          <dt id='scintillationLabel'>Scintillation:</dt>
+          <dd id="scintillation"></dd>
+          <dt id='scintRatioLabel'>Ratio:</dt>
+          <dd id="scintRatio" style="font-weight: bold;"></dd>
+          <dt id='scintDateLabel'>Date:</dt>
+          <dd id="scintDate"></dd>
+        </dl>
+      </section>
+      <section id="scintNoInfo" style="display: none;">
+        <p style="font-style: italic; font-size: 1.5em;">Unable to find any scintillation data for this block</p>
+      </section>
     </section>
-    <section id="blockDetailsNoInfo" style="display: none;">
-      <p style="font-style: italic; font-size: 1.5em;">Unable to find any block information for this dbn</p>
-    </section>
-    <section id="densitySection" style="display: none;">
-      <h2 id="densitySectionLabel">Density</h2>
-      <dl class='inline-flex'>
-        <dt id='volumeLabel'>Volume:</dt>
-        <dd id="volume"></dd>
-        <dt id='massLabel'>Mass:</dt>
-        <dd id="mass"></dd>
-        <dt id='densityLabel'>Density:</dt>
-        <dd id="density" style="font-weight: bold;"></dd>
-        <dt id='densityDateLabel'>Date:</dt>
-        <dd id="densityDate"></dd>
-      </dl>
-      <button id="showTolerancesTableBtn" style="display: none;" onclick="toggleTolerancesTable()">Show Tolerances</button>
-      <table class="dimension" id="tolerancesTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
-        <tr>
-          <th>ΔL</th><th>ΔBT</th><th>ΔBB</th><th>ΔBH</th><th>ΔST</th><th>ΔSB</th><th>ΔSH</th>
-        </tr>
-        <tr>
-          <td id="L" style="font-weight: bold;"></td><td id="BT" style="font-weight: bold;"></td><td id="BB" style="font-weight: bold;"></td><td id="BH" style="font-weight: bold;"></td><td id="ST" style="font-weight: bold;"></td><td id="SB" style="font-weight: bold;"></td><td id="SH" style="font-weight: bold;"></td>
-        </tr>
+    <section id="findBlocks" style="display: none;">
+      <form action="javascript:filter()" style="display: inline;">
+        <label style="display: inline-block; width: 90px;">DBN: </label><input style="width: 240px;" type="text" tabindex="1" id="inputDBNs">
+        <button>submit</button>
+      </form>
+      <button onclick="clearInputDBNs()" style="display: inline;">clear</button><br>
+      <form action="javascript:filter()" style="display: inline;">
+        <label style="display: inline-block; width: 90px;">Shipment: </label><input style="width: 240px;" type="text" tabindex="2" id="inputShipment">
+        <button>submit</button>
+      </form>
+      <button onclick="clearInputShipment()" style="display: inline;">clear</button><br>
+      <form action="javascript:filter()" style="display: inline;">
+        <label style="display: inline-block; width: 90px;">Status: </label><input style="width: 240px;" type="text" tabindex="3" id="inputStatus">
+        <button>submit</button>
+      </form>
+      <button onclick="clearInputStatus()" style="display: inline;">clear</button><br>
+      <form action="javascript:filter()" style="display: inline;">
+        <label style="display: inline-block; width: 90px;">Block Design: </label><input style="width: 240px;" type="text" tabindex="4" id="inputBlock">
+        <button>submit</button>
+      </form>
+      <button onclick="clearInputBlock()" style="display: inline;">clear</button><br>
+      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
+      <input id="showRowsCB" type="checkbox" onclick="toggleShowRows()"><label for="showRowsCB">Show rows with empty cells in selected column(s)</label>
+      <section style="margin: 1em 0em">
+        <span>Blocks Found:</span>
+        <span id="blocksCount"></span>
+      </section>
+      <table id="blocksTable" class="nowrap stripe hover order-column row-border cell-border" style="width: 100%;">
+        <thead><tr></tr></thead>
+        <tbody id="blocksTableBody"></tbody>
+        <tfoot><tr></tr></tfoot>
       </table>
     </section>
-    <section id="densityNoInfo" style="display: none;">
-      <p style="font-style: italic; font-size: 1.5em;">Unable to find any density data for this block</p>
-    </section>
-    <section id="lightTransSection" style="display: none;">
-      <h2 id="lightTransSectionLabel">Light Transmission</h2>
-      <dl class='inline-flex'>
-        <dt id='fiberPercentageLabel'>Fiber Count:</dt>
-        <dd id="fiberPercentage" style="font-weight: bold;"></dd>
-        <dt id='goodEndLabel'>Good End:</dt>
-        <dd id="goodEnd"></dd>
-        <dt id='missingRowLabel'>Missing Row:</dt>
-        <dd id="missingRow" style="font-weight: bold;"></dd>
-        <dt id='thirteenHolesLabel'>13 Connected Holes:</dt>
-        <dd id="thirteenHoles" style="font-weight: bold;"></dd>
-        <dt id='lightTransDateLabel'>Date:</dt>
-        <dd id="lightTransDate"></dd>
-      </dl>
-      <button id="showTowerTableBtn" style="display: none; margin-bottom: 1em;" onclick="toggleTowerTable()">Show Tower Information</button>
-      <table class="dimension" id="towerTable" style="display: none; margin-bottom: 1em; border-collapse: collapse; fill: #333;">
-        <tr>
-          <th>T1 (BL)</th><th>T2 (BR)</th><th>T3 (TL)</th><th>T3 (TR)</th>
-        </tr>
-        <tr>
-          <td id="tower1" style="font-weight: bold;"></td><td id="tower2" style="font-weight: bold;"></td><td id="tower3" style="font-weight: bold;"></td><td id="tower4" style="font-weight: bold;"></td>
-        </tr>
+    <section id="findRetouch" style="display: none;">
+      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
+      <table id="candidateRetouchTable" class="nowrap display cell-border" style="width: 100%;">
+        <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Needing Retouch: <span id="candidateRetouchCount"></span></caption>
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr></tr></tfoot>
       </table>
-      <a id="histogramWide" target="_blank" style="display: none;">Histograms (Wide)<br></a>
-      <a id="histogramNarrow" target="_blank" style="display: none;;">Histograms (Narrow)</a>
-      <figure class="testImg" id="lightTransImgFigW" style="display: none;">
-        <img id="lightTransImgW" height="360"/>
-        <figcaption>Wide End</figcaption>
-      </figure>
-      <figure class="testImg" id="lightTransImgFigN" style="display: none;">
-        <img id="lightTransImgN" height="360"/>
-        <figcaption>Narrow End</figcaption>
-      </figure>
-      <figure class="testImg" id="lightTransImgCroppedFigW" style="display: none;">
-        <img id="lightTransImgCroppedW" height="360"/>
-        <figcaption>Wide End</figcaption>
-      </figure>
-      <figure class="testImg" id="lightTransImgCroppedFigN" style="display: none;">
-        <img id="lightTransImgCroppedN" height="360"/>
-        <figcaption>Narrow End</figcaption>
-      </figure>
+      <table id="sentRetouchTable" class="nowrap display cell-border" style="width: 100%;">
+        <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Sent For Retouch: <span id="sentRetouchCount"></span></caption>
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr></tr></tfoot>
+      </table>
     </section>
-    <section id="lightTransNoInfo" style="display: none;">
-      <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
-    </section>
-    <section id="natLightSection" style="display: none;">
-      <h2>Natural Light</h2>
-      <dl class='inline-flex'>
-        <dt id='natLightDateLabel'>Date:</dt>
-        <dd id="natLightDate"></dd>
-      </dl>
-      <figure class="testImg" id="natLightImgFigW" style="display: none;">
-        <img id="natLightImgW" height="360"/>
-        <figcaption id="natLightImgFigCaption4">Wide End</figcaption>
-      </figure>
-      <figure class="testImg" id="natLightImgFigN" style="display: none;">
-        <img id="natLightImgN" height="360"/>
-        <figcaption id="natLightImgFigCaption5">Narrow End</figcaption>
-      </figure>
-    </section>
-    <section id="natLightNoInfo" style="display: none;">
-      <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
-    </section>
-    <section id="scintSection" style="display: none;">
-      <h2 id="scintSectionLabel">Scintillation</h2>
-      <dl class='inline-flex'>
-        <dt id='scintillationLabel'>Scintillation:</dt>
-        <dd id="scintillation"></dd>
-        <dt id='scintRatioLabel'>Ratio:</dt>
-        <dd id="scintRatio" style="font-weight: bold;"></dd>
-        <dt id='scintDateLabel'>Date:</dt>
-        <dd id="scintDate"></dd>
-      </dl>
-    </section>
-    <section id="scintNoInfo" style="display: none;">
-      <p style="font-style: italic; font-size: 1.5em;">Unable to find any scintillation data for this block</p>
-    </section>
-  </section>
-  <section id="findBlocks" style="display: none;">
-    <form action="javascript:filter()" style="display: inline;">
-      <label style="display: inline-block; width: 90px;">Shipment: </label><input style="width: 80px;" type="text" tabindex="1" id="inputShipment">
-      <button>submit</button>
-    </form>
-    <button onclick="clearInputShipment()" style="display: inline;">clear</button><br>
-    <form action="javascript:filter()" style="display: inline;">
-      <label style="display: inline-block; width: 90px;">Status: </label><input style="width: 80px;" type="text" tabindex="2" id="inputStatus">
-      <button>submit</button>
-    </form>
-    <button onclick="clearInputStatus()" style="display: inline;">clear</button><br>
-    <form action="javascript:filter()" style="display: inline;">
-      <label style="display: inline-block; width: 90px;">Block Design: </label><input style="width: 80px;" type="text" tabindex="3" id="inputBlock">
-      <button>submit</button>
-    </form>
-    <button onclick="clearInputBlock()" style="display: inline;">clear</button><br>
-    <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
-    <input id="showRowsCB" type="checkbox" onclick="toggleShowRows()"><label for="showRowsCB">Show rows with empty cells in selected column(s)</label>
-    <section style="margin: 1em 0em">
-      <span>Blocks Found:</span>
-      <span id="blocksCount"></span>
-    </section>
-    <table id="blocksTable" class="nowrap display cell-border" style="width: 100%;">
-      <thead><tr></tr></thead>
-      <tbody id="blocksTableBody"></tbody>
-      <tfoot><tr></tr></tfoot>
-    </table>
-  </section>
-  <section id="findRetouch" style="display: none;">
-    <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
-    <table id="candidateRetouchTable" class="nowrap display cell-border" style="width: 100%;">
-      <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Needing Retouch: <span id="candidateRetouchCount"></span></caption>
-      <thead><tr></tr></thead>
-      <tbody></tbody>
-      <tfoot><tr></tr></tfoot>
-    </table>
-    <table id="sentRetouchTable" class="nowrap display cell-border" style="width: 100%;">
-      <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Sent For Retouch: <span id="sentRetouchCount"></span></caption>
-      <thead><tr></tr></thead>
-      <tbody></tbody>
-      <tfoot><tr></tr></tfoot>
-    </table>
-  </section>
-  <script>
-    // store each section's ID in an array for easy iteration:
-    const allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
-    // store all image prefixes in an array for easy iteration
-    const allImagePrefixes = ['lightTransImg', 'lightTransImgCropped', 'natLightImg']
-    // store all testing image IDs in an array for easy iteration:
-    const allTestingImgs = ['lightTransImgW', 'lightTransImgN', 'lightTransImgCroppedW', 'lightTransImgCroppedN', 'natLightImgW', 'natLightImgN']
-    // converts a status number to english so it can be added to the block information (the suffix that appears after the status number)
-    const statusMap = new Map([
-      ['0','(fiber set)'],
-      ['1','(fibers in mold)'],
-      ['2','(tungsten in mold)'],
-      ['3','(potted)'],
-      ['4','(machining)'],
-      ['5','(ready for testing)'],
-      ['5a','(A-grade, all tests good)'],
-      ['5b','(B-grade, some tests bad)'],
-      ['6','(ready to be shipped)'],
-      ['7','(shipped, at BNL)'],
-      ['8','(graveyard)']
-    ])
-    // maximum DBN (reject dbns larger than this)
-    var maxDbn = 3498
-    // For both sheets
-    const blocksSheetMap = new Map([
-      ['dbn', 0],
-      ['block', 2],
-      ['status', 3],
-      ['shipment', 4],
-      ['comment', 6],
-      ['sector', 7],
-      ['powder', 14],
-      ['bucket', 15],
-      ['moldSeries', 16],
-      ['emptyMoldMass', 17],
-      ['filledMoldMass', 18],
-      ['tungstenMass', 19],
-      ['tungstenFillingDate', 21],
-      ['epoxyBatch', 23],
-      ['resinMass', 24],
-      ['hardenerMass', 25],
-      ['pottingNotes', 26],
-      ['epoxyFillingTime', 27],
-      ['epoxyFillingDate', 28],
-      ['L', 33],
-      ['SH', 39],
-      ['volume', 40],
-      ['dimensionTester', 41],
-      ['mass', 42],
-      ['massTester', 43],
-      ['density', 44],
-      ['densityDate', 45],
-      ['goodEnd', 47],
-      ['fiberPercentage', 49],
-      ['tower1', 55],
-      ['tower2', 56],
-      ['tower3', 57],
-      ['tower4', 58],
-      ['missingRow', 59],
-      ['thirteenHoles', 60],
-      ['lightTransTester', 63],
-      ['lightTransDate', 64],
-      ['scintillation', 65],
-      ['scintRatio', 67],
-      ['scintDate', 69],
-      ['natLightDate', 70],
-      ['natLightTester', 71],
-      ['densityChecked', 73],
-      ['lightTransChecked', 74],
-      ['natLightChecked', 75],
-      ['pregrade', 77]
-    ])
-    // array [Blocks DB, Blocks1364DB], where each element is a (large) 2D array
-    var database
-    //
-    var blocksCollection
-    // stores the expected dimensions for each block type
-    const dimensionsMap = new Map([
-    [123, [5.5000,	2.0850,	2.0850,	1.9890,	1.8150,	1.8150,	1.9890]],
-    [4, [5.4460,	2.0850,	2.0820,	2.2740,	1.8180,	1.8150,	1.9900]],
-    [5, [5.3500,	2.0850,	2.0760,	2.2630,	1.8230,	1.8150,	1.9900]],
-    [6, [5.2700,	2.0850,	2.0710,	2.2530,	1.8280,	1.8150,	1.9900]],
-    [7, [5.2050,	2.0850,	2.0650,	2.2430,	1.8320,	1.8150,	1.9900]],
-    [8, [5.1550,	2.0850,	2.0600,	2.2340,	1.8370,	1.8150,	1.9890]],
-    [9, [5.1180,	2.0850,	2.0560,	2.2250,	1.8410,	1.8150,	1.9890]],
-    [10, [5.0940,	2.0850,	2.0510,	2.2160,	1.8460,	1.8150,	1.9890]],
-    [11, [5.0820,	2.0850,	2.0470,	2.2080,	1.8500,	1.8150,	1.9890]],
-    [12, [5.0810,	2.0850,	2.0420,	2.2010,	1.8530,	1.8150,	1.9890]],
-    [13, [5.0900,	2.0850,	2.0390,	2.1930,	1.8570,	1.8150,	1.9890]],
-    [14, [5.1100,	2.0850,	2.0350,	2.1860,	1.8600,	1.8150,	1.9890]],
-    [15, [5.1390,	2.0850,	2.0320,	2.1800,	1.8640,	1.8150,	1.9890]],
-    [16, [5.1770,	2.0850,	2.0280,	2.1740,	1.8670,	1.8150,	1.9890]],
-    [17, [5.2240,	2.0850,	2.0250,	2.1680,	1.8700,	1.8150,	1.9890]],
-    [18, [5.2790,	2.0850,	2.0230,	2.1620,	1.8720,	1.8150,	1.9890]],
-    [19, [5.3420,	2.0850,	2.0200,	2.1570,	1.8750,	1.8150,	1.9890]],
-    [20, [5.4120,	2.0850,	2.0180,	2.1520,	1.8770,	1.8150,	1.9890]],
-    [21, [5.4890,	2.0850,	2.0150,	2.1470,	1.8790,	1.8150,	1.9890]],
-    [22, [5.5720,	2.0850,	2.0130,	2.1420,	1.8810,	1.8150,	1.9890]],
-    [23, [5.6620,	2.0850,	2.0120,	2.1380,	1.8830,	1.8150,	1.9890]],
-    [24, [5.7580,	2.0850,	2.0100,	2.1330,	1.8850,	1.8150,	1.9890]]
-    ])
-    // changes to true when the "do not press" button is pressed, which changes the way image urls are obtained
-    var slowMode = false
-    // called when the web page is loaded—loads the database
-    function getDatabaseOnLoad() {
-      // create a timestamp to display     
-      document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + Date(Date.now()).toString()
-      document.getElementById("currentDateAndTime").style.display = 'block'
-      document.getElementById('loadingDatabase').style.display = 'block'
-      google.script.run.withSuccessHandler(onSuccess).getDatabase()
-      function onSuccess (gotDatabase) {
-        if (gotDatabase == null) {
-          alert('oops, fn gotDatabase returned null! unable to load database and testing folders from drive')
-          document.getElementById('loadingDatabase').style.display = 'none'
-          return
-        } else if (gotDatabase[2] !== '') {
-          // an error occured, so display an alert with the error message passed from script
-          alert('an error occured while loading the database and testing fodlers: ' + gotDatabase[2])
-          document.getElementById('loadingDatabase').style.display = 'none'
-        } else {
-          console.log('loaded database and testing folders without error')
-          database = gotDatabase
-          let blocks = []
-          for (let index = 1; index < database[0].length; index++) {
-            if (database[0][blocksSheetMap.get('block')] !== '') {
-              blocks[index - 1] = new Block(database[0][index], 0, index - 1)
+    <script>
+      function toPrint() {
+        var yourDOCTYPE = '<!DOCTYPE html>'
+        var printPreview = window.open()
+        var printDocument = printPreview.document
+        printDocument.open()
+        let html = $(document.documentElement.cloneNode(true))
+        html.find('body').attr('onload', 'print()')
+        let dbn = document.getElementById('inputDBN').value
+        html.find('head title').html('BlockReport-DBN_' + dbn + '-asOf_' + makeFileFriendly(currentDate))
+        html.find('script').eq(1).remove()
+        html.find('script').eq(6).remove()
+        html.find('#dbnSubmitButton, #loadAllImagesButton, #printButton, #loadFindBlocksButton, #loadRetouchButton').remove()
+        html.find('#CBshow-lightTransImg').attr('checked', document.getElementById("CBshow-lightTransImg").checked)
+        html.find('#CBshow-lightTransImgCropped').attr('checked', document.getElementById("CBshow-lightTransImgCropped").checked)
+        html.find('#CBshow-natLightImg').attr('checked', document.getElementById("CBshow-natLightImg").checked)
+        console.log(document.getElementById("CBshow-lightTransImg").checked + ', ' + document.getElementById("CBshow-lightTransImgCropped").checked + ', ' + document.getElementById("CBshow-natLightImg").checked)
+        html.find('#inputDBN').prop('disabled', true).attr('value', dbn)
+        console.log(html.get(0))
+        printDocument.write(yourDOCTYPE + '<html>' + html.html() + '</html>')
+        printDocument.close()
+      }
+      // store each section's ID in an array for easy iteration:
+      const allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
+      // store all image prefixes in an array for easy iteration
+      const allImagePrefixes = ['lightTransImg', 'lightTransImgCropped', 'natLightImg']
+      // store all testing image IDs in an array for easy iteration:
+      const allTestingImgs = ['lightTransImgW', 'lightTransImgN', 'lightTransImgCroppedW', 'lightTransImgCroppedN', 'natLightImgW', 'natLightImgN']
+      // converts a status number to english so it can be added to the block information (the suffix that appears after the status number)
+      const statusMap = new Map([
+        ['0','(fiber set)'],
+        ['1','(fibers in mold)'],
+        ['2','(tungsten in mold)'],
+        ['3','(potted)'],
+        ['4','(machining)'],
+        ['5','(ready for testing)'],
+        ['5a','(A-grade, all tests good)'],
+        ['5b','(B-grade, some tests bad)'],
+        ['6','(ready to be shipped)'],
+        ['7','(shipped, at BNL)'],
+        ['8','(graveyard)']
+      ])
+      // maximum DBN (reject dbns larger than this)
+      var maxDbn = 3498
+      // For both sheets
+      const blocksSheetMap = new Map([
+        ['dbn', 0],
+        ['block', 2],
+        ['status', 3],
+        ['shipment', 4],
+        ['comment', 6],
+        ['sector', 7],
+        ['powder', 14],
+        ['bucket', 15],
+        ['moldSeries', 16],
+        ['emptyMoldMass', 17],
+        ['filledMoldMass', 18],
+        ['tungstenMass', 19],
+        ['tungstenFillingDate', 21],
+        ['epoxyBatch', 23],
+        ['resinMass', 24],
+        ['hardenerMass', 25],
+        ['pottingNotes', 26],
+        ['epoxyFillingTime', 27],
+        ['epoxyFillingDate', 28],
+        ['machiningDate', 31],
+        ['L', 33],
+        ['SH', 39],
+        ['volume', 40],
+        ['dimensionTester', 41],
+        ['mass', 42],
+        ['massTester', 43],
+        ['density', 44],
+        ['densityDate', 45],
+        ['goodEnd', 47],
+        ['fiberPercentage', 49],
+        ['tower1', 55],
+        ['tower2', 56],
+        ['tower3', 57],
+        ['tower4', 58],
+        ['missingRow', 59],
+        ['thirteenHoles', 60],
+        ['lightTransTester', 63],
+        ['lightTransDate', 64],
+        ['scintillation', 65],
+        ['scintRatio', 67],
+        ['scintDate', 69],
+        ['natLightDate', 70],
+        ['natLightTester', 71],
+        ['densityChecked', 73],
+        ['lightTransChecked', 74],
+        ['natLightChecked', 75],
+        ['pregrade', 77]
+      ])
+      // array [Blocks DB, Blocks1364DB], where each element is a (large) 2D array
+      var database
+      //
+      var blocksCollection
+      // stores the expected dimensions for each block type
+      const dimensionsMap = new Map([
+      [123, [5.5000,	2.0850,	2.0850,	1.9890,	1.8150,	1.8150,	1.9890]],
+      [4, [5.4460,	2.0850,	2.0820,	2.2740,	1.8180,	1.8150,	1.9900]],
+      [5, [5.3500,	2.0850,	2.0760,	2.2630,	1.8230,	1.8150,	1.9900]],
+      [6, [5.2700,	2.0850,	2.0710,	2.2530,	1.8280,	1.8150,	1.9900]],
+      [7, [5.2050,	2.0850,	2.0650,	2.2430,	1.8320,	1.8150,	1.9900]],
+      [8, [5.1550,	2.0850,	2.0600,	2.2340,	1.8370,	1.8150,	1.9890]],
+      [9, [5.1180,	2.0850,	2.0560,	2.2250,	1.8410,	1.8150,	1.9890]],
+      [10, [5.0940,	2.0850,	2.0510,	2.2160,	1.8460,	1.8150,	1.9890]],
+      [11, [5.0820,	2.0850,	2.0470,	2.2080,	1.8500,	1.8150,	1.9890]],
+      [12, [5.0810,	2.0850,	2.0420,	2.2010,	1.8530,	1.8150,	1.9890]],
+      [13, [5.0900,	2.0850,	2.0390,	2.1930,	1.8570,	1.8150,	1.9890]],
+      [14, [5.1100,	2.0850,	2.0350,	2.1860,	1.8600,	1.8150,	1.9890]],
+      [15, [5.1390,	2.0850,	2.0320,	2.1800,	1.8640,	1.8150,	1.9890]],
+      [16, [5.1770,	2.0850,	2.0280,	2.1740,	1.8670,	1.8150,	1.9890]],
+      [17, [5.2240,	2.0850,	2.0250,	2.1680,	1.8700,	1.8150,	1.9890]],
+      [18, [5.2790,	2.0850,	2.0230,	2.1620,	1.8720,	1.8150,	1.9890]],
+      [19, [5.3420,	2.0850,	2.0200,	2.1570,	1.8750,	1.8150,	1.9890]],
+      [20, [5.4120,	2.0850,	2.0180,	2.1520,	1.8770,	1.8150,	1.9890]],
+      [21, [5.4890,	2.0850,	2.0150,	2.1470,	1.8790,	1.8150,	1.9890]],
+      [22, [5.5720,	2.0850,	2.0130,	2.1420,	1.8810,	1.8150,	1.9890]],
+      [23, [5.6620,	2.0850,	2.0120,	2.1380,	1.8830,	1.8150,	1.9890]],
+      [24, [5.7580,	2.0850,	2.0100,	2.1330,	1.8850,	1.8150,	1.9890]]
+      ])
+      // changes to true when the "do not press" button is pressed, which changes the way image urls are obtained
+      var slowMode = false
+      //
+      var currentDate
+      // called when the web page is loaded—loads the database
+      function getDatabaseOnLoad() {
+        // create a timestamp to display     
+        currentDate = new Date()
+        document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + currentDate.toString()
+        document.getElementById("currentDateAndTime").style.display = 'block'
+        document.getElementById('loadingDatabase').style.display = 'block'
+        google.script.run.withSuccessHandler(onSuccess).getDatabase()
+        function onSuccess (gotDatabase) {
+          if (gotDatabase == null) {
+            alert('oops, fn gotDatabase returned null! unable to load database and testing folders from drive')
+            document.getElementById('loadingDatabase').style.display = 'none'
+            return
+          } else if (gotDatabase[2] !== '') {
+            // an error occured, so display an alert with the error message passed from script
+            alert('an error occured while loading the database and testing fodlers: ' + gotDatabase[2])
+            document.getElementById('loadingDatabase').style.display = 'none'
+          } else {
+            console.log('loaded database and testing folders without error')
+            database = gotDatabase
+            let blocks = []
+            for (let index = 1; index < database[0].length; index++) {
+              if (database[0][blocksSheetMap.get('block')] !== '') {
+                blocks[index - 1] = new Block(database[0][index], 0, index - 1)
+              }
             }
-          }
-          for (let index = 1; index < database[1].length; index++) {
-            if (database[1][blocksSheetMap.get('block')] !== '') {
-              blocks[index + 1999] = new Block(database[1][index], 1, index + 1999)
+            for (let index = 1; index < database[1].length; index++) {
+              if (database[1][blocksSheetMap.get('block')] !== '') {
+                blocks[index + 1999] = new Block(database[1][index], 1, index + 1999)
+              }
             }
+            blocksCollection = new BlocksCollection(blocks)
+            document.getElementById('loadingDatabase').style.display = 'none'
+            document.getElementById('findBlockInfo').style.display = 'block'
           }
-          blocksCollection = new BlocksCollection(blocks)
-          document.getElementById('loadingDatabase').style.display = 'none'
-          document.getElementById('findBlockInfo').style.display = 'block'
         }
-      }
-    }
-    
-    // called when enter is pressed in text box or submit button is clicked
-    function onSubmit() {
-      // load the database if it hasn't been loaded
-      if (database == null) {
-        getDatabaseOnLoad()
-        afterOnSubmit()
-      } else {
-        afterOnSubmit()
-      }
-      function afterOnSubmit () {
-        // show that we're loading the block data
-        document.getElementById("loadingBlockData").style.display = 'block'
-        // grab the dbn from the input box
-        var dbn = document.getElementById("inputDBN").value
-        console.log('fetching information for DBN ' + dbn)
-        // hide all block info and noInfo sections for them to be loaded if needed by loadTestingData
-        for (let i = 0; i < allSectionPrefixes.length; i++) {
-          document.getElementById(allSectionPrefixes[i] + 'Section').style.display = 'none'
-          document.getElementById(allSectionPrefixes[i] + 'NoInfo').style.display = 'none'
-        }
-        // hide imagesSelection section for it to be loaded if needed by loadTestingData
-        document.getElementById("imagesSelection").style.display = 'none'
-        // and reset the checkboxes
-        resetCheckboxes()
-        // and reset text that isn't automatically reset in imagesSelection section
-        document.getElementById("noImagesFound").style.display = 'none'
-        document.getElementById("histogramWide").style.display = 'none'
-        document.getElementById("histogramWide").href = '#'
-        document.getElementById("histogramNarrow").style.display = 'none'
-        document.getElementById("histogramNarrow").href = '#'
-        // and reset the img src urls just in case one happens to be shown but on overwritten
-        // (e.g. one LT cropped image returns a url and the other does not (e.g. DBN 78))
-        for (let i = 0; i < allTestingImgs.length; i++) {
-          document.getElementById(allTestingImgs[i]).src = '#'
-        }
-        // run loadTestingDataAsStringifiedJson and pass it's return data to a success handler
-        console.log('loading testing data')
-        loadTestingData(dbn)
-      }
-    }
-    // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
-    function dataPresent (data) {
-      return (data != null && data != '' && data != '#NUM!' && data != '#DIV/0!' && data != 'NaN')
-    }
-    // loads testing data, updates fields, and unhides relevant sections based on the data present
-    function loadTestingData (stringDBN) {
-      let block = blocksCollection.getBlockByStringDBN(stringDBN)
-      if (block == null) {
-        alert('unable to find that block')
-        document.getElementById("loadingBlockData").style.display = 'none'
-        return
-      }
-      let getImageUrlsRun = false
-      // BLOCK DETAILS
-      const tungstenTableEntries = ['powder', 'bucket', 'moldSeries', 'emptyMoldMass', 'filledMoldMass', 'tungstenMass', 'tungstenFillingDate']
-      const epoxyTableEntries = ['epoxyBatch', 'resinMass', 'hardenerMass', 'pottingNotes', 'epoxyFillingTime', 'epoxyFillingDate']
-      document.getElementById("blockDetailsSection").style.display = 'block'
-      //block details
-      if (block.dbn != null) {
-        document.getElementById('dbn').innerHTML = block.dbn
-        document.getElementById('dbn').style.display = 'inline'
-        document.getElementById('dbn' + 'Label').style.display = 'inline'
-      } else {
-        document.getElementById('dbn').style.display = 'none'
-        document.getElementById('dbn' + 'Label').style.display = 'none'
-      }
-      if (block.block != null) {
-        document.getElementById('block').innerHTML = block.block
-        document.getElementById('block').style.display = 'inline'
-        document.getElementById('block' + 'Label').style.display = 'inline'
-      } else {
-        document.getElementById('block').style.display = 'none'
-        document.getElementById('block' + 'Label').style.display = 'none'
-      }
-      if (block.status != null) {
-        document.getElementById('status').innerHTML = block.status + ' ' + statusMap.get(block.status)
-        document.getElementById('status').style.display = 'inline'
-        document.getElementById('status' + 'Label').style.display = 'inline'
-      } else {
-        document.getElementById('status').style.display = 'none'
-        document.getElementById('status' + 'Label').style.display = 'none'
-      }
-      if (block.shipment != null) {
-        document.getElementById('shipment').innerHTML = block.shipment
-        document.getElementById('shipment').style.display = 'inline'
-        document.getElementById('shipment' + 'Label').style.display = 'inline'
-      } else {
-        document.getElementById('shipment').style.display = 'none'
-        document.getElementById('shipment' + 'Label').style.display = 'none'
-      }
-      if (block.sector != null) {
-        document.getElementById('sector').innerHTML = block.sector
-        document.getElementById('sector').style.display = 'inline'
-        document.getElementById('sector' + 'Label').style.display = 'inline'
-      } else {
-        document.getElementById('sector').style.display = 'none'
-        document.getElementById('sector' + 'Label').style.display = 'none'
-      }
-      if (block.comment != null) {
-        document.getElementById('comment').innerHTML = block.comment
-        document.getElementById('comment').style.display = 'inline'
-        document.getElementById('comment' + 'Label').style.display = 'inline'
-      } else {
-        document.getElementById('comment').style.display = 'none'
-        document.getElementById('comment' + 'Label').style.display = 'none'
-      }
-      //tungsten table
-      if (block.getTungstenData().some((value) => value != null)) {
-        for (let i = 0; i < tungstenTableEntries.length; i++) {
-          document.getElementById(tungstenTableEntries[i]).innerHTML = block.getTungstenData()[i]
-        }
-        document.getElementById('showTungstenTableBtn').style.display = 'block'
-      } else {
-        document.getElementById('showTungstenTableBtn').style.display = 'none'
-        document.getElementById('tungstenTable').style.display = 'none'
-      }
-      //epoxy table
-      if (block.getEpoxyData().some((value) => value != null)) {
-        for (let i = 0; i < epoxyTableEntries.length; i++) {
-          document.getElementById(epoxyTableEntries[i]).innerHTML = block.getEpoxyData()[i]
-        }
-        document.getElementById('showEpoxyTableBtn').style.display = 'block'
-      } else {
-        document.getElementById('showEpoxyTableBtn').style.display = 'none'
-        document.getElementById('epoxyTable').style.display = 'none'
-      }
-      //pregrade
-      if (block.pregrade != null) {
-        document.getElementById('pregrade').innerHTML = block.pregrade
-        let grade = grade_pregrade(block.pregrade)
-        if (grade != null) {
-          document.getElementById('pregrade').style.color = testColors[grade]
-          document.getElementById('pregrade').style.fontWeight = 'bold'
-        } else {
-          document.getElementById('pregrade').style.color = black
-          document.getElementById('pregrade').style.fontWeight = 'normal'
-        }
-        document.getElementById('pregrade').style.display = 'inline'
-        document.getElementById('pregrade' + 'Label').style.display = 'inline'
-      } else {
-        document.getElementById('pregrade').style.display = 'none'
-        document.getElementById('pregrade' + 'Label').style.display = 'none'
       }
       
-      // DENSITY  (check if data is present)
-      if (block.hasDensityData()) {
-        // some block info present, so make the info section visible and update its entries and hide the noInfo section
-        document.getElementById("densitySection").style.display = 'block'
-        //density details
-        if (block.volume != null) {
-          document.getElementById('volume').innerHTML = block.volume + ' mL'
-          document.getElementById('volume').style.display = 'inline'
-          document.getElementById('volume' + 'Label').style.display = 'inline'
+      // called when enter is pressed in text box or submit button is clicked
+      function onSubmit() {
+        // load the database if it hasn't been loaded
+        if (database == null) {
+          getDatabaseOnLoad()
+          afterOnSubmit()
         } else {
-          document.getElementById('volume').style.display = 'none'
-          document.getElementById('volume' + 'Label').style.display = 'none'
+          afterOnSubmit()
         }
-        if (block.mass != null) {
-          document.getElementById('mass').innerHTML = block.mass + ' g'
-          document.getElementById('mass').style.display = 'inline'
-          document.getElementById('mass' + 'Label').style.display = 'inline'
+        function afterOnSubmit () {
+          // show that we're loading the block data
+          document.getElementById("loadingBlockData").style.display = 'block'
+          // grab the dbn from the input box
+          var dbn = document.getElementById("inputDBN").value
+          console.log('fetching information for DBN ' + dbn)
+          // hide all block info and noInfo sections for them to be loaded if needed by loadTestingData
+          for (let i = 0; i < allSectionPrefixes.length; i++) {
+            document.getElementById(allSectionPrefixes[i] + 'Section').style.display = 'none'
+            document.getElementById(allSectionPrefixes[i] + 'NoInfo').style.display = 'none'
+          }
+          // hide imagesSelection section for it to be loaded if needed by loadTestingData
+          document.getElementById("imagesSelection").style.display = 'none'
+          // and reset the checkboxes
+          resetCheckboxes()
+          // and reset text that isn't automatically reset in imagesSelection section
+          document.getElementById("noImagesFound").style.display = 'none'
+          document.getElementById("histogramWide").style.display = 'none'
+          document.getElementById("histogramWide").href = '#'
+          document.getElementById("histogramNarrow").style.display = 'none'
+          document.getElementById("histogramNarrow").href = '#'
+          // and reset the img src urls just in case one happens to be shown but on overwritten
+          // (e.g. one LT cropped image returns a url and the other does not (e.g. DBN 78))
+          for (let i = 0; i < allTestingImgs.length; i++) {
+            document.getElementById(allTestingImgs[i]).src = '#'
+          }
+          // run loadTestingDataAsStringifiedJson and pass it's return data to a success handler
+          console.log('loading testing data')
+          loadTestingData(dbn)
+        }
+      }
+      // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
+      function dataPresent (data) {
+        return (data != null && data != '' && data != '#NUM!' && data != '#DIV/0!' && data != 'NaN')
+      }
+      // loads testing data, updates fields, and unhides relevant sections based on the data present
+      function loadTestingData (stringDBN) {
+        let block = blocksCollection.getBlockByStringDBN(stringDBN)
+        if (block == null) {
+          alert('unable to find that block')
+          document.getElementById("loadingBlockData").style.display = 'none'
+          return
+        }
+        let getImageUrlsRun = false
+        // BLOCK DETAILS
+        const tungstenTableEntries = ['powder', 'bucket', 'moldSeries', 'emptyMoldMass', 'filledMoldMass', 'tungstenMass', 'tungstenFillingDate']
+        const epoxyTableEntries = ['epoxyBatch', 'resinMass', 'hardenerMass', 'pottingNotes', 'epoxyFillingTime', 'epoxyFillingDate']
+        document.getElementById("blockDetailsSection").style.display = 'block'
+        //block details
+        if (block.dbn != null) {
+          document.getElementById('dbn').innerHTML = block.dbn
+          document.getElementById('dbn').style.display = 'inline'
+          document.getElementById('dbn' + 'Label').style.display = 'inline'
         } else {
-          document.getElementById('mass').style.display = 'none'
-          document.getElementById('mass' + 'Label').style.display = 'none'
+          document.getElementById('dbn').style.display = 'none'
+          document.getElementById('dbn' + 'Label').style.display = 'none'
         }
-        if (block.density != null) {
-          document.getElementById('density').innerHTML = block.density + ' g/mL'
-          document.getElementById('density').style.color = testColors[grade_density(block.density)]
-          document.getElementById('density').style.display = 'inline'
-          document.getElementById('density' + 'Label').style.display = 'inline'
+        if (block.block != null) {
+          document.getElementById('block').innerHTML = block.block
+          document.getElementById('block').style.display = 'inline'
+          document.getElementById('block' + 'Label').style.display = 'inline'
         } else {
-          document.getElementById('density').style.display = 'none'
-          document.getElementById('density' + 'Label').style.display = 'none'
+          document.getElementById('block').style.display = 'none'
+          document.getElementById('block' + 'Label').style.display = 'none'
         }
-        if (block.densityDate != null) {
-          document.getElementById('densityDate').innerHTML = block.densityDate
-          document.getElementById('densityDate').style.display = 'inline'
-          document.getElementById('densityDate' + 'Label').style.display = 'inline'
+        if (block.status != null) {
+          document.getElementById('status').innerHTML = block.status + ' ' + statusMap.get(block.status)
+          document.getElementById('status').style.display = 'inline'
+          document.getElementById('status' + 'Label').style.display = 'inline'
         } else {
-          document.getElementById('densityDate').style.display = 'none'
-          document.getElementById('densityDate' + 'Label').style.display = 'none'
+          document.getElementById('status').style.display = 'none'
+          document.getElementById('status' + 'Label').style.display = 'none'
         }
-        //tolerances table
-        if (block.deviations() != null) {
-          const tolerancesTableEntries = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
-          for (let i = 0; i < tolerancesTableEntries.length; i++) {
-            let deviation = block.deviations()[i]
-            if (deviation <= 0) {
-              document.getElementById(tolerancesTableEntries[i]).innerHTML = (deviation).toFixed(4)
-            } else {
-              document.getElementById(tolerancesTableEntries[i]).innerHTML = '+' + (deviation).toFixed(4)
+        if (block.shipment != null) {
+          document.getElementById('shipment').innerHTML = block.shipment
+          document.getElementById('shipment').style.display = 'inline'
+          document.getElementById('shipment' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('shipment').style.display = 'none'
+          document.getElementById('shipment' + 'Label').style.display = 'none'
+        }
+        if (block.sector != null) {
+          document.getElementById('sector').innerHTML = block.sector
+          document.getElementById('sector').style.display = 'inline'
+          document.getElementById('sector' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('sector').style.display = 'none'
+          document.getElementById('sector' + 'Label').style.display = 'none'
+        }
+        if (block.comment != null) {
+          document.getElementById('comment').innerHTML = block.comment
+          document.getElementById('comment').style.display = 'inline'
+          document.getElementById('comment' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('comment').style.display = 'none'
+          document.getElementById('comment' + 'Label').style.display = 'none'
+        }
+        //tungsten table
+        if (block.getTungstenData().some((value) => value != null)) {
+          for (let i = 0; i < tungstenTableEntries.length; i++) {
+            document.getElementById(tungstenTableEntries[i]).innerHTML = block.getTungstenData()[i]
+          }
+          document.getElementById('showTungstenTableBtn').style.display = 'block'
+        } else {
+          document.getElementById('showTungstenTableBtn').style.display = 'none'
+          document.getElementById('tungstenTable').style.display = 'none'
+        }
+        //epoxy table
+        if (block.getEpoxyData().some((value) => value != null)) {
+          for (let i = 0; i < epoxyTableEntries.length; i++) {
+            document.getElementById(epoxyTableEntries[i]).innerHTML = block.getEpoxyData()[i]
+          }
+          document.getElementById('showEpoxyTableBtn').style.display = 'block'
+        } else {
+          document.getElementById('showEpoxyTableBtn').style.display = 'none'
+          document.getElementById('epoxyTable').style.display = 'none'
+        }
+        //pregrade
+        if (block.pregrade != null) {
+          document.getElementById('pregrade').innerHTML = block.pregrade
+          let grade = grade_pregrade(block.pregrade)
+          if (grade != null) {
+            document.getElementById('pregrade').style.color = testColors[grade]
+            document.getElementById('pregrade').style.fontWeight = 'bold'
+          } else {
+            document.getElementById('pregrade').style.color = black
+            document.getElementById('pregrade').style.fontWeight = 'normal'
+          }
+          document.getElementById('pregrade').style.display = 'inline'
+          document.getElementById('pregrade' + 'Label').style.display = 'inline'
+        } else {
+          document.getElementById('pregrade').style.display = 'none'
+          document.getElementById('pregrade' + 'Label').style.display = 'none'
+        }
+        
+        // DENSITY  (check if data is present)
+        if (block.hasDensityData()) {
+          // some block info present, so make the info section visible and update its entries and hide the noInfo section
+          document.getElementById("densitySection").style.display = 'block'
+          //density details
+          if (block.volume != null) {
+            document.getElementById('volume').innerHTML = block.volume + ' mL'
+            document.getElementById('volume').style.display = 'inline'
+            document.getElementById('volume' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('volume').style.display = 'none'
+            document.getElementById('volume' + 'Label').style.display = 'none'
+          }
+          if (block.mass != null) {
+            document.getElementById('mass').innerHTML = block.mass + ' g'
+            document.getElementById('mass').style.display = 'inline'
+            document.getElementById('mass' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('mass').style.display = 'none'
+            document.getElementById('mass' + 'Label').style.display = 'none'
+          }
+          if (block.density != null) {
+            document.getElementById('density').innerHTML = block.density + ' g/mL'
+            document.getElementById('density').style.color = testColors[grade_density(block.density)]
+            document.getElementById('density').style.display = 'inline'
+            document.getElementById('density' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('density').style.display = 'none'
+            document.getElementById('density' + 'Label').style.display = 'none'
+          }
+          if (block.densityDate != null) {
+            document.getElementById('densityDate').innerHTML = block.densityDate
+            document.getElementById('densityDate').style.display = 'inline'
+            document.getElementById('densityDate' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('densityDate').style.display = 'none'
+            document.getElementById('densityDate' + 'Label').style.display = 'none'
+          }
+          //tolerances table
+          if (block.deviations() != null) {
+            const tolerancesTableEntries = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
+            for (let i = 0; i < tolerancesTableEntries.length; i++) {
+              let deviation = block.deviations()[i]
+              if (deviation <= 0) {
+                document.getElementById(tolerancesTableEntries[i]).innerHTML = (deviation).toFixed(4)
+              } else {
+                document.getElementById(tolerancesTableEntries[i]).innerHTML = '+' + (deviation).toFixed(4)
+              }
             }
+            // color coding
+            for (let i = 0; i < tolerancesTableEntries.length; i++) {
+              document.getElementById(tolerancesTableEntries[i]).style.color = testColors[block.testGrades().tolerances[i]]
+            }
+            document.getElementById('densitySectionLabel').style.color = testColors[block.testGrades().density]
+            document.getElementById('showTolerancesTableBtn').style.color = testColors[Math.max(...block.testGrades().tolerances)]
+            document.getElementById('showTolerancesTableBtn').style.display = 'inline'
+          } else {
+            document.getElementById('showTolerancesTableBtn').style.display = 'none'
+            document.getElementById('tolerancesTable').style.display = 'none'
+          } 
+        } else {
+          // no block info present, so make the noInfo section visible and clear entries in info section
+          document.getElementById("densityNoInfo").style.display = 'block'
+        }
+
+        // LIGHT TRANSMISSION (check if data is present)
+        if (block.hasLightTransData()) {
+          // some block info present, so make the info section visible and update its entries and hide the noInfo section
+          document.getElementById("lightTransSection").style.display = 'block'
+          if (block.goodEnd != null) {
+            document.getElementById('goodEnd').innerHTML = block.goodEnd
+            document.getElementById('goodEnd').style.display = 'inline'
+            document.getElementById('goodEnd' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('goodEnd').style.display = 'none'
+            document.getElementById('goodEnd' + 'Label').style.display = 'none'
+          }
+          if (block.fiberPercentage != null) {
+            document.getElementById('fiberPercentage').innerHTML = block.fiberPercentage + ' %'
+            document.getElementById('fiberPercentage').style.color = testColors[grade_fiberPercentage(block.fiberPercentage)]
+            document.getElementById('fiberPercentage').style.display = 'inline'
+            document.getElementById('fiberPercentage' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('fiberPercentage').style.display = 'none'
+            document.getElementById('fiberPercentage' + 'Label').style.display = 'none'
+          }
+          if (block.missingRow != null) {
+            let displayValue = (block.missingRow) ? 'Y' : 'N'
+            document.getElementById('missingRow').innerHTML = displayValue
+            document.getElementById('missingRow').style.color = testColors[grade_missingRow(displayValue)]
+            document.getElementById('missingRow').style.display = 'inline'
+            document.getElementById('missingRow' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('missingRow').style.display = 'none'
+            document.getElementById('missingRow' + 'Label').style.display = 'none'
+          }
+          if (block.thirteenHoles != null) {
+            let displayValue = (block.thirteenHoles) ? 'Y' : 'N'
+            document.getElementById('thirteenHoles').innerHTML = displayValue
+            document.getElementById('thirteenHoles').style.color = testColors[grade_thirteenHoles(displayValue)]
+            document.getElementById('thirteenHoles').style.display = 'inline'
+            document.getElementById('thirteenHoles' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('thirteenHoles').style.display = 'none'
+            document.getElementById('thirteenHoles' + 'Label').style.display = 'none'
+          }
+          if (block.lightTransDate != null) {
+            document.getElementById('lightTransDate').innerHTML = block.lightTransDate
+            document.getElementById('lightTransDate').style.display = 'inline'
+            document.getElementById('lightTransDate' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('lightTransDate').style.display = 'none'
+            document.getElementById('lightTransDate' + 'Label').style.display = 'none'
+          }
+          const towerTableEntries = ['tower1', 'tower2', 'tower3', 'tower4']
+          if (block.hasTowerData()) {
+            let towers = [block.tower1, block.tower2, block.tower3, block.tower4]
+            for (let i = 0; i < towerTableEntries.length; i++) {
+              document.getElementById(towerTableEntries[i]).innerHTML = towers[i]
+              document.getElementById(towerTableEntries[i]).style.color = testColors[grade_tower(towers[i])]
+
+            }
+            document.getElementById('showTowerTableBtn').style.display = 'inline'
+          } else {
+            document.getElementById('showTowerTableBtn').style.display = 'none'
+            document.getElementById('towerTable').style.display = 'none'
           }
           // color coding
-          for (let i = 0; i < tolerancesTableEntries.length; i++) {
-            document.getElementById(tolerancesTableEntries[i]).style.color = testColors[block.testGrades().tolerances[i]]
-          }
-          document.getElementById('densitySectionLabel').style.color = testColors[block.testGrades().density]
-          document.getElementById('showTolerancesTableBtn').style.color = testColors[Math.max(...block.testGrades().tolerances)]
-          document.getElementById('showTolerancesTableBtn').style.display = 'inline'
-        } else {
-          document.getElementById('showTolerancesTableBtn').style.display = 'none'
-          document.getElementById('tolerancesTable').style.display = 'none'
-        } 
-      } else {
-        // no block info present, so make the noInfo section visible and clear entries in info section
-        document.getElementById("densityNoInfo").style.display = 'block'
-      }
-
-      // LIGHT TRANSMISSION (check if data is present)
-      if (block.hasLightTransData()) {
-        // some block info present, so make the info section visible and update its entries and hide the noInfo section
-        document.getElementById("lightTransSection").style.display = 'block'
-        if (block.goodEnd != null) {
-          document.getElementById('goodEnd').innerHTML = block.goodEnd
-          document.getElementById('goodEnd').style.display = 'inline'
-          document.getElementById('goodEnd' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('goodEnd').style.display = 'none'
-          document.getElementById('goodEnd' + 'Label').style.display = 'none'
-        }
-        if (block.fiberPercentage != null) {
-          document.getElementById('fiberPercentage').innerHTML = block.fiberPercentage + ' %'
-          document.getElementById('fiberPercentage').style.color = testColors[grade_fiberPercentage(block.fiberPercentage)]
-          document.getElementById('fiberPercentage').style.display = 'inline'
-          document.getElementById('fiberPercentage' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('fiberPercentage').style.display = 'none'
-          document.getElementById('fiberPercentage' + 'Label').style.display = 'none'
-        }
-        if (block.missingRow != null) {
-          let displayValue = (block.missingRow) ? 'Y' : 'N'
-          document.getElementById('missingRow').innerHTML = displayValue
-          document.getElementById('missingRow').style.color = testColors[grade_missingRow(displayValue)]
-          document.getElementById('missingRow').style.display = 'inline'
-          document.getElementById('missingRow' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('missingRow').style.display = 'none'
-          document.getElementById('missingRow' + 'Label').style.display = 'none'
-        }
-        if (block.thirteenHoles != null) {
-          let displayValue = (block.thirteenHoles) ? 'Y' : 'N'
-          document.getElementById('thirteenHoles').innerHTML = displayValue
-          document.getElementById('thirteenHoles').style.color = testColors[grade_thirteenHoles(displayValue)]
-          document.getElementById('thirteenHoles').style.display = 'inline'
-          document.getElementById('thirteenHoles' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('thirteenHoles').style.display = 'none'
-          document.getElementById('thirteenHoles' + 'Label').style.display = 'none'
-        }
-        if (block.lightTransDate != null) {
-          document.getElementById('lightTransDate').innerHTML = block.lightTransDate
-          document.getElementById('lightTransDate').style.display = 'inline'
-          document.getElementById('lightTransDate' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('lightTransDate').style.display = 'none'
-          document.getElementById('lightTransDate' + 'Label').style.display = 'none'
-        }
-        const towerTableEntries = ['tower1', 'tower2', 'tower3', 'tower4']
-        if (block.hasTowerData()) {
-          let towers = [block.tower1, block.tower2, block.tower3, block.tower4]
-          for (let i = 0; i < towerTableEntries.length; i++) {
-            document.getElementById(towerTableEntries[i]).innerHTML = towers[i]
-            document.getElementById(towerTableEntries[i]).style.color = testColors[grade_tower(towers[i])]
-
-          }
-          document.getElementById('showTowerTableBtn').style.display = 'inline'
-        } else {
-          document.getElementById('showTowerTableBtn').style.display = 'none'
-          document.getElementById('towerTable').style.display = 'none'
-        }
-        // color coding
-        document.getElementById('showTowerTableBtn').style.color = testColors[Math.max(...block.testGrades().towers)]
-        document.getElementById('lightTransSectionLabel').style.color = testColors[block.testGrades().lightTrans]
-        // and run getImageUrls
-        document.getElementById("imagesSelection").style.display = 'block'
-        document.getElementById("loadingImages").style.display = 'block'
-        console.log('fetching image urls')
-        if (slowMode) {
-          getImageUrlsSlow(block.numericDBN)
-        } else {
-          block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess)
-        }
-        getImageUrlsRun = true
-      } else {
-        // no block info present, so make the noInfo section visible and clear entries in info section
-        document.getElementById("lightTransNoInfo").style.display = 'block'
-      }
-      
-      // NATURAL LIGHT (check if data is present)
-      if (block.hasNatLightData()) {
-        // some info present, so make the info section visible and update its entries and hide the noInfo section
-        document.getElementById("natLightSection").style.display = 'block'
-        if (block.natLightDate != null) {
-          document.getElementById('natLightDate').innerHTML = block.natLightDate
-          document.getElementById('natLightDate').style.display = 'inline'
-          document.getElementById('natLightDate' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('natLightDate').style.display = 'none'
-          document.getElementById('natLightDate' + 'Label').style.display = 'none'
-        }
-        // run getImageUrls if it hasn't been run by light transmission
-        if (!getImageUrlsRun) {
-          // run getImageUrls if it hasn't been run
+          document.getElementById('showTowerTableBtn').style.color = testColors[Math.max(...block.testGrades().towers)]
+          document.getElementById('lightTransSectionLabel').style.color = testColors[block.testGrades().lightTrans]
+          // and run getImageUrls
           document.getElementById("imagesSelection").style.display = 'block'
           document.getElementById("loadingImages").style.display = 'block'
           console.log('fetching image urls')
@@ -1709,498 +1872,558 @@
             block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess)
           }
           getImageUrlsRun = true
-        }
-      } else {
-        // no block info present, so make the noInfo section visible and clear entries in info section
-        document.getElementById("natLightNoInfo").style.display = 'block'
-        // I don't need to run getImageUrls, so if light transmission didn't run it, then we don't need any of the image checkboxes
-        // AND we need to reset them (if they are checked, uncheck them and toggle)
-        if (!getImageUrlsRun) {
-          console.log('determined there was no need to search for images')
-          resetCheckboxes()
-        }
-      }
-      
-      // SCINTILLATION (check if data is present)
-      if (block.hasScintData()) {
-        // some info present, so make the info section visible and update its entries and hide the noInfo section
-        document.getElementById("scintSection").style.display = 'block'
-        if (block.scintillation != null) {
-          document.getElementById('scintillation').innerHTML = block.scintillation + ' mV'
-          document.getElementById('scintillation').style.display = 'inline'
-          document.getElementById('scintillation' + 'Label').style.display = 'inline'
         } else {
-          document.getElementById('scintillation').style.display = 'none'
-          document.getElementById('scintillation' + 'Label').style.display = 'none'
+          // no block info present, so make the noInfo section visible and clear entries in info section
+          document.getElementById("lightTransNoInfo").style.display = 'block'
         }
-        if (block.scintRatio != null) {
-          document.getElementById('scintRatio').innerHTML = block.scintRatio
-          document.getElementById('scintRatio').style.color = testColors[grade_scintRatio(block.scintRatio)]
-          document.getElementById('scintRatio').style.display = 'inline'
-          document.getElementById('scintRatio' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('scintRatio').style.display = 'none'
-          document.getElementById('scintRatio' + 'Label').style.display = 'none'
-        }
-        if (block.scintDate != null) {
-          document.getElementById('scintDate').innerHTML = block.scintDate
-          document.getElementById('scintDate').style.display = 'inline'
-          document.getElementById('scintDate' + 'Label').style.display = 'inline'
-        } else {
-          document.getElementById('scintDate').style.display = 'none'
-          document.getElementById('scintDate' + 'Label').style.display = 'none'
-        }
-        document.getElementById('scintSectionLabel').style.color = testColors[grade_scintRatio(block.scintRatio)]
-      } else {
-        // no block info present, so make the noInfo section visible and clear entries in info section
-        document.getElementById("scintNoInfo").style.display = 'block'
-      }
-      // now hide the loading block data text...
-      document.getElementById("loadingBlockData").style.display = 'none'
-    }
-    // resets a checkbox to unchecked
-    function resetCheckbox (imagePrefix) {
-      // if a checkbox is checked, uncheck it and call it's toggle function to hide images
-      if (document.getElementById('CBshow-' + imagePrefix).checked == true) {
-        document.getElementById('CBshow-' + imagePrefix).checked = false
-        toggleImages(imagePrefix)
-      }
-      // then hide the checkbox
-      document.getElementById('CBshow-' + imagePrefix + 'Section').style.display = 'none'
-    }
-    // reset all checkboxes individually and hide checkboxes section
-    function resetCheckboxes () {
-      for (let i = 0; i < allImagePrefixes.length; i++) {
-        resetCheckbox(allImagePrefixes[i])
-      }
-      document.getElementById("allCheckboxes").style.display = 'none'
-    }
-
-    // does not perfectly nicely handle the situation where ONE end's image is present and the other is not..
-    // since this case is so rare, it tries to load both (and if one happens to not have an image, a placeholder is displayed)
-    function onGetImageUrlsSuccess (imageUrls) {
-      // check if getImageUrls returned any urls...
-      if (imageUrls == null || imageUrls.every((element) => element == null)) {
-        // ...NO image urls were returned, so there's no image data to display
-        document.getElementById("loadingImages").style.display = 'none'
-        document.getElementById("noImagesFound").style.display = 'block'
-      } else {
-        // first set all not null urls to their image srcs
-        imageUrls.forEach((element, index) => {
-          if (element != null) {
-            if (index < 4) {
-              document.getElementById(allTestingImgs[index]).src = element
-            } else {
-              document.getElementById(allTestingImgs[index]).src = element[0]
-              let imageUrlsIndexToEnd = new Map([[4, 'Wide End'], [5, 'Narrow End']])
-              let positionCodeToPosition = new Map([[1, '(pictured on left)'], [2, '(pictured on right)']])
-              if (imageUrls[index][1] !== 0) {
-                document.getElementById('natLightImgFigCaption' + index).innerHTML = imageUrlsIndexToEnd.get(index) + ' ' + positionCodeToPosition.get(imageUrls[index][1])
-              } else {
-                document.getElementById('natLightImgFigCaption' + index). innerHTML = imageUrlsIndexToEnd.get(index)
-              }
-            }
-          }
-        });
-        // determine which checkboxes / image sections need to be displayed
-        for (let i = 0; i < allImagePrefixes.length; i++) {
-          if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
-            // one of this section's images is present, so display its checkbox
-            document.getElementById('CBshow-' + allImagePrefixes[i] + 'Section').style.display = 'block'
+        
+        // NATURAL LIGHT (check if data is present)
+        if (block.hasNatLightData()) {
+          // some info present, so make the info section visible and update its entries and hide the noInfo section
+          document.getElementById("natLightSection").style.display = 'block'
+          if (block.natLightDate != null) {
+            document.getElementById('natLightDate').innerHTML = block.natLightDate
+            document.getElementById('natLightDate').style.display = 'inline'
+            document.getElementById('natLightDate' + 'Label').style.display = 'inline'
           } else {
-            // this section is not needed—reset its checkbox
-            resetCheckbox(allImagePrefixes[i])
+            document.getElementById('natLightDate').style.display = 'none'
+            document.getElementById('natLightDate' + 'Label').style.display = 'none'
+          }
+          // run getImageUrls if it hasn't been run by light transmission
+          if (!getImageUrlsRun) {
+            // run getImageUrls if it hasn't been run
+            document.getElementById("imagesSelection").style.display = 'block'
+            document.getElementById("loadingImages").style.display = 'block'
+            console.log('fetching image urls')
+            if (slowMode) {
+              getImageUrlsSlow(block.numericDBN)
+            } else {
+              block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess)
+            }
+            getImageUrlsRun = true
+          }
+        } else {
+          // no block info present, so make the noInfo section visible and clear entries in info section
+          document.getElementById("natLightNoInfo").style.display = 'block'
+          // I don't need to run getImageUrls, so if light transmission didn't run it, then we don't need any of the image checkboxes
+          // AND we need to reset them (if they are checked, uncheck them and toggle)
+          if (!getImageUrlsRun) {
+            console.log('determined there was no need to search for images')
+            resetCheckboxes()
           }
         }
-        // finally, display the checkboxes section
-        document.getElementById("loadingImages").style.display = 'none'
-        document.getElementById("allCheckboxes").style.display = 'block'
-      }
-    }
-    function onGetHistogramsSuccess (histogramUrls) {
-      if (histogramUrls != null) {
-        if (histogramUrls[0] != null) {
-          document.getElementById('histogramWide').href = histogramUrls[0]
-          document.getElementById('histogramWide').style.display = 'block'
+        
+        // SCINTILLATION (check if data is present)
+        if (block.hasScintData()) {
+          // some info present, so make the info section visible and update its entries and hide the noInfo section
+          document.getElementById("scintSection").style.display = 'block'
+          if (block.scintillation != null) {
+            document.getElementById('scintillation').innerHTML = block.scintillation + ' mV'
+            document.getElementById('scintillation').style.display = 'inline'
+            document.getElementById('scintillation' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('scintillation').style.display = 'none'
+            document.getElementById('scintillation' + 'Label').style.display = 'none'
+          }
+          if (block.scintRatio != null) {
+            document.getElementById('scintRatio').innerHTML = block.scintRatio
+            document.getElementById('scintRatio').style.color = testColors[grade_scintRatio(block.scintRatio)]
+            document.getElementById('scintRatio').style.display = 'inline'
+            document.getElementById('scintRatio' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('scintRatio').style.display = 'none'
+            document.getElementById('scintRatio' + 'Label').style.display = 'none'
+          }
+          if (block.scintDate != null) {
+            document.getElementById('scintDate').innerHTML = block.scintDate
+            document.getElementById('scintDate').style.display = 'inline'
+            document.getElementById('scintDate' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('scintDate').style.display = 'none'
+            document.getElementById('scintDate' + 'Label').style.display = 'none'
+          }
+          document.getElementById('scintSectionLabel').style.color = testColors[grade_scintRatio(block.scintRatio)]
         } else {
-          document.getElementById('histogramWide').style.display = 'none'
+          // no block info present, so make the noInfo section visible and clear entries in info section
+          document.getElementById("scintNoInfo").style.display = 'block'
         }
-        if (histogramUrls[1] != null) {
-          document.getElementById('histogramNarrow').href = histogramUrls[1]
-          document.getElementById('histogramNarrow').style.display = 'block'
-        } else {
-          document.getElementById('histogramNarrow').style.display = 'none'
-        }
-      } else {
-        document.getElementById('histogramWide').style.display = 'none'
-        document.getElementById('histogramNarrow').style.display = 'none'
+        // now hide the loading block data text...
+        document.getElementById("loadingBlockData").style.display = 'none'
       }
-    }
+      // resets a checkbox to unchecked
+      function resetCheckbox (imagePrefix) {
+        // if a checkbox is checked, uncheck it and call it's toggle function to hide images
+        if (document.getElementById('CBshow-' + imagePrefix).checked == true) {
+          document.getElementById('CBshow-' + imagePrefix).checked = false
+          toggleImages(imagePrefix)
+        }
+        // then hide the checkbox
+        document.getElementById('CBshow-' + imagePrefix + 'Section').style.display = 'none'
+      }
+      // reset all checkboxes individually and hide checkboxes section
+      function resetCheckboxes () {
+        for (let i = 0; i < allImagePrefixes.length; i++) {
+          resetCheckbox(allImagePrefixes[i])
+        }
+        document.getElementById("allCheckboxes").style.display = 'none'
+      }
 
-    function getImageUrlsSlow (dbn) {
-      // check if getImageUrls returned any urls...
-      if (bigArray[dbn] == null) {
-        console.log('bigArray was null at index: ' + dbn)
-        document.getElementById("loadingImages").style.display = 'none'
-        document.getElementById("noImagesFound").style.display = 'block'
-      } else {
-        imageUrls = bigArray[dbn]
-        if (imageUrls.every((element) => element == null)) {
+      // does not perfectly nicely handle the situation where ONE end's image is present and the other is not..
+      // since this case is so rare, it tries to load both (and if one happens to not have an image, a placeholder is displayed)
+      function onGetImageUrlsSuccess (imageUrls) {
+        // check if getImageUrls returned any urls...
+        if (imageUrls == null || imageUrls.every((element) => element == null)) {
           // ...NO image urls were returned, so there's no image data to display
           document.getElementById("loadingImages").style.display = 'none'
           document.getElementById("noImagesFound").style.display = 'block'
-          return
-        }
-        // first set all not null urls to their image srcs
-        imageUrls.forEach((element, index) => {
-          if (element != null) {
-            document.getElementById(allTestingImgs[index]).src = element[0]
-          }
-        });
-        // determine which checkboxes / image sections need to be displayed
-        for (let i = 0; i < allImagePrefixes.length; i++) {
-          if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
-            // one of this section's images is present, so display its checkbox
-            document.getElementById('CBshow-' + allImagePrefixes[i] + 'Section').style.display = 'block'
-          } else {
-            // this section is not needed—reset its checkbox
-            resetCheckbox(allImagePrefixes[i])
-          }
-        }
-        // add suffixes to figure captions on NL images (left or right) if needed
-        let imageUrlsIndexToEnd = new Map([[4, 'Wide End'], [5, 'Narrow End']])
-        let positionCodeToPosition = new Map([[1, '(pictured on left)'], [2, '(pictured on right)']])
-        for (let i = 4; i < imageUrls.length; i++) {
-          if (imageUrls[i] != null) {
-            if (imageUrls[i][2] != 0) {
-              document.getElementById('natLightImgFigCaption' + i).innerHTML = imageUrlsIndexToEnd.get(i) + ' ' + positionCodeToPosition.get(imageUrls[i][2])
+        } else {
+          // first set all not null urls to their image srcs
+          imageUrls.forEach((element, index) => {
+            if (element != null) {
+              if (index < 4) {
+                document.getElementById(allTestingImgs[index]).src = element
+              } else {
+                document.getElementById(allTestingImgs[index]).src = element[0]
+                let imageUrlsIndexToEnd = new Map([[4, 'Wide End'], [5, 'Narrow End']])
+                let positionCodeToPosition = new Map([[1, '(pictured on left)'], [2, '(pictured on right)']])
+                if (imageUrls[index][1] !== 0) {
+                  document.getElementById('natLightImgFigCaption' + index).innerHTML = imageUrlsIndexToEnd.get(index) + ' ' + positionCodeToPosition.get(imageUrls[index][1])
+                } else {
+                  document.getElementById('natLightImgFigCaption' + index). innerHTML = imageUrlsIndexToEnd.get(index)
+                }
+              }
+            }
+          });
+          // determine which checkboxes / image sections need to be displayed
+          for (let i = 0; i < allImagePrefixes.length; i++) {
+            if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
+              // one of this section's images is present, so display its checkbox
+              document.getElementById('CBshow-' + allImagePrefixes[i] + 'Section').style.display = 'block'
             } else {
-              document.getElementById('natLightImgFigCaption' + i). innerHTML = imageUrlsIndexToEnd.get(i)
+              // this section is not needed—reset its checkbox
+              resetCheckbox(allImagePrefixes[i])
             }
           }
+          // finally, display the checkboxes section
+          document.getElementById("loadingImages").style.display = 'none'
+          document.getElementById("allCheckboxes").style.display = 'block'
+        }
+      }
+      function onGetHistogramsSuccess (histogramUrls) {
+        if (histogramUrls != null) {
+          if (histogramUrls[0] != null) {
+            document.getElementById('histogramWide').href = histogramUrls[0]
+            document.getElementById('histogramWide').style.display = 'block'
+          } else {
+            document.getElementById('histogramWide').style.display = 'none'
+          }
+          if (histogramUrls[1] != null) {
+            document.getElementById('histogramNarrow').href = histogramUrls[1]
+            document.getElementById('histogramNarrow').style.display = 'block'
+          } else {
+            document.getElementById('histogramNarrow').style.display = 'none'
+          }
+        } else {
+          document.getElementById('histogramWide').style.display = 'none'
+          document.getElementById('histogramNarrow').style.display = 'none'
+        }
+      }
+
+      function getImageUrlsSlow (dbn) {
+        // check if getImageUrls returned any urls...
+        if (bigArray[dbn] == null) {
+          console.log('bigArray was null at index: ' + dbn)
+          document.getElementById("loadingImages").style.display = 'none'
+          document.getElementById("noImagesFound").style.display = 'block'
+        } else {
+          imageUrls = bigArray[dbn]
+          if (imageUrls.every((element) => element == null)) {
+            // ...NO image urls were returned, so there's no image data to display
+            document.getElementById("loadingImages").style.display = 'none'
+            document.getElementById("noImagesFound").style.display = 'block'
+            return
+          }
+          // first set all not null urls to their image srcs
+          imageUrls.forEach((element, index) => {
+            if (element != null) {
+              document.getElementById(allTestingImgs[index]).src = element[0]
+            }
+          });
+          // determine which checkboxes / image sections need to be displayed
+          for (let i = 0; i < allImagePrefixes.length; i++) {
+            if (imageUrls[2*i] != null || imageUrls[2*i + 1] != null) {
+              // one of this section's images is present, so display its checkbox
+              document.getElementById('CBshow-' + allImagePrefixes[i] + 'Section').style.display = 'block'
+            } else {
+              // this section is not needed—reset its checkbox
+              resetCheckbox(allImagePrefixes[i])
+            }
+          }
+          // add suffixes to figure captions on NL images (left or right) if needed
+          let imageUrlsIndexToEnd = new Map([[4, 'Wide End'], [5, 'Narrow End']])
+          let positionCodeToPosition = new Map([[1, '(pictured on left)'], [2, '(pictured on right)']])
+          for (let i = 4; i < imageUrls.length; i++) {
+            if (imageUrls[i] != null) {
+              if (imageUrls[i][2] != 0) {
+                document.getElementById('natLightImgFigCaption' + i).innerHTML = imageUrlsIndexToEnd.get(i) + ' ' + positionCodeToPosition.get(imageUrls[i][2])
+              } else {
+                document.getElementById('natLightImgFigCaption' + i). innerHTML = imageUrlsIndexToEnd.get(i)
+              }
+            }
+          }
+          // finally, display the checkboxes section
+          document.getElementById("loadingImages").style.display = 'none'
+          document.getElementById("allCheckboxes").style.display = 'block'
+        }
+      }
+
+      // takes an image name prefix (e.g. lightTransImg, lightTransImgCropped, or natLightImg)
+      // and toggles the visibility of the corresponding wide and narrow images
+      function toggleImages(imagePrefix) {
+        let fig1 = document.getElementById(imagePrefix + 'FigW')
+        let fig2 = document.getElementById(imagePrefix + 'FigN')
+        if (fig1.style.display === "none" || fig2.style.display === "none") {
+          fig1.style.display = "block"
+          fig2.style.display = "block"
+        } else {
+          fig1.style.display = "none"
+          fig2.style.display = "none"
+        }
+      }
+      // changes the way image urls are obtained
+      function madness () {
+        alert('loading ALL image urls, do not submit another dbn before this request completes (should take about 90 seconds)')
+        slowMode = true
+        google.script.run.withSuccessHandler(onSuccess).loadBigArray()
+        function onSuccess (data) {
+          if (data == null) {
+            console.log('bigArray was null :(')
+            alert('there was an error fetching ALL image urls')
+          } else {
+            bigArray = data
+            console.log('loaded bigArray')
+            alert('loaded ALL image urls')
+          }
+        }
+      }
+      // hides/shows the tungsten table
+      function toggleTungstenTable () {
+        if (document.getElementById('tungstenTable').style.display === 'none') {
+          document.getElementById('tungstenTable').style.display = 'block'
+          document.getElementById('showTungstenTableBtn').innerHTML = 'Hide Tungsten Powder Infomation'
+        } else {
+          document.getElementById('tungstenTable').style.display = 'none'
+          document.getElementById('showTungstenTableBtn').innerHTML = 'Show Tungsten Powder Information'
+        }
+      }
+      // hides/shows the epoxy table
+      function toggleEpoxyTable () {
+        if (document.getElementById('epoxyTable').style.display === 'none') {
+          document.getElementById('epoxyTable').style.display = 'block'
+          document.getElementById('showEpoxyTableBtn').innerHTML = 'Hide Epoxy Information'
+        } else {
+          document.getElementById('epoxyTable').style.display = 'none'
+          document.getElementById('showEpoxyTableBtn').innerHTML = 'Show Epoxy Information'
         }
         // finally, display the checkboxes section
         document.getElementById("loadingImages").style.display = 'none'
         document.getElementById("allCheckboxes").style.display = 'block'
       }
-    }
-
-    // takes an image name prefix (e.g. lightTransImg, lightTransImgCropped, or natLightImg)
-    // and toggles the visibility of the corresponding wide and narrow images
-    function toggleImages(imagePrefix) {
-      let fig1 = document.getElementById(imagePrefix + 'FigW')
-      let fig2 = document.getElementById(imagePrefix + 'FigN')
-      if (fig1.style.display === "none" || fig2.style.display === "none") {
-        fig1.style.display = "block"
-        fig2.style.display = "block"
-      } else {
-        fig1.style.display = "none"
-        fig2.style.display = "none"
-      }
-    }
-    // changes the way image urls are obtained
-    function madness () {
-      alert('loading ALL image urls, do not submit another dbn before this request completes (should take about 90 seconds)')
-      slowMode = true
-      google.script.run.withSuccessHandler(onSuccess).loadBigArray()
-      function onSuccess (data) {
-        if (data == null) {
-          console.log('bigArray was null :(')
-          alert('there was an error fetching ALL image urls')
+      // hides/shows the tolerances table
+      function toggleTolerancesTable () {
+        if (document.getElementById('tolerancesTable').style.display === 'none') {
+          document.getElementById('tolerancesTable').style.display = 'block'
+          document.getElementById('showTolerancesTableBtn').innerHTML = 'Hide Tolerances'
         } else {
-          bigArray = data
-          console.log('loaded bigArray')
-          alert('loaded ALL image urls')
+          document.getElementById('tolerancesTable').style.display = 'none'
+          document.getElementById('showTolerancesTableBtn').innerHTML = 'Show Tolerances'
         }
       }
-    }
-    // hides/shows the tungsten table
-    function toggleTungstenTable () {
-      if (document.getElementById('tungstenTable').style.display === 'none') {
-        document.getElementById('tungstenTable').style.display = 'block'
-        document.getElementById('showTungstenTableBtn').innerHTML = 'Hide Tungsten Powder Infomation'
-      } else {
-        document.getElementById('tungstenTable').style.display = 'none'
-        document.getElementById('showTungstenTableBtn').innerHTML = 'Show Tungsten Powder Information'
+      // hides/shows the tower table
+      function toggleTowerTable () {
+        if (document.getElementById('towerTable').style.display === 'none') {
+          document.getElementById('towerTable').style.display = 'block'
+          document.getElementById('showTowerTableBtn').innerHTML = 'Hide Tower Information'
+        } else {
+          document.getElementById('towerTable').style.display = 'none'
+          document.getElementById('showTowerTableBtn').innerHTML = 'Show Tower Information'
+        }
       }
-    }
-    // hides/shows the epoxy table
-    function toggleEpoxyTable () {
-      if (document.getElementById('epoxyTable').style.display === 'none') {
-        document.getElementById('epoxyTable').style.display = 'block'
-        document.getElementById('showEpoxyTableBtn').innerHTML = 'Hide Epoxy Information'
-      } else {
-        document.getElementById('epoxyTable').style.display = 'none'
-        document.getElementById('showEpoxyTableBtn').innerHTML = 'Show Epoxy Information'
-      }
-      // finally, display the checkboxes section
-      document.getElementById("loadingImages").style.display = 'none'
-      document.getElementById("allCheckboxes").style.display = 'block'
-    }
-    // hides/shows the tolerances table
-    function toggleTolerancesTable () {
-      if (document.getElementById('tolerancesTable').style.display === 'none') {
-        document.getElementById('tolerancesTable').style.display = 'block'
-        document.getElementById('showTolerancesTableBtn').innerHTML = 'Hide Tolerances'
-      } else {
-        document.getElementById('tolerancesTable').style.display = 'none'
-        document.getElementById('showTolerancesTableBtn').innerHTML = 'Show Tolerances'
-      }
-    }
-    // hides/shows the tower table
-    function toggleTowerTable () {
-      if (document.getElementById('towerTable').style.display === 'none') {
-        document.getElementById('towerTable').style.display = 'block'
-        document.getElementById('showTowerTableBtn').innerHTML = 'Hide Tower Information'
-      } else {
-        document.getElementById('towerTable').style.display = 'none'
-        document.getElementById('showTowerTableBtn').innerHTML = 'Show Tower Information'
-      }
-    }
-    var filterShipmentValue
-    var filterStatusValue
-    var filterBlockValue
-    function filter () {
-      filterShipmentValue = document.getElementById('inputShipment').value
-      filterStatusValue = document.getElementById('inputStatus').value
-      filterBlockValue = document.getElementById('inputBlock').value
-      loadBlocksTable()
-    }
-    function clearInputShipment () {
-      document.getElementById('inputShipment').value = null
-      filter()
-    }
-    function clearInputStatus () {
-      document.getElementById('inputStatus').value = null
-      filter()
-    }
-    function clearInputBlock () {
-      document.getElementById('inputBlock').value = null
-      filter()
-    }
-    function loadBlocksTable () {
-      let dataTable = $('#blocksTable').DataTable()
-      dataTable.clear()
-      let sheet1 = [...database[0]]
-      sheet1.shift()
-      let sheet2 = [...database[1]]
-      sheet2.shift()
-      let mergedSheet = sheet1.concat(sheet2)
-      let tableColumnsNames = []
-      let cols = dataTable.settings().init().columns
-      for (let i = 0; i < cols.length; i++) {
-        tableColumnsNames[dataTable.column(cols[i].name + ':name').index()] = cols[i].name
-      }
-      for (let i = 0; i < mergedSheet.length; i++) {
-        let rowPassesFilter = dataPresent(mergedSheet[i][blocksSheetMap.get('block')])
-          && (filterShipmentValue == null || filterShipmentValue == '' || filterShipmentValue === mergedSheet[i][blocksSheetMap.get('shipment')])
-          && (filterStatusValue == null || filterStatusValue == '' || filterStatusValue === mergedSheet[i][blocksSheetMap.get('status')])
-          && (filterBlockValue == null || filterBlockValue == '' || filterBlockValue === mergedSheet[i][blocksSheetMap.get('block')])
-        let sortColumns = arrayFromFirstElements(dataTable.order())
-        if (rowPassesFilter) {
-          let rowData = new Array(tableColumnsNames.length)
-          let dimensions = mergedSheet[i].slice(blocksSheetMap.get('L'), blocksSheetMap.get('SH') + 1)
-          let tolerancesNames = ['dL', 'dBT', 'dBB', 'dBH', 'dST', 'dSB', 'dSH']
-          let block = mergedSheet[i][blocksSheetMap.get('block')]
-          let tolerances = ['', '', '', '', '', '', '']
-          for (let j = 0; j < dimensions.length; j++) {
-            if (!isNaN(dimensions[j]) && dimensions[j] !== 0 && dimensions[j] !== '') {
-              tolerances[j] = (dimensions[j] - dimensionsMap.get(parseInt(block))[j]).toFixed(4)
-            }
+      var filterDBNsValueArray
+      var filterShipmentValueArray
+      var filterStatusValueArray
+      var filterBlockValueArray
+      function filter () {
+        function separate (inputString) {
+          let string = inputString.slice()
+          if (string == null || string === '') {
+            return null
+          } else {
+            let array = string.split(',')
+            array.forEach((value, index, array) => array[index] = value.trim())
+            array = array.join(' ').split(' ')
+            array.forEach((value, index, array) => array[index] = value.trim())
+            return array
           }
-          for (let j = 0; j < tableColumnsNames.length; j++) {
-            let name = tableColumnsNames[j]
-            let data
-            if (Array.from(blocksSheetMap.keys()).includes(name)) {
-              data = mergedSheet[i][blocksSheetMap.get(tableColumnsNames[j])]
+        }
+        filterDBNsValueArray = separate(document.getElementById('inputDBNs').value)
+        filterShipmentValueArray = separate(document.getElementById('inputShipment').value)
+        filterStatusValueArray = separate(document.getElementById('inputStatus').value)
+        filterBlockValueArray = separate(document.getElementById('inputBlock').value)
+        loadBlocksTable()
+      }
+      function clearInputShipment () {
+        document.getElementById('inputShipment').value = null
+        filter()
+      }
+      function clearInputStatus () {
+        document.getElementById('inputStatus').value = null
+        filter()
+      }
+      function clearInputBlock () {
+        document.getElementById('inputBlock').value = null
+        filter()
+      }
+      function clearInputDBNs () {
+        document.getElementById('inputDBNs').value = null
+        filter()
+      }
+      function loadBlocksTable () {
+        let dataTable = $('#blocksTable').DataTable()
+        dataTable.clear()
+        let sheet1 = [...database[0]]
+        sheet1.shift()
+        let sheet2 = [...database[1]]
+        sheet2.shift()
+        let mergedSheet = sheet1.concat(sheet2)
+        let tableColumnsNames = []
+        let cols = dataTable.settings().init().columns
+        for (let i = 0; i < cols.length; i++) {
+          tableColumnsNames[dataTable.column(cols[i].name + ':name').index()] = cols[i].name
+        }
+        for (let i = 0; i < mergedSheet.length; i++) {
+          let rowPassesFilter = dataPresent(mergedSheet[i][blocksSheetMap.get('block')])
+            && (filterDBNsValueArray == null || filterDBNsValueArray.includes(mergedSheet[i][blocksSheetMap.get('dbn')]))
+            && (filterShipmentValueArray == null || filterShipmentValueArray.includes(mergedSheet[i][blocksSheetMap.get('shipment')]))
+            && (filterStatusValueArray == null || filterStatusValueArray.includes(mergedSheet[i][blocksSheetMap.get('status')]))
+            && (filterBlockValueArray == null || filterBlockValueArray.includes(mergedSheet[i][blocksSheetMap.get('block')]))
+          let sortColumns = arrayFromFirstElements(dataTable.order())
+          if (rowPassesFilter) {
+            let rowData = new Array(tableColumnsNames.length)
+            let dimensions = mergedSheet[i].slice(blocksSheetMap.get('L'), blocksSheetMap.get('SH') + 1)
+            let tolerancesNames = ['dL', 'dBT', 'dBB', 'dBH', 'dST', 'dSB', 'dSH']
+            let block = mergedSheet[i][blocksSheetMap.get('block')]
+            let tolerances = ['', '', '', '', '', '', '']
+            for (let j = 0; j < dimensions.length; j++) {
+              if (!isNaN(dimensions[j]) && dimensions[j] !== 0 && dimensions[j] !== '') {
+                tolerances[j] = (dimensions[j] - dimensionsMap.get(parseInt(block))[j]).toFixed(4)
+              }
             }
-            if (tolerancesNames.includes(name)) {
-              let k = tolerancesNames.findIndex((value) => name === value)
-              rowData[j] = tolerances[k]
-            } else if (['tower1', 'tower2', 'tower3', 'tower4'].includes(name)) {
-              if (dataPresent(data)) {
-                rowData[j] = parseFloat(data).toFixed(2)
-              } else {
-                rowData[j] = ''
+            for (let j = 0; j < tableColumnsNames.length; j++) {
+              let name = tableColumnsNames[j]
+              let data
+              if (Array.from(blocksSheetMap.keys()).includes(name)) {
+                data = mergedSheet[i][blocksSheetMap.get(tableColumnsNames[j])]
               }
-            } else if (name == 'pregrade') {
-              if (i < sheet1.length) {
-                rowData[j] = data
-              } else {
-                rowData[j] = ''
-              }
-            } else if (name === 'toleranceMse') {
-              if (tolerances.every((value) => value != '')) {
-                tolerances.forEach((value, index, array) => array[index] = value * value)
-                rowData[j] = ((tolerances.reduce((a, b) => (a + b))) / 7).toFixed(9)
-              } else {
-                rowData[j] = ''
-              }
-            } else if (name === 'tungstenMass') {
-              if (data !== '0') {
-                rowData[j] = data
-              } else {
-                rowData[j] = ''
-              }
-            } else if (name === 'fiberPercentage') {
-              if (dataPresent(data) && data !== '0.00') {
-                rowData[j] = data
-              } else {
-                rowData[j] = ''
-              }
-            } else if (name === 'scintillation') {
-              if (dataPresent(data)) {
-                rowData[j] = parseFloat(data).toFixed(3)
-              } else {
-                rowData[j] = ''
-              }
-            } else if (name === 'volume') {
-              if (dataPresent(data) && data !== '0.0') {
-                rowData[j] = parseFloat(data).toFixed(3)
-              } else {
-                rowData[j] = ''
-              }
-            } else if (name === 'testingStatus') {
-              if (i < sheet1.length) { 
-                data = []
-                let densityGrade
-                let lightTransGrade
-                let scintGrade
-                let natLightGrade
-                let densityChecked
-                let lightTransChecked
-                let natLightChecked
-                let densityComplete
-                let lightTransComplete
-                let natLightComplete
-
-                let density = mergedSheet[i][blocksSheetMap.get('density')]
-                let volume = mergedSheet[i][blocksSheetMap.get('volume')]
-                let dL = tolerances[tolerances.findIndex((value) => value === 'dL')]
-                let otherDevGrades = [...tolerances].slice(1)
-                let mass = mergedSheet[i][blocksSheetMap.get('mass')]
-                let massTester = mergedSheet[i][blocksSheetMap.get('massTester')]
-                otherDevGrades.forEach((value, index, array) => array[index] = ((!dataPresent(value)) ? notStartedGrade : grade_otherDev(value)))
-                let densityValuesToGrade = [
-                  ((!dataPresent(density)) ? notStartedGrade : grade_density(density)),
-                  ((!dataPresent(dL)) ? notStartedGrade : grade_dL(dL)),
-                  Math.max(...otherDevGrades)
-                ]
-                densityGrade = Math.max(...densityValuesToGrade)
-                let fiberPercentage = mergedSheet[i][blocksSheetMap.get('fiberPercentage')]
-                let towers = mergedSheet[i].slice(blocksSheetMap.get('tower1'), blocksSheetMap.get('tower4') + 1)
-                let towerGrades = [...towers]
-                towerGrades.forEach((value, index, array) => array[index] = ((!dataPresent(value)) ? notStartedGrade : grade_tower(value)))
-                let missingRow = mergedSheet[i][blocksSheetMap.get('missingRow')]
-                let thirteenHoles = mergedSheet[i][blocksSheetMap.get('thirteenHoles')]
-                let lightTransTester = mergedSheet[i][blocksSheetMap.get('lightTransTester')]
-                let lightTransValuesToGrade = [
-                  (!dataPresent(fiberPercentage)) ? notStartedGrade : grade_fiberPercentage(fiberPercentage),
-                  Math.max(...towerGrades),
-                  (!dataPresent(missingRow)) ? notStartedGrade : grade_missingRow(missingRow),
-                  (!dataPresent(thirteenHoles)) ? notStartedGrade : grade_thirteenHoles(thirteenHoles)
-                ]
-                lightTransGrade = Math.max(...lightTransValuesToGrade)
-                let scintRatio = mergedSheet[i][blocksSheetMap.get('scintRatio')]
-                scintGrade = (!dataPresent(scintRatio)) ? notStartedGrade : grade_scintRatio(scintRatio)
-                let natLightDate = mergedSheet[i][blocksSheetMap.get('natLightDate')]
-                let natLightTester = mergedSheet[i][blocksSheetMap.get('natLightTester')]
-                if (dataPresent(natLightDate) || dataPresent(natLightTester)) {
-                  natLightGrade = aGrade
+              if (tolerancesNames.includes(name)) {
+                let k = tolerancesNames.findIndex((value) => name === value)
+                rowData[j] = tolerances[k]
+              } else if (['tower1', 'tower2', 'tower3', 'tower4'].includes(name)) {
+                if (dataPresent(data)) {
+                  rowData[j] = parseFloat(data).toFixed(2)
                 } else {
-                  natLightGrade = notStartedGrade
+                  rowData[j] = ''
                 }
+              } else if (name == 'pregrade') {
+                if (i < sheet1.length) {
+                  rowData[j] = data
+                } else {
+                  rowData[j] = ''
+                }
+              } else if (name === 'toleranceMse') {
+                if (tolerances.every((value) => value != '')) {
+                  tolerances.forEach((value, index, array) => array[index] = value * value)
+                  rowData[j] = ((tolerances.reduce((a, b) => (a + b))) / 7).toFixed(9)
+                } else {
+                  rowData[j] = ''
+                }
+              } else if (name === 'tungstenMass') {
+                if (data !== '0') {
+                  rowData[j] = data
+                } else {
+                  rowData[j] = ''
+                }
+              } else if (name === 'fiberPercentage') {
+                if (dataPresent(data) && data !== '0.00') {
+                  rowData[j] = data
+                } else {
+                  rowData[j] = ''
+                }
+              } else if (name === 'scintillation') {
+                if (dataPresent(data)) {
+                  rowData[j] = parseFloat(data).toFixed(3)
+                } else {
+                  rowData[j] = ''
+                }
+              } else if (name === 'volume') {
+                if (dataPresent(data) && data !== '0.0') {
+                  rowData[j] = parseFloat(data).toFixed(3)
+                } else {
+                  rowData[j] = ''
+                }
+              } else if (name === 'testingStatus') {
+                if (i < sheet1.length) { 
+                  data = []
+                  let densityGrade
+                  let lightTransGrade
+                  let scintGrade
+                  let natLightGrade
+                  let densityChecked
+                  let lightTransChecked
+                  let natLightChecked
+                  let densityComplete
+                  let lightTransComplete
+                  let natLightComplete
 
-                densityChecked = (mergedSheet[i][blocksSheetMap.get('densityChecked')] === '') ? notStartedGrade : 1
-                lightTransChecked = (mergedSheet[i][blocksSheetMap.get('lightTransChecked')] === '') ? notStartedGrade : 1
-                natLightChecked = (mergedSheet[i][blocksSheetMap.get('natLightChecked')] === '') ? notStartedGrade : 1
+                  let density = mergedSheet[i][blocksSheetMap.get('density')]
+                  let volume = mergedSheet[i][blocksSheetMap.get('volume')]
+                  let dL = tolerances[tolerances.findIndex((value) => value === 'dL')]
+                  let otherDevGrades = [...tolerances].slice(1)
+                  let mass = mergedSheet[i][blocksSheetMap.get('mass')]
+                  let massTester = mergedSheet[i][blocksSheetMap.get('massTester')]
+                  otherDevGrades.forEach((value, index, array) => array[index] = ((!dataPresent(value)) ? notStartedGrade : grade_otherDev(value)))
+                  let densityValuesToGrade = [
+                    ((!dataPresent(density)) ? notStartedGrade : grade_density(density)),
+                    ((!dataPresent(dL)) ? notStartedGrade : grade_dL(dL)),
+                    Math.max(...otherDevGrades)
+                  ]
+                  densityGrade = Math.max(...densityValuesToGrade)
+                  let fiberPercentage = mergedSheet[i][blocksSheetMap.get('fiberPercentage')]
+                  let towers = mergedSheet[i].slice(blocksSheetMap.get('tower1'), blocksSheetMap.get('tower4') + 1)
+                  let towerGrades = [...towers]
+                  towerGrades.forEach((value, index, array) => array[index] = ((!dataPresent(value)) ? notStartedGrade : grade_tower(value)))
+                  let missingRow = mergedSheet[i][blocksSheetMap.get('missingRow')]
+                  let thirteenHoles = mergedSheet[i][blocksSheetMap.get('thirteenHoles')]
+                  let lightTransTester = mergedSheet[i][blocksSheetMap.get('lightTransTester')]
+                  let lightTransValuesToGrade = [
+                    (!dataPresent(fiberPercentage)) ? notStartedGrade : grade_fiberPercentage(fiberPercentage),
+                    Math.max(...towerGrades),
+                    (!dataPresent(missingRow)) ? notStartedGrade : grade_missingRow(missingRow),
+                    (!dataPresent(thirteenHoles)) ? notStartedGrade : grade_thirteenHoles(thirteenHoles)
+                  ]
+                  lightTransGrade = Math.max(...lightTransValuesToGrade)
+                  let scintRatio = mergedSheet[i][blocksSheetMap.get('scintRatio')]
+                  scintGrade = (!dataPresent(scintRatio)) ? notStartedGrade : grade_scintRatio(scintRatio)
+                  let natLightDate = mergedSheet[i][blocksSheetMap.get('natLightDate')]
+                  let natLightTester = mergedSheet[i][blocksSheetMap.get('natLightTester')]
+                  if (dataPresent(natLightDate) || dataPresent(natLightTester)) {
+                    natLightGrade = aGrade
+                  } else {
+                    natLightGrade = notStartedGrade
+                  }
 
-                densityComplete = (dataPresent(volume) && dataPresent(mass) && dataPresent(massTester)) ? 1 : 0
-                lightTransComplete = (dataPresent(fiberPercentage) && dataPresent(missingRow) && dataPresent(thirteenHoles) && dataPresent(lightTransTester)) ? 1 : 0
-                natLightComplete  = (dataPresent(natLightDate) && dataPresent(natLightTester)) ? 1 : 0
+                  densityChecked = (mergedSheet[i][blocksSheetMap.get('densityChecked')] === '') ? notStartedGrade : 1
+                  lightTransChecked = (mergedSheet[i][blocksSheetMap.get('lightTransChecked')] === '') ? notStartedGrade : 1
+                  natLightChecked = (mergedSheet[i][blocksSheetMap.get('natLightChecked')] === '') ? notStartedGrade : 1
 
-                data[0] = [densityGrade, densityChecked, densityComplete]
-                data[1] = [lightTransGrade, lightTransChecked, lightTransComplete]
-                data[2] = [scintGrade]
-                data[3] = [natLightGrade, natLightChecked, natLightComplete]
+                  densityComplete = (dataPresent(volume) && dataPresent(mass) && dataPresent(massTester)) ? 1 : 0
+                  lightTransComplete = (dataPresent(fiberPercentage) && dataPresent(missingRow) && dataPresent(thirteenHoles) && dataPresent(lightTransTester)) ? 1 : 0
+                  natLightComplete  = (dataPresent(natLightDate) && dataPresent(natLightTester)) ? 1 : 0
 
-                rowData[j] = data
+                  data[0] = [densityGrade, densityChecked, densityComplete]
+                  data[1] = [lightTransGrade, lightTransChecked, lightTransComplete]
+                  data[2] = [scintGrade]
+                  data[3] = [natLightGrade, natLightChecked, natLightComplete]
+
+                  rowData[j] = data
+                } else {
+                  rowData[j] = ''
+                }
+              } else if (name === 'readyToGrade') {
+                let block = blocksCollection.getBlockByNumericDBN(i)
+                if (block != null) {
+                  if (block.testsComplete && block.testsChecked) {
+                    rowData[j] = {text: 'Ready', color: green}
+                  } else if (block.testsComplete) {
+                    rowData[j] = {text: 'Needs Checks', color: orange}
+                  } else {
+                    rowData[j] = {text: 'Needs Tests', color: grey}
+                  }
+                } else {
+                  rowData[j] = {text: '', color: black}
+                }
               } else {
-                rowData[j] = ''
-              }
-            } else {
-              if (dataPresent(data)) {
-                rowData[j] = data
-              } else {
-                rowData[j] = ''
+                if (dataPresent(data)) {
+                  rowData[j] = data
+                } else {
+                  rowData[j] = ''
+                }
               }
             }
-          }
-          if (!hideUninterestingRows || sortColumns.every((value) => rowData[value] !== '')) {
-            dataTable.row.add(rowData)
+            if (!hideUninterestingRows || sortColumns.every((value) => rowData[value] !== '')) {
+              dataTable.row.add(rowData)
+            }
           }
         }
+        dataTable.columns.adjust().draw()
       }
-      dataTable.columns.adjust().draw()
-    }
-    function loadRetouchTables() {
-      if (blocksCollection == null) {
-        return
+      function loadRetouchTables() {
+        if (blocksCollection == null) {
+          return
+        }
+        let candidateDataTable = $('#candidateRetouchTable').DataTable()
+        let sentDataTable = $('#sentRetouchTable').DataTable()
+        blocksCollection.getBlocksNeedingRetouch('').forEach(function(data) {
+          let rowData = []
+          rowData[0] = data[0].dbn
+          rowData[1] = data[0].status
+          rowData[2] = data[0].retouch
+          rowData[3] = data[1]
+          candidateDataTable.row.add(rowData)
+        })
+        blocksCollection.getBlocksNeedingRetouch('R').forEach(function(data) {
+          let rowData = []
+          rowData[0] = data[0].dbn
+          rowData[1] = data[0].status
+          rowData[2] = data[0].retouch
+          rowData[3] = data[1]
+          candidateDataTable.row.add(rowData)
+        })
+        blocksCollection.getBlocksNeedingRetouch('S').forEach(function(data) {
+          let rowData = []
+          rowData[0] = data[0].dbn
+          rowData[1] = data[0].status
+          rowData[2] = data[1]
+          sentDataTable.row.add(rowData)
+        })
+        candidateDataTable.columns.adjust().draw()
+        sentDataTable.columns.adjust().draw()
+        document.getElementById('candidateRetouchCount').innerHTML = candidateDataTable.rows().count()
+        document.getElementById('sentRetouchCount').innerHTML = sentDataTable.rows().count()
       }
-      let candidateDataTable = $('#candidateRetouchTable').DataTable()
-      let sentDataTable = $('#sentRetouchTable').DataTable()
-      blocksCollection.getBlocksNeedingRetouch('').forEach(function(data) {
-        let rowData = []
-        rowData[0] = data[0].dbn
-        rowData[1] = data[0].status
-        rowData[2] = data[0].retouch
-        rowData[3] = data[1]
-        candidateDataTable.row.add(rowData)
-      })
-      blocksCollection.getBlocksNeedingRetouch('R').forEach(function(data) {
-        let rowData = []
-        rowData[0] = data[0].dbn
-        rowData[1] = data[0].status
-        rowData[2] = data[0].retouch
-        rowData[3] = data[1]
-        candidateDataTable.row.add(rowData)
-      })
-      blocksCollection.getBlocksNeedingRetouch('S').forEach(function(data) {
-        let rowData = []
-        rowData[0] = data[0].dbn
-        rowData[1] = data[0].status
-        rowData[2] = data[1]
-        sentDataTable.row.add(rowData)
-        //console.log(rowData)
-      })
-      candidateDataTable.columns.adjust().draw()
-      sentDataTable.columns.adjust().draw()
-      document.getElementById('candidateRetouchCount').innerHTML = candidateDataTable.rows().count()
-      document.getElementById('sentRetouchCount').innerHTML = sentDataTable.rows().count()
-    }
-    function loadFindBlockInfo () {
-      document.getElementById('findBlockInfo').style.display = 'block'
-      document.getElementById('findBlocks').style.display = 'none'
-      document.getElementById('findRetouch').style.display = 'none'
-    }
-    function loadFindBlocks () {
-      document.getElementById('findBlocks').style.display = 'block'
-      document.getElementById('findBlockInfo').style.display = 'none'
-    }
-    var loadedRetouch = false
-    function loadRetouch() {
-      document.getElementById('findRetouch').style.display = 'block'
-      document.getElementById('findBlockInfo').style.display = 'none'
-      if (!loadedRetouch) {
-        loadRetouchTables()
-        loadedRetouch = true
+      function loadFindBlockInfo () {
+        document.getElementById('findBlockInfo').style.display = 'block'
+        document.getElementById('findBlocks').style.display = 'none'
+        document.getElementById('findRetouch').style.display = 'none'
       }
-    }
-    var hideUninterestingRows = true
-    function toggleShowRows () {
-      hideUninterestingRows = !hideUninterestingRows
-      filter()
-    }
-  </script>
-</body>
+      function loadFindBlocks () {
+        document.getElementById('findBlocks').style.display = 'block'
+        document.getElementById('findBlockInfo').style.display = 'none'
+      }
+      var loadedRetouch = false
+      function loadRetouch() {
+        document.getElementById('findRetouch').style.display = 'block'
+        document.getElementById('findBlockInfo').style.display = 'none'
+        if (!loadedRetouch) {
+          loadRetouchTables()
+          loadedRetouch = true
+        }
+      }
+      var hideUninterestingRows = true
+      function toggleShowRows () {
+        hideUninterestingRows = !hideUninterestingRows
+        filter()
+      }
+    </script>
+  </body>
 </html>
