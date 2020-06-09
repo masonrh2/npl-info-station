@@ -415,8 +415,8 @@
         scrollY: "480px",
         dom: 'Brtp',
         buttons: [
-          {extend: 'colvis', text:'columns', collectionLayout: 'fixed four-column'},
-          {extend: 'collection', text: 'tests', buttons: [
+          {extend: 'colvis', text:'Columns', collectionLayout: 'fixed four-column'},
+          {extend: 'collection', text: 'Tests', buttons: [
             {extend: 'columnToggle', text: 'Block Information', columns: '.basicInfo'},
             {extend: 'columnToggle', text: 'Graded', columns: '.hasGrade'},
             {extend: 'columnToggle', text: 'Tungsten', columns: '.tungsten'},
@@ -1513,25 +1513,25 @@
     <section id="findBlocks" style="display: none;">
       <form action="javascript:filter()" style="display: inline;">
         <label style="display: inline-block; width: 90px;">DBN: </label><input style="width: 240px;" type="text" tabindex="1" id="inputDBNs">
-        <button>submit</button>
+        <button>Submit</button>
       </form>
-      <button onclick="clearInputDBNs()" style="display: inline;">clear</button><br>
+      <button onclick="clearInputDBNs()" style="display: inline;">Clear</button><br>
       <form action="javascript:filter()" style="display: inline;">
         <label style="display: inline-block; width: 90px;">Shipment: </label><input style="width: 240px;" type="text" tabindex="2" id="inputShipment">
-        <button>submit</button>
+        <button>Submit</button>
       </form>
-      <button onclick="clearInputShipment()" style="display: inline;">clear</button><br>
+      <button onclick="clearInputShipment()" style="display: inline;">Clear</button><br>
       <form action="javascript:filter()" style="display: inline;">
         <label style="display: inline-block; width: 90px;">Status: </label><input style="width: 240px;" type="text" tabindex="3" id="inputStatus">
-        <button>submit</button>
+        <button>Submit</button>
       </form>
-      <button onclick="clearInputStatus()" style="display: inline;">clear</button><br>
+      <button onclick="clearInputStatus()" style="display: inline;">Clear</button><br>
       <form action="javascript:filter()" style="display: inline;">
         <label style="display: inline-block; width: 90px;">Block Design: </label><input style="width: 240px;" type="text" tabindex="4" id="inputBlock">
-        <button>submit</button>
+        <button>Submit</button>
       </form>
-      <button onclick="clearInputBlock()" style="display: inline;">clear</button><br>
-      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
+      <button onclick="clearInputBlock()" style="display: inline;">Clear</button><br>
+      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
       <input id="showRowsCB" type="checkbox" onclick="toggleShowRows()"><label for="showRowsCB">Show rows with empty cells in selected column(s)</label>
       <section style="margin: 1em 0em">
         <span>Blocks Found:</span>
@@ -1544,7 +1544,7 @@
       </table>
     </section>
     <section id="findRetouch" style="display: none;">
-      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
+      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
       <table id="candidateRetouchTable" class="nowrap display cell-border" style="width: 100%;">
         <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Needing Retouch: <span id="candidateRetouchCount"></span></caption>
         <thead><tr></tr></thead>
@@ -1559,16 +1559,17 @@
       </table>
     </section>
     <section id="dateRange" style="display: none;">
-      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
+      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
       <form action="javascript:calcDateRange()" style="display: inline;">
         <label>From: </label><input type="text" id="fromDate" style="width: 70px;">
         <label>To: </label><input type="text" id="toDate" style="width: 70px;">
         <button id="dateRangeSubmitButton">Submit</button>
       </form><br>
       <form action="javascript:calcLastDays()" style="display: inline;">
-        <label>Last </label><input type="text" id="lastDays" style="width: 24px;" value="0"><label> Weekdays</label>
+        <label>Last </label><input type="text" id="lastDays" style="width: 24px;"><label> Weekdays</label>
         <button id="lastDaysSubmitButton">Submit</button>
-      </form>
+      </form><br>
+      <button id="lastDaysSubmitButton" onclick="calcThisWeek()">This Week</button>
       <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
         <span style="font-weight: bold;">Tungsten Filled: </span><span id="tungstenFilledDateRangeCount">0</span><p id="tungstenFilledDateBlocks"></p>
         <button onclick="copy(document.getElementById('tungstenFilledDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('tungstenFilledDateBlocks').innerHTML)">Get Info</button>
@@ -1771,7 +1772,7 @@
             blocksCollection = new BlocksCollection(blocks)
             document.getElementById('loadingDatabase').style.display = 'none'
             document.getElementById('findBlockInfo').style.display = 'block'
-            calcLastDays()
+            calcThisWeek()
           }
         }
       }
@@ -2648,6 +2649,17 @@
         } else {
           alert('invalid last _ days input')
         }
+      }
+      function calcThisWeek() {
+        let from = new Date(currentDate)
+        while (from.getDay() !== 0) {
+          from.setDate(from.getDate() - 1)
+        }
+        let to = new Date(from)
+        to.setDate(to.getDate() + 6)
+        document.getElementById('fromDate').value = dateToYYYYMMDD(from)
+        document.getElementById('toDate').value = dateToYYYYMMDD(to)
+        calcDateRange()
       }
       function loadFindBlockInfo () {
         document.getElementById('findBlockInfo').style.display = 'block'
