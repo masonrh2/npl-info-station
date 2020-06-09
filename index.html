@@ -302,11 +302,21 @@
           return blocks
         }
         getBlocksModifiedInDateRange(fromDate, toDate) {
-          let dates = []
-          let current = fromDate
-          while (current <= toDate) {
-            dates.push(current)
-            current++
+          let noMin = false
+          let noMax = false
+          if (fromDate == null) {noMin = true}
+          if (toDate == null) {noMax = true}
+          let dates
+          if (!noMin && !noMax) {
+            dates = []
+            let current = fromDate
+            while (current <= toDate) {
+              dates.push(current)
+              let date = YYYYMMDDtoDate(current)
+              date.setDate(date.getDate() + 1)
+              current = dateToYYYYMMDD(date)
+            }
+            console.log('date range: ' + dates)
           }
           let tungstenFilled = []
           let epoxyFilled = []
@@ -316,38 +326,73 @@
           let scintTested = []
           let natLightTested = []
           this.array.forEach(function(block) {
-            if (dates.includes(block.tungstenFillingDate)) {
-              tungstenFilled.push(block)
+            let date = block.tungstenFillingDate
+            if (date != null) {
+              if ((noMin && noMax && block.tungstenFillingDate != null)
+                || (noMin && block.tungstenFillingDate <= toDate)
+                || (noMax && block.tungstenFillingDate >= fromDate)
+                || (dates != null && dates.includes(block.tungstenFillingDate)))
+              {tungstenFilled.push(block)}
             }
           })
           this.array.forEach(function(block) {
-            if (dates.includes(block.epoxyFillingDate)) {
-              epoxyFilled.push(block)
+            let date = block.epoxyFillingDate
+            if (date != null) {
+              if ((noMin && noMax && block.epoxyFillingDate != null)
+                || (noMin && block.epoxyFillingDate <= toDate)
+                || (noMax && block.epoxyFillingDate >= fromDate)
+                || (dates != null && dates.includes(block.epoxyFillingDate)))
+              {epoxyFilled.push(block)}
             }
           })
           this.array.forEach(function(block) {
-            if (dates.includes(block.machiningDate)) {
-              machined.push(block)
+            let date = block.machiningDate
+            if (date != null) {
+              if ((noMin && noMax && block.machiningDate != null)
+                || (noMin && block.machiningDate <= toDate)
+                || (noMax && block.machiningDate >= fromDate)
+                || (dates != null && dates.includes(block.machiningDate)))
+              {machined.push(block)}
             }
           })
           this.array.forEach(function(block) {
-            if (dates.includes(block.densityDate)) {
-              densityTested.push(block)
+            let date = block.densityDate
+            if (date != null) {
+              if ((noMin && noMax && block.densityDate != null)
+                || (noMin && block.densityDate <= toDate)
+                || (noMax && block.densityDate >= fromDate)
+                || (dates != null && dates.includes(block.densityDate)))
+              {densityTested.push(block)}
             }
           })
           this.array.forEach(function(block) {
-            if (dates.includes(block.lightTransDateActual)) {
-              lightTransTested.push(block)
+            let date = block.lightTransDateActual
+            if (date != null) {
+              if ((noMin && noMax && block.lightTransDateActual != null)
+                || (noMin && block.lightTransDateActual <= toDate)
+                || (noMax && block.lightTransDateActual >= fromDate)
+                || (dates != null && dates.includes(block.lightTransDateActual)))
+              {lightTransTested.push(block)}
             }
           })
           this.array.forEach(function(block) {
-            if (dates.includes(block.scintDateActual)) {
-              scintTested.push(block)
+            let date = block.scintDateActual
+            if (date != null) {
+              if ((noMin && noMax && block.scintDateActual != null)
+                || (noMin && block.scintDateActual <= toDate)
+                || (noMax && block.scintDateActual >= fromDate)
+                || (dates != null && dates.includes(block.scintDateActual)))
+              {scintTested.push(block)}
             }
           })
           this.array.forEach(function(block) {
-            if (dates.includes(block.natLightDate)) {
-              natLightTested.push(block)
+            let date = block.natLightDate
+            if (date != null) {
+              if ((noMin && noMax && block.natLightDate != null)
+                || (noMin && block.natLightDate <= toDate)
+                || (noMax && block.natLightDate >= fromDate)
+                || (dates != null && dates.includes(block.natLightDate)))
+              {natLightTested.push(block)}
             }
           })
           return {
@@ -408,9 +453,13 @@
             return ''
           } else if (type === 'display') {
             let tests = ['D', 'LT', 'S', 'NL']
-            function createSpan(text, color, underline) {
-              if (underline) {
-                return '<span style="color: ' + color + '; font-weight: bold; border-bottom: 2px solid ' + color + ';">' + text + '</span>'
+            function createSpan(text, color, style) {
+              if (style === 'bolded') {
+                return '<span style="color: ' + color + '; font-weight: bold;">' + text + '</span>'
+              } else if (style === 'normal') {
+                return '<span style="color: ' + color + ';">' + text + '</span>'
+              } else if (style === 'italicizedDotted') {
+                return '<span style="color: ' + color + '; font-style: italic; border-bottom: 2px dotted ' + color + ';">' + text + '</span>'
               } else {
                 return '<span style="color: ' + color + '; font-weight: bold">' + text + '</span>'
               }
@@ -420,12 +469,13 @@
             data.forEach(function (value, index) {
               if (index == 2) {
                 if (value[0] === 0) {
-                  spans[index] = createSpan(tests[index], testColors[value[0]], false)
+                  spans[index] = createSpan(tests[index], testColors[value[0]], 'normal')
                 } else {
-                  spans[index] = createSpan(tests[index], testColors[value[0]], true)
+                  spans[index] = createSpan(tests[index], testColors[value[0]], 'bolded')
                 }
               } else {
-                spans[index] = createSpan(tests[index], testColors[value[0]], value[2] === 1) + createSpan('✔', checkColors[value[1]], false)
+                let style = (value[2] === aGrade) ? 'bolded' : ((value[0] === notStartedGrade) ? 'normal' : 'italicizedDotted')
+                spans[index] = createSpan(tests[index], testColors[value[0]], style) + createSpan('✔', checkColors[value[1]], 'none')
               }
             })
             spans.forEach(function (span, index) {
@@ -1202,12 +1252,16 @@
         }
       }
       function dateToYYYYMMDD (date) {
-        var y = date.getFullYear().toString()
-        var m = (date.getMonth() + 1).toString()
-        var d = date.getDate().toString()
-        (d.length == 1) && (d = '0' + d)
-        (m.length == 1) && (m = '0' + m)
-        return y + m + d
+        let y = date.getFullYear().toString()
+        let m = (date.getMonth() + 1).toString()
+        let d = date.getDate().toString()
+        if (m.length === 1) {m = '0' + m}
+        if (d.length === 1) {d = '0' + d}
+        return parseInt(y + m + d)
+      }
+      function YYYYMMDDtoDate (int) {
+        str = int.toString()
+        return new Date(parseInt(str.toString().substr(0, 4)), parseInt(str.toString().substr(4, 2)) - 1, parseInt(str.toString().substr(6, 2)))
       }
       function makeFileFriendly (date) {
         return date.getFullYear() + '-' + to2digits((date.getMonth() + 1).toString()) + '-' +  to2digits(date.getDate().toString())
@@ -1221,7 +1275,9 @@
         for (let i = 0; i < array.length - 1; i++) {
           string += array[i] + ', '
         }
-        string += array[array.length - 1]
+        if (array.length > 0) {
+          string += array[array.length - 1]
+        }
         return string
       }
       function wToWide (string) {
@@ -1270,7 +1326,7 @@
     </script>
   </head>
   <body onload="getDatabaseOnLoad()" style="margin: 16px;">
-    <div class="header" style="display: block; padding-bottom: 2em;">
+    <div class="header removeForPrint" style="display: block; padding-bottom: 2em;">
       <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd" />
       <h1>NPL Block Information Station</h1>
     </div>
@@ -1280,16 +1336,16 @@
       <section style="display: inline-block; margin-left: 0em;">
         <form action="javascript:onSubmit()" style="display: inline;">
           <label>DBN: </label><input type="text" id="inputDBN">
-          <button id="dbnSubmitButton">Submit</button>
+          <button class="removeForPrint" id="dbnSubmitButton">Submit</button>
         </form>
-        <button id="loadAllImagesButton" onclick="madness()">Load All Images</button>
-        <button id="printButton" onclick="toPrint()" style="margin-left: 0;">Print</button>
-        <button id="loadFindBlocksButton" onclick="loadFindBlocks()">Find Blocks</button>
-        <button id="loadRetouchButton" onclick="loadRetouch()">Retouch Information</button>
-        <button id="loadDateRangeButton" onclick="loadDateRange()">Date Range</button>
+        <button class="removeForPrint" id="loadAllImagesButton" onclick="madness()">Load All Images</button>
+        <button class="removeForPrint" id="printButton" onclick="toPrint()" style="margin-left: 0;">Print</button>
+        <button class="removeForPrint" id="loadFindBlocksButton" onclick="loadFindBlocks()">Find Blocks</button>
+        <button class="removeForPrint" id="loadRetouchButton" onclick="loadRetouch()">Retouch Information</button>
+        <button class="removeForPrint" id="loadDateRangeButton" onclick="loadDateRange()">Date Range</button>
       </section>
       <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
-      <section id="imagesSelection" style="display: none;  margin-top: 1em;">
+      <section class="removeForPrint" id="imagesSelection" style="display: none;  margin-top: 1em;">
         <section id="allCheckboxes" style="display: none;">
           <section id="CBshow-lightTransImgSection" style="display: none;">
             <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')">
@@ -1325,7 +1381,7 @@
           <dt id="commentLabel">Comment:</dt>
           <dd id="comment"></dd>
           <section style="width: 100%; padding-top: 1em;">
-            <button id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
+            <button class="removeForPrint" id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
             <table class="dimension" id="tungstenTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
               <tr>
                 <th style="white-space: nowrap;">Powder</th><th style="white-space: nowrap;">Bucket Number</th><th style="white-space: nowrap;">Mold Series</th><th style="white-space: nowrap;">Empty Mold Mass (g)</th><th style="white-space: nowrap;">Filled Mold Mass (g)</th><th style="white-space: nowrap;">Tungsten Mass (g)</th><th style="white-space: nowrap;">Filling Date</th>
@@ -1336,7 +1392,7 @@
             </table>
           </section>
           <section style="width: 100%; padding-top: 1em;">
-            <button id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
+            <button class="removeForPrint" id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
             <table class="dimension" id="epoxyTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
               <tr>
                 <th style="white-space: nowrap;">Epoxy Batch</th><th style="white-space: nowrap;">Resin Mass (g)</th><th style="white-space: nowrap;">Hardener Mass (g)</th><th style="white-space: nowrap;">Potting Notes</th><th style="white-space: nowrap;">Epoxy Filling Time (min)</th><th style="white-space: nowrap;">Filling Date</th>
@@ -1363,7 +1419,7 @@
           <dt id='densityDateLabel'>Date:</dt>
           <dd id="densityDate"></dd>
         </dl>
-        <button id="showTolerancesTableBtn" style="display: none;" onclick="toggleTolerancesTable()">Show Tolerances</button>
+        <button class="removeForPrint" id="showTolerancesTableBtn" style="display: none;" onclick="toggleTolerancesTable()">Show Tolerances</button>
         <table class="dimension" id="tolerancesTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
           <tr>
             <th>ΔL</th><th>ΔBT</th><th>ΔBB</th><th>ΔBH</th><th>ΔST</th><th>ΔSB</th><th>ΔSH</th>
@@ -1390,7 +1446,7 @@
           <dt id='lightTransDateLabel'>Date:</dt>
           <dd id="lightTransDate"></dd>
         </dl>
-        <button id="showTowerTableBtn" style="display: none; margin-bottom: 1em;" onclick="toggleTowerTable()">Show Tower Information</button>
+        <button class="removeForPrint" id="showTowerTableBtn" style="display: none; margin-bottom: 1em;" onclick="toggleTowerTable()">Show Tower Information</button>
         <table class="dimension" id="towerTable" style="display: none; margin-bottom: 1em; border-collapse: collapse; fill: #333;">
           <tr>
             <th>T1 (BL)</th><th>T2 (BR)</th><th>T3 (TL)</th><th>T3 (TR)</th>
@@ -1505,41 +1561,41 @@
     <section id="dateRange" style="display: none;">
       <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">back</button><br>
       <form action="javascript:calcDateRange()" style="display: inline;">
-        <label>From: </label><input type="text" id="fromDate">
-        <label>To: </label><input type="text" id="toDate">
+        <label>From: </label><input type="text" id="fromDate" style="width: 70px;">
+        <label>To: </label><input type="text" id="toDate" style="width: 70px;">
         <button id="dateRangeSubmitButton">Submit</button>
       </form><br>
       <form action="javascript:calcLastDays()" style="display: inline;">
-        <label>Last </label><input type="text" id="lastDays"><label> Days</label>
+        <label>Last </label><input type="text" id="lastDays" style="width: 24px;" value="0"><label> Weekdays</label>
         <button id="lastDaysSubmitButton">Submit</button>
       </form>
-      <div>
-        <span>tungstenFilled: </span><p id="tungstenFilledDateBlocks"></p>
-        <button onclick="">copy</button><button onclick="">get info</button>
+      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+        <span style="font-weight: bold;">Tungsten Filled: </span><span id="tungstenFilledDateRangeCount">0</span><p id="tungstenFilledDateBlocks"></p>
+        <button onclick="copy(document.getElementById('tungstenFilledDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('tungstenFilledDateBlocks').innerHTML)">Get Info</button>
       </div>
-      <div>
-        <span>epoxyFilled: </span><p id="epoxyFilledDateBlocks"></p>
-        <button onclick="">copy</button><button onclick="">get info</button>
+      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+        <span style="font-weight: bold;">Epoxy Filled: </span><span id="epoxyFilledDateRangeCount">0</span><p id="epoxyFilledDateBlocks"></p>
+        <button onclick="copy(document.getElementById('epoxyFilledDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('epoxyFilledDateBlocks').innerHTML)">Get Info</button>
       </div>
-      <div>
-        <span>machined: </span><p id="machinedDateBlocks"></p>
-        <button onclick="">copy</button><button onclick="">get info</button>
+      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+        <span style="font-weight: bold;">Machined: </span><span id="machinedDateRangeCount">0</span><p id="machinedDateBlocks"></p>
+        <button onclick="copy(document.getElementById('machinedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('machinedDateBlocks').innerHTML)">Get Info</button>
       </div>
-      <div>
-        <span>densityTested: </span><p id="densityTestedDateBlocks"></p>
-        <button onclick="">copy</button><button onclick="">get info</button>
+      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+        <span style="font-weight: bold;">Density Tested: </span><span id="densityTestedDateRangeCount">0</span><p id="densityTestedDateBlocks"></p>
+        <button onclick="copy(document.getElementById('densityTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('densityTestedDateBlocks').innerHTML)">Get Info</button>
       </div>
-      <div>
-        <span>lightTransTested: </span><p id="lightTransTestedDateBlocks"></p>
-        <button onclick="">copy</button><button onclick="">get info</button>
+      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+        <span style="font-weight: bold;">Light Transmission Tested: </span><span id="lightTransTestedDateRangeCount">0</span><p id="lightTransTestedDateBlocks"></p>
+        <button onclick="copy(document.getElementById('lightTransTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('lightTransTestedDateBlocks').innerHTML)">Get Info</button>
       </div>
-      <div>
-        <span>scintTested: </span><p id="scintTestedDateBlocks"></p>
-        <button onclick="">copy</button><button onclick="">get info</button>
+      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+        <span style="font-weight: bold;">Scintillation Tested: </span><span id="scintTestedDateRangeCount">0</span><p id="scintTestedDateBlocks"></p>
+        <button onclick="copy(document.getElementById('scintTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('scintTestedDateBlocks').innerHTML)">Get Info</button>
       </div>
-      <div>
-        <span>natLightTested: </span><p id="natLightTestedDateBlocks"></p>
-        <button onclick="">copy</button><button onclick="">get info</button>
+      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+        <span style="font-weight: bold;">Natural Light Tested: </span><span id="natLightTestedDateRangeCount">0</span><p id="natLightTestedDateBlocks"></p>
+        <button onclick="copy(document.getElementById('natLightTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('natLightTestedDateBlocks').innerHTML)">Get Info</button>
       </div>
     </section>
     <script>
@@ -1554,15 +1610,27 @@
         html.find('head title').html('BlockReport-DBN_' + dbn + '-asOf_' + makeFileFriendly(currentDate))
         html.find('script').eq(1).remove()
         html.find('script').eq(6).remove()
-        html.find('#dbnSubmitButton, #loadAllImagesButton, #printButton, #loadFindBlocksButton, #loadRetouchButton').remove()
-        html.find('#CBshow-lightTransImg').attr('checked', document.getElementById("CBshow-lightTransImg").checked)
-        html.find('#CBshow-lightTransImgCropped').attr('checked', document.getElementById("CBshow-lightTransImgCropped").checked)
-        html.find('#CBshow-natLightImg').attr('checked', document.getElementById("CBshow-natLightImg").checked)
-        console.log(document.getElementById("CBshow-lightTransImg").checked + ', ' + document.getElementById("CBshow-lightTransImgCropped").checked + ', ' + document.getElementById("CBshow-natLightImg").checked)
+        html.find('.removeForPrint').remove()
         html.find('#inputDBN').prop('disabled', true).attr('value', dbn)
-        console.log(html.get(0))
         printDocument.write(yourDOCTYPE + '<html>' + html.html() + '</html>')
         printDocument.close()
+      }
+      function copy(text) {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          let successful = document.execCommand('copy');
+          let msg = successful ? 'successful' : 'unsuccessful';
+        } catch (err) {
+          console.error('unable to copy:', err);
+        }
+        document.body.removeChild(textArea);
       }
       // store each section's ID in an array for easy iteration:
       const allSectionPrefixes = ['blockDetails', 'density', 'lightTrans', 'natLight', 'scint']
@@ -1703,6 +1771,7 @@
             blocksCollection = new BlocksCollection(blocks)
             document.getElementById('loadingDatabase').style.display = 'none'
             document.getElementById('findBlockInfo').style.display = 'block'
+            calcLastDays()
           }
         }
       }
@@ -2523,15 +2592,15 @@
       function calcDateRange() {
         let fromInput = document.getElementById('fromDate').value
         let toInput = document.getElementById('toDate').value
-        if ((isNaN(fromInput) && fromInput !== '') || (isNaN(toInput) && toInput !== '')) {
-          alert('please enter integers only or leave input dates blank')
+        if (((isNaN(fromInput) || fromInput.length !== 8) && fromInput !== '') || ((isNaN(toInput) || toInput.length !== 8) && toInput !== '')) {
+          alert('please enter dates in YYYYMMDD format or leave input dates blank')
           return
         }
         function elementsToDBN (array) {
           array.forEach((value, index, array) => array[index] = value.dbn)
         }
-        let from = (fromInput === '') ? 0 : parseInt(fromInput)
-        let to = (toInput === '') ? 0 : parseInt(toInput)
+        let from = (fromInput === '') ? null : parseInt(fromInput)
+        let to = (toInput === '') ? null : parseInt(toInput)
         let dateRangeBlocks = blocksCollection.getBlocksModifiedInDateRange(from, to)
         elementsToDBN(dateRangeBlocks.tungstenFilled)
         elementsToDBN(dateRangeBlocks.epoxyFilled)
@@ -2541,15 +2610,44 @@
         elementsToDBN(dateRangeBlocks.scintTested)
         elementsToDBN(dateRangeBlocks.natLightTested)
         document.getElementById('tungstenFilledDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.tungstenFilled)
+        document.getElementById('tungstenFilledDateRangeCount').innerHTML = dateRangeBlocks.tungstenFilled.length
         document.getElementById('epoxyFilledDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.epoxyFilled)
+        document.getElementById('epoxyFilledDateRangeCount').innerHTML = dateRangeBlocks.epoxyFilled.length
         document.getElementById('machinedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.machined)
+        document.getElementById('machinedDateRangeCount').innerHTML = dateRangeBlocks.machined.length
         document.getElementById('densityTestedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.densityTested)
+        document.getElementById('densityTestedDateRangeCount').innerHTML = dateRangeBlocks.densityTested.length
         document.getElementById('lightTransTestedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.lightTransTested)
+        document.getElementById('lightTransTestedDateRangeCount').innerHTML = dateRangeBlocks.lightTransTested.length
         document.getElementById('scintTestedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.scintTested)
+        document.getElementById('scintTestedDateRangeCount').innerHTML = dateRangeBlocks.scintTested.length
         document.getElementById('natLightTestedDateBlocks').innerHTML = arrayToStringList(dateRangeBlocks.natLightTested)
+        document.getElementById('natLightTestedDateRangeCount').innerHTML = dateRangeBlocks.natLightTested.length
+      }
+      function findBlocksFromList (stringList) {
+        document.getElementById('inputDBNs').value = stringList
+        document.getElementById('inputShipment').value = ''
+        document.getElementById('inputStatus').value = ''
+        document.getElementById('inputBlock').value = ''
+        loadFindBlocks()
+        filter()
       }
       function calcLastDays() {
-
+        let days = parseInt(document.getElementById('lastDays').value)
+        if (!isNaN(days) && days >= 0) {
+          let from = new Date(currentDate)
+          for (let i = 0; i < days; i++) {
+            from.setDate(from.getDate() - 1)
+            if (from.getDay() === 0 || from.getDay() === 6) {
+              i--
+            }
+          }
+          document.getElementById('fromDate').value = dateToYYYYMMDD(from)
+          document.getElementById('toDate').value = dateToYYYYMMDD(currentDate)
+          calcDateRange()
+        } else {
+          alert('invalid last _ days input')
+        }
       }
       function loadFindBlockInfo () {
         document.getElementById('findBlockInfo').style.display = 'block'
@@ -2560,6 +2658,7 @@
       function loadFindBlocks () {
         document.getElementById('findBlocks').style.display = 'block'
         document.getElementById('findBlockInfo').style.display = 'none'
+        document.getElementById('dateRange').style.display = 'none'
       }
       var loadedRetouch = false
       function loadRetouch() {

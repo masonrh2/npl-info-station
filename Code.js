@@ -1,16 +1,18 @@
 /**
  * Load the HTML page (called automatically when the web app url page is loaded)
  */
-function doGet () {
+function doGet() {
   return HtmlService.createTemplateFromFile('index').evaluate()
+    .setTitle('NPL Block Information Station')
 }
 /**
  * Allows index.html to access other files (such as css.html)
  * Includes the specified file in the HTML when called in the HTML
  * @param {string} filename
  */
-function include (filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent()
+function include(filename) {
+  return HtmlService.createTemplateFromFile(filename).evaluate()
+    .getContent()
 }
 
 // Maximum DBN (reject dbns larger than this)
