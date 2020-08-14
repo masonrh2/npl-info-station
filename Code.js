@@ -134,10 +134,18 @@ function getDatabase () {
   if (error !== '') {
     // an error occured while loading files, do don't try to pass database var to fns
     // also pass the error to HTML so the user can be alerted
-    return [null, null, error]
+    return {
+      sheet1: null,
+      sheet2: null,
+      err: error
+    }
   } else {
     const sheets = SpreadsheetApp.open(database).getSheets()
-    return [sheets[0].getDataRange().getDisplayValues(), sheets[1].getDataRange().getDisplayValues(), error]
+    return {
+      sheet1: sheets[0].getDataRange().getDisplayValues(),
+      sheet2: sheets[1].getDataRange().getDisplayValues(),
+      err: null
+    }
   }
 }
 
