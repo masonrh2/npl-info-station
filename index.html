@@ -123,12 +123,14 @@
           this.filledMoldMass = (!dataPresent(array[18])) ? null : parseInt(array[18])
           this.tungstenMass = (!dataPresent(array[19]) || parseInt(array[19]) === 0) ? null : parseInt(array[19])
           this.tungstenFillingDate = (!dataPresent(array[21])) ? null : usDateToYYYYMMDD(array[21])
+          this.tungstenFiller = (!dataPresent(array[22])) ? null : array[22]
           this.epoxyBatch = (!dataPresent(array[23])) ? null : parseInt(array[23])
           this.resinMass = (!dataPresent(array[24])) ? null : parseInt(array[24])
           this.hardenerMass = (!dataPresent(array[25])) ? null : parseInt(array[25])
           this.pottingNotes = (!dataPresent(array[26])) ? null : array[26]
           this.epoxyFillingTime = (!dataPresent(array[27])) ? null : parseFloat(array[27])
           this.epoxyFillingDate = (!dataPresent(array[28])) ? null : usDateToYYYYMMDD(array[28])
+          this.epoxyPreparer = (!dataPresent(array[29])) ? null : array[29]
           this.machiningDate = (!dataPresent(array[31])) ? null : usDateToYYYYMMDD(array[31])
           this.l = (!dataPresent(array[33])) ? null : parseFloat(array[33])
           this.bt = (!dataPresent(array[34])) ? null : parseFloat(array[34])
@@ -445,6 +447,7 @@
           }
         }},
         {name: "block", "title": "Block", className: "dt-center basicInfo searchExact", "searchable": true, "type": "block", "visible": true},
+        {name: "comment", "title": "Comment", className: "dt-center search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "status", "title": "Status", className: "dt-center basicInfo searchExact", "searchable": true, "type": "status", "visible": true},
         {name: "testingStatus", title: "Testing Status", className: "dt-center basicInfo hasGrade", "searchable": false, "type": "testingStatus","visible": true, render: function ( data, type, row ) {
           if (!dataPresent(data)) {
@@ -515,12 +518,14 @@
         {name: "emptyMoldMass", "title": "<span>Empty Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "filledMoldMass", "title": "<span>Filled Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "tungstenMass", "title": "W Mass (g)", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "tungstenFiller", "title": "W Filler", className: "dt-center tungsten search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "tungstenFillingDate", "title": "W Filling Date", className: "dt-center tungsten search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
         {name: "epoxyBatch", "title": "<span>Epoxy</span><br><span>Batch</span>", className: "dt-center epoxy searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "resinMass", "title": "<span>Resin</span><br><span>Mass (g)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "hardenerMass", "title": "<span>Hardener</span><br><span>Mass (g)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "epoxyFillingTime", "title": "<span>Epoxy Filling</span><br><span>Time (min)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "epoxyFillingDate", "title": "<span>Epoxy</span><br><span>Filling Date</span>", className: "dt-center epoxy search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
+        {name: "epoxyPreparer", "title": "<span>Epoxy</span><br><span>Preparer</span>", className: "dt-center epoxy search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "machiningDate", "title": "<span>Machining</span><br><span>Date</span>", className: "dt-center search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
         {name: "dL", "title": "ΔL (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
           if (type === 'display') {
@@ -636,7 +641,9 @@
         }},
         {name: "toleranceMse", "title": "Tolerance MSE", className:"dt-center range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "volume", "title": "Volume (mL)", className: "dt-center density range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "dimensionTester", "title": "<span>Dimension</span><br><span>Tester</span>", className: "dt-center density search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "mass", "title": "Mass (g)", className: "dt-center density range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
+        {name: "massTester", "title": "<span>Density</span><br><span>Tester</span>", className: "dt-center density search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "density", "title": "<span>Density</span><br><span>(g/mL)</span>", className: "dt-center density hasGrade range range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
           if (type === 'display') {
               if (data !== '') {
@@ -727,6 +734,7 @@
             return yToYes(data)
           }
         }},
+        {name: "lightTransTester", "title": "LT Tester", className: "dt-center lightTrans search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "lightTransDate", "title": "LT Date", className: "dt-center lightTrans searchExact", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
         {name: "scintillation", "title": "<span>Scintillation</span><br><span>(mV)</span>", className: "dt-center scint range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
         {name: "scintRatio", "title": "<span>Scintillation</span><br><span>Ratio</span>", className: "dt-center scint hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
@@ -740,6 +748,7 @@
             return data
           }
         }},
+        {name: "scintTester", "title": "<span>Scintilliation</span><br><span>Tester</span>", className: "dt-center scint search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint searchExact", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
         {name: "natLightDate", "title": "NL Date", className: "dt-center natLight searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false}
         ]
@@ -812,20 +821,6 @@
           }
           $('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
         })
-        /*
-        $(document).on({
-          mouseenter: function (event) {
-            var table = $(event.target).parents('.dataTables_wrapper').find('table.dataTable');
-            trIndex = $(this).index() + 2;
-            table.find("tr:eq(" + trIndex + ")").addClass("hover");
-          },
-          mouseleave: function (event) {
-            var table = $(event.target).parents('.dataTables_wrapper').find('table.dataTable');
-            trIndex = $(this).index() + 2;
-            table.find("tr:eq(" + trIndex + ")").removeClass("hover");
-          }
-        }, ".dataTables_wrapper tbody tr");
-        */
       })
       $.fn.dataTable.ext.search.push(
         function( settings, data, dataIndex ) {
@@ -1673,12 +1668,14 @@
         ['filledMoldMass', 18],
         ['tungstenMass', 19],
         ['tungstenFillingDate', 21],
+        ['tungstenFiller', 22],
         ['epoxyBatch', 23],
         ['resinMass', 24],
         ['hardenerMass', 25],
         ['pottingNotes', 26],
         ['epoxyFillingTime', 27],
         ['epoxyFillingDate', 28],
+        ['epoxyPreparer', 29],
         ['machiningDate', 31],
         ['L', 33],
         ['SH', 39],
@@ -1700,6 +1697,7 @@
         ['lightTransDate', 64],
         ['scintillation', 65],
         ['scintRatio', 67],
+        ['scintTester', 68],
         ['scintDate', 69],
         ['natLightDate', 70],
         ['natLightTester', 71],
