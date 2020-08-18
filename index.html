@@ -25,8 +25,7 @@
       const bGrade = 2
       const fGrade = 3
       const notStartedGrade = 0
-      //const colorChecked = green
-      //const colorUnchecked = grey
+      // GRADING FUNCTIONS
       function grade_pregrade (grade) {
         if (grade === '5a') {
           return aGrade
@@ -158,6 +157,7 @@
           this.lightTransDateActual = (!dataPresent(array[64]) || isNaN(parseInt(removeSuffix(array[64])))) ? null : parseInt(removeSuffix(array[64]))
           this.scintillation = (!dataPresent(array[65])) ? null : parseFloat(array[65])
           this.scintRatio = (!dataPresent(array[67])) ? null : parseFloat(array[67])
+          this.scintTester = (!dataPresent(array[68])) ? null : array[68]
           this.scintDate = (!dataPresent(array[69])) ? null : array[69]
           this.scintDateActual = (!dataPresent(array[69]) || isNaN(parseInt(removeSuffix(array[69])))) ? null : parseInt(removeSuffix(array[69]))
           this.natLightDate = (!dataPresent(array[70])) ? null : parseInt(array[70])
@@ -1409,8 +1409,12 @@
         <dl class='inline-flex'>
           <dt id='volumeLabel'>Volume:</dt>
           <dd id="volume"></dd>
+          <dt id='dimensionTesterLabel'>Dimension Tester:</dt>
+          <dd id="dimensionTester"></dd>
           <dt id='massLabel'>Mass:</dt>
           <dd id="mass"></dd>
+          <dt id='massTesterLabel'>Mass Tester:</dt>
+          <dd id="massTester"></dd>
           <dt id='densityLabel'>Density:</dt>
           <dd id="density" style="font-weight: bold;"></dd>
           <dt id='densityDateLabel'>Date:</dt>
@@ -1440,6 +1444,8 @@
           <dd id="missingRow" style="font-weight: bold;"></dd>
           <dt id='thirteenHolesLabel'>13 Connected Holes:</dt>
           <dd id="thirteenHoles" style="font-weight: bold;"></dd>
+          <dt id='lightTransTesterLabel'>Tester:</dt>
+          <dd id="lightTransTester"></dd>
           <dt id='lightTransDateLabel'>Date:</dt>
           <dd id="lightTransDate"></dd>
         </dl>
@@ -1499,6 +1505,8 @@
           <dd id="scintillation"></dd>
           <dt id='scintRatioLabel'>Ratio:</dt>
           <dd id="scintRatio" style="font-weight: bold;"></dd>
+          <dt id='scintTesterLabel'>Tester:</dt>
+          <dd id="scintTester"></dd>
           <dt id='scintDateLabel'>Date:</dt>
           <dd id="scintDate"></dd>
         </dl>
@@ -1943,6 +1951,14 @@
             document.getElementById('volume').style.display = 'none'
             document.getElementById('volume' + 'Label').style.display = 'none'
           }
+          if (block.dimensionTester != null) {
+            document.getElementById('dimensionTester').innerHTML = block.dimensionTester
+            document.getElementById('dimensionTester').style.display = 'inline'
+            document.getElementById('dimensionTester' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('dimensionTester').style.display = 'none'
+            document.getElementById('dimensionTester' + 'Label').style.display = 'none'
+          }
           if (block.mass != null) {
             document.getElementById('mass').innerHTML = block.mass + ' g'
             document.getElementById('mass').style.display = 'inline'
@@ -1950,6 +1966,14 @@
           } else {
             document.getElementById('mass').style.display = 'none'
             document.getElementById('mass' + 'Label').style.display = 'none'
+          }
+          if (block.massTester != null) {
+            document.getElementById('massTester').innerHTML = block.massTester
+            document.getElementById('massTester').style.display = 'inline'
+            document.getElementById('massTester' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('massTester').style.display = 'none'
+            document.getElementById('massTester' + 'Label').style.display = 'none'
           }
           if (block.density != null) {
             document.getElementById('density').innerHTML = block.density + ' g/mL'
@@ -2035,6 +2059,14 @@
           } else {
             document.getElementById('thirteenHoles').style.display = 'none'
             document.getElementById('thirteenHoles' + 'Label').style.display = 'none'
+          }
+          if (block.lightTransTester != null) {
+            document.getElementById('lightTransTester').innerHTML = block.lightTransTester
+            document.getElementById('lightTransTester').style.display = 'inline'
+            document.getElementById('lightTransTester' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('lightTransTester').style.display = 'none'
+            document.getElementById('lightTransTester' + 'Label').style.display = 'none'
           }
           if (block.lightTransDate != null) {
             document.getElementById('lightTransDate').innerHTML = block.lightTransDate
@@ -2131,6 +2163,14 @@
           } else {
             document.getElementById('scintRatio').style.display = 'none'
             document.getElementById('scintRatio' + 'Label').style.display = 'none'
+          }
+          if (block.scintTester != null) {
+            document.getElementById('scintTester').innerHTML = block.scintTester
+            document.getElementById('scintTester').style.display = 'inline'
+            document.getElementById('scintTester' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('scintTester').style.display = 'none'
+            document.getElementById('scintTester' + 'Label').style.display = 'none'
           }
           if (block.scintDate != null) {
             document.getElementById('scintDate').innerHTML = block.scintDate
