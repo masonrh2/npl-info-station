@@ -12,18 +12,23 @@
     <script>
       // color constants (in HEX)
       const red = '#800000'
+      const blue = '#0080ff'
+      const greenish = '#00ffbf'
+      const purple = '#aa00ff'
+      const magenta = '#ff00ff'
       const orange = '#e66000'
       const green = '#008000'
       const black = '#000000'
       const grey = '#ababab'
-      // color for each test (notStarted, 5A-grade, 5B-grade, fail)
-      const testColors = [grey, green, orange, red]
-      // color for each test (unchecked, checked)
-      const checkColors = [grey, green]
+      // color for each test (notStarted, 5A-grade, 5B-grade, 5C-Grade, fail)
+      const testColors = [grey, green, orange, blue, red]
+      // color for each test
+      const checkColors = {false: grey, true: green}
       // larger grade values are worse
       const aGrade = 1
       const bGrade = 2
-      const fGrade = 3
+      const cGrade = 3
+      const fGrade = 4
       const notStartedGrade = 0
       // GRADING FUNCTIONS
       function grade_pregrade (grade) {
@@ -31,6 +36,8 @@
           return aGrade
         } else if (grade === '5b') {
           return bGrade
+        } else if (grade === '5c') {
+          return cGrade
         } else if (grade === '8') {
           return fGrade
         } else {
@@ -40,8 +47,10 @@
       function grade_density (density) {
         if (density > 8.8) {
           return aGrade
-        } else if (density > 8.7) {
+        } else if (density >= 8.7) {
           return bGrade
+        } else if (density >= 8.4) {
+          return cGrade
         } else {
           return fGrade
         }
@@ -65,17 +74,17 @@
         }
       }
       function grade_missingRow (x) {
-        if (x === 'N') {
-          return aGrade
-        } else {
+        if (x) {
           return fGrade
+        } else {
+          return aGrade
         }
       }
       function grade_thirteenHoles (x) {
-        if (x === 'N') {
-          return aGrade
-        } else {
+        if (x) {
           return fGrade
+        } else {
+          return aGrade
         }
       }
       function grade_fiberPercentage (percent) {
@@ -83,6 +92,8 @@
           return aGrade
         } else if (percent >= 97) {
           return bGrade
+        } else if (percent >= 96) {
+          return cGrade
         } else {
           return fGrade
         }
@@ -92,12 +103,14 @@
           return aGrade
         } else if (percent >= 94) {
           return bGrade
+        } else if (percent >= 92) {
+          return cGrade
         } else {
           return fGrade
         }
       }
       function grade_scintRatio (ratio) {
-        if (ratio > 0.7) {
+        if (ratio >= 0.7) {
           return aGrade
         } else {
           return fGrade
@@ -163,9 +176,12 @@
           this.natLightDate = (!dataPresent(array[70])) ? null : parseInt(array[70])
           this.natLightTester = (!dataPresent(array[71])) ? null : array[71]
           this.retouch = (this.sheet === 0) ? array[72] : null
-          this.densityChecked = (this.sheet === 0) ? array[73] : null
-          this.lightTransChecked = (this.sheet === 0) ? array[74] : null
-          this.natLightChecked = (this.sheet === 0) ? array[75] : null
+          this.densityCheckedBy = (this.sheet === 0 && (dataPresent(array[73]))) ? array[73] : null
+          this.densityChecked = this.densityCheckedBy != null
+          this.lightTransCheckedBy = (this.sheet === 0 && (dataPresent(array[74]))) ? array[74] : null
+          this.lightTransChecked = this.lightTransCheckedBy != null
+          this.natLightCheckedBy = (this.sheet === 0 && (dataPresent(array[75]))) ? array[75] : null
+          this.natLightChecked = this.natLightCheckedBy != null
           this.pregrade = (this.sheet === 0) ? array[80] : null
           //other calculations
           this.densityComplete = (this.volume != null && this.mass != null && this.massTester != null) ? true : false
@@ -175,22 +191,25 @@
           this.testsComplete = this.densityComplete && this.lightTransComplete && this.scintComplete && this.natLightComplete
           this.testsChecked = this.densityChecked && this.lightTransChecked && this.natLightChecked
         }
-        getTungstenData() {return [this.powder, this.bucket, this.moldSeries, this.emptyMoldMass, this.filledMoldMass, this.tungstenMass, this.tungstenFillingDate]}
-        getEpoxyData() {return [this.epoxyBatch, this.resinMass, this.hardenerMass, this.pottingNotes, this.epoxyFillingTime, this.epoxyFillingDate]}
+        getTungstenData() {return [this.powder, this.bucket, this.moldSeries, this.emptyMoldMass, this.filledMoldMass, this.tungstenMass,this.tungstenFiller, this.tungstenFillingDate]}
+        getEpoxyData() {return [this.epoxyBatch, this.resinMass, this.hardenerMass, this.pottingNotes, this.epoxyFillingTime, this.epoxyFillingDate, this.epoxyPreparer]}
         hasDensityData() {return [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh, this.volume, this.dimensionTester, this.mass, this.massTester, this.density, this.densityDate].some((value) => value != null)}
         hasLightTransData() {return [this.goodEnd, this.fiberPercentage, this.tower1, this.tower2, this.tower3, this.tower4, this.missingRow, this.thirteenHoles, this.lightTransTester, this.lightTransDate].some((value) => value != null)}
         hasTowerData() {return [this.tower1, this.tower2, this.tower3, this.tower4].some((value) => value != null)}
         hasNatLightData() {return [this.natLightDate, this.natLightTester].some((value) => value != null)}
         hasScintData() {return [this.scintillation, this.scintRatio, this.scintDate].some((value) => value != null)}
         deviations() {
+          let block = this.block
           let tols = [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
-          if (tols.every((value) => value != null)) {
-            let devs = []
-            tols.forEach((value, index) => devs[index] = value - dimensionsMap.get(this.block)[index])
-            return devs
-          } else {
-            return null
-          }
+          let devs = []
+          tols.forEach(function(value, index) {
+            if (value != null) {
+              devs[index] = value - dimensionsMap.get(block)[index]
+            } else {
+              devs[index] = null
+            }
+          })
+          return devs
         }
         testGrades() {
           if (this.sheet === 0) { 
@@ -224,8 +243,8 @@
             let lightTransValuesToGrade = [
               (this.fiberPercentage == null) ? notStartedGrade : grade_fiberPercentage(this.fiberPercentage),
               ...towerGrades,
-              (this.missingRow == null) ? notStartedGrade : (this.missingRow) ? 3 : 1,
-              (this.thirteenHoles == null) ? notStartedGrade : (this.missingRow) ? 3 : 1
+              (this.missingRow == null) ? notStartedGrade : (this.missingRow) ? fGrade : aGrade,
+              (this.thirteenHoles == null) ? notStartedGrade : (this.missingRow) ? fGrade : aGrade
             ]
             let lightTransGrade = Math.max(...lightTransValuesToGrade)
             let scintGrade = (this.scintRatio == null) ? notStartedGrade : grade_scintRatio(this.scintRatio)
@@ -475,7 +494,7 @@
                   spans[index] = createSpan(tests[index], testColors[value[0]], 'bolded')
                 }
               } else {
-                let style = (value[2] === aGrade) ? 'bolded' : ((value[0] === notStartedGrade) ? 'normal' : 'italicizedDotted')
+                let style = (value[2]) ? 'bolded' : ((value[0] === notStartedGrade) ? 'normal' : 'italicizedDotted')
                 spans[index] = createSpan(tests[index], testColors[value[0]], style) + createSpan('✔', checkColors[value[1]], 'none')
               }
             })
@@ -714,24 +733,24 @@
         }},
         {name: "missingRow", "title": "<span>Missing</span><br><span>Row</span>", className: "dt-center lightTrans hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
           if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_missingRow(data)] + '; font-weight: bold">' + yToYes(data) + '</span>';
+            if (data !== '') {
+              return '<span style="color:' + testColors[grade_missingRow(data)] + '; font-weight: bold">' + TFToYesNo(data) + '</span>';
             } else {
               return '<span>' + data + '</span>'
             } 
           } else {
-            return yToYes(data)
+            return TFToYesNo(data)
           }
         }},
         {name: "thirteenHoles", "title": "<span>13 Connected</span><br><span>Holes</span>", className: "dt-center lightTrans hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
           if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_thirteenHoles(data)] + '; font-weight: bold">' + yToYes(data) + '</span>';
+            if (data !== '') {
+              return '<span style="color:' + testColors[grade_thirteenHoles(data)] + '; font-weight: bold">' + TFToYesNo(data) + '</span>';
             } else {
               return '<span>' + data + '</span>'
             } 
           } else {
-            return yToYes(data)
+            return TFToYesNo(data)
           }
         }},
         {name: "lightTransTester", "title": "LT Tester", className: "dt-center lightTrans search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
@@ -750,6 +769,7 @@
         }},
         {name: "scintTester", "title": "<span>Scintilliation</span><br><span>Tester</span>", className: "dt-center scint search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint searchExact", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
+        {name: "natLightTester", "title": "NL Tester", className: "dt-center natLight search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
         {name: "natLightDate", "title": "NL Date", className: "dt-center natLight searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false}
         ]
       }
@@ -791,7 +811,7 @@
           $(colInitial.footer()).find('input.max').keyup(function() {dataTable.draw()})
         })
         $('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
-        dataTable.on( 'draw', function () {
+        dataTable.on('draw', function () {
           //$('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
         }).on( 'order', function () {
           if (arraysEqual(arrayFromFirstElements(dataTable.order()), arrayFromFirstElements(sortConfig))) {
@@ -935,7 +955,7 @@
         return toReturn
       }
       var sortConfig = [0, 'asc']
-      // custom sorting functions
+      // SORTING FUNCTIONS
       $.extend($.fn.dataTable.ext.type.order, {
         "YYYYMMDDwithSuffix-asc": function (a, b) {
           a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
@@ -1282,13 +1302,13 @@
           return string
         }
       }
-      function yToYes (string) {
-        if (string.toUpperCase() === 'Y') {
+      function TFToYesNo (boolean) {
+        if (boolean == null) {
+          return ''
+        } else if (boolean) {
           return 'Yes'
-        } else if (string.toUpperCase() === 'N') {
-          return 'No'
         } else {
-          return string
+          return 'No'
         }
       }
       function indexFromTestingStatus (status) {
@@ -1379,10 +1399,10 @@
             <button class="removeForPrint" id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
             <table class="dimension" id="tungstenTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
               <tr>
-                <th style="white-space: nowrap;">Powder</th><th style="white-space: nowrap;">Bucket Number</th><th style="white-space: nowrap;">Mold Series</th><th style="white-space: nowrap;">Empty Mold Mass (g)</th><th style="white-space: nowrap;">Filled Mold Mass (g)</th><th style="white-space: nowrap;">Tungsten Mass (g)</th><th style="white-space: nowrap;">Filling Date</th>
+                <th style="white-space: nowrap;">Powder</th><th style="white-space: nowrap;">Bucket Number</th><th style="white-space: nowrap;">Mold Series</th><th style="white-space: nowrap;">Empty Mold Mass (g)</th><th style="white-space: nowrap;">Filled Mold Mass (g)</th><th style="white-space: nowrap;">Tungsten Mass (g)</th><th style="white-space: nowrap;">Filler</th><th style="white-space: nowrap;">Filling Date</th>
               </tr>
               <tr>
-                <td id="powder"></td><td id="bucket"></td><td id="moldSeries"></td><td id="emptyMoldMass"></td><td id="filledMoldMass"></td><td id="tungstenMass"></td><td id="tungstenFillingDate"></td>
+                <td id="powder"></td><td id="bucket"></td><td id="moldSeries"></td><td id="emptyMoldMass"></td><td id="filledMoldMass"></td><td id="tungstenMass"></td><td id="tungstenFiller"></td><td id="tungstenFillingDate"></td>
               </tr>
             </table>
           </section>
@@ -1390,10 +1410,10 @@
             <button class="removeForPrint" id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
             <table class="dimension" id="epoxyTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
               <tr>
-                <th style="white-space: nowrap;">Epoxy Batch</th><th style="white-space: nowrap;">Resin Mass (g)</th><th style="white-space: nowrap;">Hardener Mass (g)</th><th style="white-space: nowrap;">Potting Notes</th><th style="white-space: nowrap;">Epoxy Filling Time (min)</th><th style="white-space: nowrap;">Filling Date</th>
+                <th style="white-space: nowrap;">Epoxy Batch</th><th style="white-space: nowrap;">Resin Mass (g)</th><th style="white-space: nowrap;">Hardener Mass (g)</th><th style="white-space: nowrap;">Potting Notes</th><th style="white-space: nowrap;">Epoxy Filling Time (min)</th><th style="white-space: nowrap;">Filling Date</th><th style="white-space: nowrap;">Preparer</th>
               </tr>
               <tr>
-                <td id="epoxyBatch"></td><td id="resinMass"></td><td id="hardenerMass"></td><td id="pottingNotes"></td><td id="epoxyFillingTime"></td><td id="epoxyFillingDate"></td>
+                <td id="epoxyBatch"></td><td id="resinMass"></td><td id="hardenerMass"></td><td id="pottingNotes"></td><td id="epoxyFillingTime"></td><td id="epoxyFillingDate"></td><td id="epoxyPreparer"></td>
               </tr>
             </table>
           </section>
@@ -1483,6 +1503,8 @@
       <section id="natLightSection" style="display: none;">
         <h2>Natural Light</h2>
         <dl class='inline-flex'>
+          <dt id='natLightTesterLabel'>Tester:</dt>
+          <dd id="natLightTester"></dd>
           <dt id='natLightDateLabel'>Date:</dt>
           <dd id="natLightDate"></dd>
         </dl>
@@ -1653,95 +1675,48 @@
         ['3','(potted)'],
         ['4','(machining)'],
         ['5','(ready for testing)'],
-        ['5a','(A-grade, all tests good)'],
-        ['5b','(B-grade, some tests bad)'],
+        ['5a','(tested A-grade)'],
+        ['5b','(tested B-grade)'],
+        ['5c','(tested C-grade)'],
+        ['5r','(review)'],
+        ['5m','(monitoring)'],
         ['6','(ready to be shipped)'],
         ['7','(shipped, at BNL)'],
         ['8','(graveyard)']
       ])
       // maximum DBN (reject dbns larger than this)
       var maxDbn = 3498
-      // For both sheets
-      const blocksSheetMap = new Map([
-        ['dbn', 0],
-        ['block', 2],
-        ['status', 3],
-        ['shipment', 4],
-        ['comment', 6],
-        ['sector', 7],
-        ['powder', 14],
-        ['bucket', 15],
-        ['moldSeries', 16],
-        ['emptyMoldMass', 17],
-        ['filledMoldMass', 18],
-        ['tungstenMass', 19],
-        ['tungstenFillingDate', 21],
-        ['tungstenFiller', 22],
-        ['epoxyBatch', 23],
-        ['resinMass', 24],
-        ['hardenerMass', 25],
-        ['pottingNotes', 26],
-        ['epoxyFillingTime', 27],
-        ['epoxyFillingDate', 28],
-        ['epoxyPreparer', 29],
-        ['machiningDate', 31],
-        ['L', 33],
-        ['SH', 39],
-        ['volume', 40],
-        ['dimensionTester', 41],
-        ['mass', 42],
-        ['massTester', 43],
-        ['density', 44],
-        ['densityDate', 45],
-        ['goodEnd', 47],
-        ['fiberPercentage', 49],
-        ['tower1', 55],
-        ['tower2', 56],
-        ['tower3', 57],
-        ['tower4', 58],
-        ['missingRow', 59],
-        ['thirteenHoles', 60],
-        ['lightTransTester', 63],
-        ['lightTransDate', 64],
-        ['scintillation', 65],
-        ['scintRatio', 67],
-        ['scintTester', 68],
-        ['scintDate', 69],
-        ['natLightDate', 70],
-        ['natLightTester', 71],
-        ['densityChecked', 73],
-        ['lightTransChecked', 74],
-        ['natLightChecked', 75],
-        ['pregrade', 77]
-      ])
+      // zero index column number for "block" column
+      const databaseBlockColIndex = 2
       // array [Blocks DB, Blocks1364DB], where each element is a (large) 2D array
       var database
       //
       var blocksCollection
       // stores the expected dimensions for each block type
+      //BL     L        BT      BB      BH      ST      SB      SH
       const dimensionsMap = new Map([
       [123, [5.5000,	2.0850,	2.0850,	1.9890,	1.8150,	1.8150,	1.9890]],
-      [4, [5.4460,	2.0850,	2.0820,	2.2740,	1.8180,	1.8150,	1.9900]],
-      [5, [5.3500,	2.0850,	2.0760,	2.2630,	1.8230,	1.8150,	1.9900]],
-      [6, [5.2700,	2.0850,	2.0710,	2.2530,	1.8280,	1.8150,	1.9900]],
-      [7, [5.2050,	2.0850,	2.0650,	2.2430,	1.8320,	1.8150,	1.9900]],
-      [8, [5.1550,	2.0850,	2.0600,	2.2340,	1.8370,	1.8150,	1.9890]],
-      [9, [5.1180,	2.0850,	2.0560,	2.2250,	1.8410,	1.8150,	1.9890]],
-      [10, [5.0940,	2.0850,	2.0510,	2.2160,	1.8460,	1.8150,	1.9890]],
-      [11, [5.0820,	2.0850,	2.0470,	2.2080,	1.8500,	1.8150,	1.9890]],
-      [12, [5.0810,	2.0850,	2.0420,	2.2010,	1.8530,	1.8150,	1.9890]],
-      [13, [5.0900,	2.0850,	2.0390,	2.1930,	1.8570,	1.8150,	1.9890]],
-      [14, [5.1100,	2.0850,	2.0350,	2.1860,	1.8600,	1.8150,	1.9890]],
-      [15, [5.1390,	2.0850,	2.0320,	2.1800,	1.8640,	1.8150,	1.9890]],
-      [16, [5.1770,	2.0850,	2.0280,	2.1740,	1.8670,	1.8150,	1.9890]],
-      [17, [5.2240,	2.0850,	2.0250,	2.1680,	1.8700,	1.8150,	1.9890]],
-      [18, [5.2790,	2.0850,	2.0230,	2.1620,	1.8720,	1.8150,	1.9890]],
-      [19, [5.3420,	2.0850,	2.0200,	2.1570,	1.8750,	1.8150,	1.9890]],
-      [20, [5.4120,	2.0850,	2.0180,	2.1520,	1.8770,	1.8150,	1.9890]],
-      [21, [5.4890,	2.0850,	2.0150,	2.1470,	1.8790,	1.8150,	1.9890]],
-      [22, [5.5720,	2.0850,	2.0130,	2.1420,	1.8810,	1.8150,	1.9890]],
-      [23, [5.6620,	2.0850,	2.0120,	2.1380,	1.8830,	1.8150,	1.9890]],
-      [24, [5.7580,	2.0850,	2.0100,	2.1330,	1.8850,	1.8150,	1.9890]]
+      [  4, [5.4460,	2.0850,	2.0820,	2.2740,	1.8180,	1.8150,	1.9900]],
+      [  5, [5.3500,	2.0850,	2.0760,	2.2630,	1.8230,	1.8150,	1.9900]],
+      [  6, [5.2700,	2.0850,	2.0710,	2.2530,	1.8280,	1.8150,	1.9900]],
+      [  7, [5.2050,	2.0850,	2.0650,	2.2430,	1.8320,	1.8150,	1.9900]],
+      [  8, [5.1550,	2.0850,	2.0600,	2.2340,	1.8370,	1.8150,	1.9890]],
+      [  9, [5.1180,	2.0850,	2.0560,	2.2250,	1.8410,	1.8150,	1.9890]],
+      [ 10, [5.0940,	2.0850,	2.0510,	2.2160,	1.8460,	1.8150,	1.9890]],
+      [ 11, [5.0820,	2.0850,	2.0470,	2.2080,	1.8500,	1.8150,	1.9890]],
+      [ 12, [5.0810,	2.0850,	2.0420,	2.2010,	1.8530,	1.8150,	1.9890]],
+      [ 13, [5.0900,	2.0850,	2.0390,	2.1930,	1.8570,	1.8150,	1.9890]],
+      [ 14, [5.1100,	2.0850,	2.0350,	2.1860,	1.8600,	1.8150,	1.9890]],
+      [ 15, [5.1390,	2.0850,	2.0320,	2.1800,	1.8640,	1.8150,	1.9890]],
+      [ 16, [5.1770,	2.0850,	2.0280,	2.1740,	1.8670,	1.8150,	1.9890]],
+      [ 17, [5.2240,	2.0850,	2.0250,	2.1680,	1.8700,	1.8150,	1.9890]],
+      [ 18, [5.2790,	2.0850,	2.0230,	2.1620,	1.8720,	1.8150,	1.9890]],
+      [ 19, [5.3420,	2.0850,	2.0200,	2.1570,	1.8750,	1.8150,	1.9890]],
+      [ 20, [5.4120,	2.0850,	2.0180,	2.1520,	1.8770,	1.8150,	1.9890]],
+      [ 21, [5.4890,	2.0850,	2.0150,	2.1470,	1.8790,	1.8150,	1.9890]],
+      [ 22, [5.5720,	2.0850,	2.0130,	2.1420,	1.8810,	1.8150,	1.9890]],
+      [ 23, [5.6620,	2.0850,	2.0120,	2.1380,	1.8830,	1.8150,	1.9890]],
+      [ 24, [5.7580,	2.0850,	2.0100,	2.1330,	1.8850,	1.8150,	1.9890]]
       ])
       // changes to true when the "do not press" button is pressed, which changes the way image urls are obtained
       var slowMode = false
@@ -1769,12 +1744,12 @@
             database = [gotDatabase.sheet1, gotDatabase.sheet2]
             let blocks = []
             for (let index = 1; index < database[0].length; index++) {
-              if (database[0][blocksSheetMap.get('block')] !== '') {
+              if (database[0][databaseBlockColIndex] !== '') {
                 blocks[index - 1] = new Block(database[0][index], 0, index - 1)
               }
             }
             for (let index = 1; index < database[1].length; index++) {
-              if (database[1][blocksSheetMap.get('block')] !== '') {
+              if (database[1][databaseBlockColIndex] !== '') {
                 blocks[index + 1999] = new Block(database[1][index], 1, index + 1999)
               }
             }
@@ -1840,8 +1815,8 @@
         }
         let getImageUrlsRun = false
         // BLOCK DETAILS
-        const tungstenTableEntries = ['powder', 'bucket', 'moldSeries', 'emptyMoldMass', 'filledMoldMass', 'tungstenMass', 'tungstenFillingDate']
-        const epoxyTableEntries = ['epoxyBatch', 'resinMass', 'hardenerMass', 'pottingNotes', 'epoxyFillingTime', 'epoxyFillingDate']
+        const tungstenTableEntries = ['powder', 'bucket', 'moldSeries', 'emptyMoldMass', 'filledMoldMass', 'tungstenMass', 'tungstenFiller', 'tungstenFillingDate']
+        const epoxyTableEntries = ['epoxyBatch', 'resinMass', 'hardenerMass', 'pottingNotes', 'epoxyFillingTime', 'epoxyFillingDate', 'epoxyPreparer']
         document.getElementById("blockDetailsSection").style.display = 'block'
         //block details
         if (block.dbn != null) {
@@ -2043,7 +2018,7 @@
           if (block.missingRow != null) {
             let displayValue = (block.missingRow) ? 'Y' : 'N'
             document.getElementById('missingRow').innerHTML = displayValue
-            document.getElementById('missingRow').style.color = testColors[grade_missingRow(displayValue)]
+            document.getElementById('missingRow').style.color = testColors[grade_missingRow(block.missingRow)]
             document.getElementById('missingRow').style.display = 'inline'
             document.getElementById('missingRow' + 'Label').style.display = 'inline'
           } else {
@@ -2053,7 +2028,7 @@
           if (block.thirteenHoles != null) {
             let displayValue = (block.thirteenHoles) ? 'Y' : 'N'
             document.getElementById('thirteenHoles').innerHTML = displayValue
-            document.getElementById('thirteenHoles').style.color = testColors[grade_thirteenHoles(displayValue)]
+            document.getElementById('thirteenHoles').style.color = testColors[grade_thirteenHoles(block.thirteenHoles)]
             document.getElementById('thirteenHoles').style.display = 'inline'
             document.getElementById('thirteenHoles' + 'Label').style.display = 'inline'
           } else {
@@ -2111,6 +2086,14 @@
         if (block.hasNatLightData()) {
           // some info present, so make the info section visible and update its entries and hide the noInfo section
           document.getElementById("natLightSection").style.display = 'block'
+          if (block.natLightTester != null) {
+            document.getElementById('natLightTester').innerHTML = block.natLightTester
+            document.getElementById('natLightTester').style.display = 'inline'
+            document.getElementById('natLightTester' + 'Label').style.display = 'inline'
+          } else {
+            document.getElementById('natLightTester').style.display = 'none'
+            document.getElementById('natLightTester' + 'Label').style.display = 'none'
+          }
           if (block.natLightDate != null) {
             document.getElementById('natLightDate').innerHTML = block.natLightDate
             document.getElementById('natLightDate').style.display = 'inline'
@@ -2423,60 +2406,50 @@
         document.getElementById('inputDBNs').value = null
         filter()
       }
+      const tolerancesNames = ['dL', 'dBT', 'dBB', 'dBH', 'dST', 'dSB', 'dSH']
+      const towerNames = ['tower1', 'tower2', 'tower3', 'tower4']
       function loadBlocksTable () {
         let dataTable = $('#blocksTable').DataTable()
         dataTable.clear()
-        let sheet1 = [...database[0]]
-        sheet1.shift()
-        let sheet2 = [...database[1]]
-        sheet2.shift()
-        let mergedSheet = sheet1.concat(sheet2)
         let tableColumnsNames = []
         let cols = dataTable.settings().init().columns
         for (let i = 0; i < cols.length; i++) {
           tableColumnsNames[dataTable.column(cols[i].name + ':name').index()] = cols[i].name
         }
-        for (let i = 0; i < mergedSheet.length; i++) {
-          let rowPassesFilter = dataPresent(mergedSheet[i][blocksSheetMap.get('block')])
-            && (filterDBNsValueArray == null || filterDBNsValueArray.includes(mergedSheet[i][blocksSheetMap.get('dbn')]))
-            && (filterShipmentValueArray == null || filterShipmentValueArray.includes(mergedSheet[i][blocksSheetMap.get('shipment')]))
-            && (filterStatusValueArray == null || filterStatusValueArray.includes(mergedSheet[i][blocksSheetMap.get('status')]))
-            && (filterBlockValueArray == null || filterBlockValueArray.includes(mergedSheet[i][blocksSheetMap.get('block')]))
+        for (let i = 0; i < blocksCollection.array.length; i++) {
+          let block = blocksCollection.array[i]
+          let rowPassesFilter = block != null
+            && (filterDBNsValueArray == null || filterDBNsValueArray.includes(block['dbn']))
+            && (filterShipmentValueArray == null || filterShipmentValueArray.includes(block['shipment']))
+            && (filterStatusValueArray == null || filterStatusValueArray.includes(block['status']))
+            && (filterBlockValueArray == null || filterBlockValueArray.includes(block['block']))
           let sortColumns = arrayFromFirstElements(dataTable.order())
           if (rowPassesFilter) {
             let rowData = new Array(tableColumnsNames.length)
-            let dimensions = mergedSheet[i].slice(blocksSheetMap.get('L'), blocksSheetMap.get('SH') + 1)
-            let tolerancesNames = ['dL', 'dBT', 'dBB', 'dBH', 'dST', 'dSB', 'dSH']
-            let block = mergedSheet[i][blocksSheetMap.get('block')]
-            let tolerances = ['', '', '', '', '', '', '']
-            for (let j = 0; j < dimensions.length; j++) {
-              if (!isNaN(dimensions[j]) && dimensions[j] !== 0 && dimensions[j] !== '') {
-                tolerances[j] = (dimensions[j] - dimensionsMap.get(parseInt(block))[j]).toFixed(4)
-              }
-            }
+            let tolerances = block.deviations()
             for (let j = 0; j < tableColumnsNames.length; j++) {
               let name = tableColumnsNames[j]
               let data
-              if (Array.from(blocksSheetMap.keys()).includes(name)) {
-                data = mergedSheet[i][blocksSheetMap.get(tableColumnsNames[j])]
+              if (block.hasOwnProperty(name)) {
+                data = block[tableColumnsNames[j]]
               }
               if (tolerancesNames.includes(name)) {
                 let k = tolerancesNames.findIndex((value) => name === value)
-                rowData[j] = tolerances[k]
-              } else if (['tower1', 'tower2', 'tower3', 'tower4'].includes(name)) {
+                rowData[j] = (tolerances[k] == null) ? '' : tolerances[k].toFixed(3)
+              } else if (towerNames.includes(name)) {
                 if (dataPresent(data)) {
                   rowData[j] = parseFloat(data).toFixed(2)
                 } else {
                   rowData[j] = ''
                 }
               } else if (name == 'pregrade') {
-                if (i < sheet1.length) {
+                if (block.pregrade != null) {
                   rowData[j] = data
                 } else {
                   rowData[j] = ''
                 }
               } else if (name === 'toleranceMse') {
-                if (tolerances.every((value) => value != '')) {
+                if (tolerances.every((value) => value != null)) {
                   tolerances.forEach((value, index, array) => array[index] = value * value)
                   rowData[j] = ((tolerances.reduce((a, b) => (a + b))) / 7).toFixed(9)
                 } else {
@@ -2507,75 +2480,18 @@
                   rowData[j] = ''
                 }
               } else if (name === 'testingStatus') {
-                if (i < sheet1.length) { 
+                let grades = block.testGrades()
+                if (grades != null) { 
                   data = []
-                  let densityGrade
-                  let lightTransGrade
-                  let scintGrade
-                  let natLightGrade
-                  let densityChecked
-                  let lightTransChecked
-                  let natLightChecked
-                  let densityComplete
-                  let lightTransComplete
-                  let natLightComplete
-
-                  let density = mergedSheet[i][blocksSheetMap.get('density')]
-                  let volume = mergedSheet[i][blocksSheetMap.get('volume')]
-                  let dL = tolerances[tolerances.findIndex((value) => value === 'dL')]
-                  let otherDevGrades = [...tolerances].slice(1)
-                  let mass = mergedSheet[i][blocksSheetMap.get('mass')]
-                  let massTester = mergedSheet[i][blocksSheetMap.get('massTester')]
-                  otherDevGrades.forEach((value, index, array) => array[index] = ((!dataPresent(value)) ? notStartedGrade : grade_otherDev(value)))
-                  let densityValuesToGrade = [
-                    ((!dataPresent(density)) ? notStartedGrade : grade_density(density)),
-                    ((!dataPresent(dL)) ? notStartedGrade : grade_dL(dL)),
-                    Math.max(...otherDevGrades)
-                  ]
-                  densityGrade = Math.max(...densityValuesToGrade)
-                  let fiberPercentage = mergedSheet[i][blocksSheetMap.get('fiberPercentage')]
-                  let towers = mergedSheet[i].slice(blocksSheetMap.get('tower1'), blocksSheetMap.get('tower4') + 1)
-                  let towerGrades = [...towers]
-                  towerGrades.forEach((value, index, array) => array[index] = ((!dataPresent(value)) ? notStartedGrade : grade_tower(value)))
-                  let missingRow = mergedSheet[i][blocksSheetMap.get('missingRow')]
-                  let thirteenHoles = mergedSheet[i][blocksSheetMap.get('thirteenHoles')]
-                  let lightTransTester = mergedSheet[i][blocksSheetMap.get('lightTransTester')]
-                  let lightTransValuesToGrade = [
-                    (!dataPresent(fiberPercentage)) ? notStartedGrade : grade_fiberPercentage(fiberPercentage),
-                    Math.max(...towerGrades),
-                    (!dataPresent(missingRow)) ? notStartedGrade : grade_missingRow(missingRow),
-                    (!dataPresent(thirteenHoles)) ? notStartedGrade : grade_thirteenHoles(thirteenHoles)
-                  ]
-                  lightTransGrade = Math.max(...lightTransValuesToGrade)
-                  let scintRatio = mergedSheet[i][blocksSheetMap.get('scintRatio')]
-                  scintGrade = (!dataPresent(scintRatio)) ? notStartedGrade : grade_scintRatio(scintRatio)
-                  let natLightDate = mergedSheet[i][blocksSheetMap.get('natLightDate')]
-                  let natLightTester = mergedSheet[i][blocksSheetMap.get('natLightTester')]
-                  if (dataPresent(natLightDate) || dataPresent(natLightTester)) {
-                    natLightGrade = aGrade
-                  } else {
-                    natLightGrade = notStartedGrade
-                  }
-
-                  densityChecked = (mergedSheet[i][blocksSheetMap.get('densityChecked')] === '') ? notStartedGrade : 1
-                  lightTransChecked = (mergedSheet[i][blocksSheetMap.get('lightTransChecked')] === '') ? notStartedGrade : 1
-                  natLightChecked = (mergedSheet[i][blocksSheetMap.get('natLightChecked')] === '') ? notStartedGrade : 1
-
-                  densityComplete = (dataPresent(volume) && dataPresent(mass) && dataPresent(massTester)) ? 1 : 0
-                  lightTransComplete = (dataPresent(fiberPercentage) && dataPresent(missingRow) && dataPresent(thirteenHoles) && dataPresent(lightTransTester)) ? 1 : 0
-                  natLightComplete  = (dataPresent(natLightDate) && dataPresent(natLightTester)) ? 1 : 0
-
-                  data[0] = [densityGrade, densityChecked, densityComplete]
-                  data[1] = [lightTransGrade, lightTransChecked, lightTransComplete]
-                  data[2] = [scintGrade]
-                  data[3] = [natLightGrade, natLightChecked, natLightComplete]
-
+                  data[0] = [grades.density, block.densityChecked, block.densityComplete]
+                  data[1] = [grades.lightTrans, block.lightTransChecked, block.lightTransComplete]
+                  data[2] = [grades.scint]
+                  data[3] = [grades.natLight, block.natLightChecked, block.natLightComplete]
                   rowData[j] = data
                 } else {
                   rowData[j] = ''
                 }
               } else if (name === 'readyToGrade') {
-                let block = blocksCollection.getBlockByNumericDBN(i)
                 if (block != null) {
                   if (block.testsComplete && block.testsChecked) {
                     rowData[j] = {text: 'Ready', color: green}
@@ -2587,6 +2503,8 @@
                 } else {
                   rowData[j] = {text: '', color: black}
                 }
+              } else if (name === 'missingRow' || name === 'thirteenHoles') {
+                rowData[j] = data
               } else {
                 if (dataPresent(data)) {
                   rowData[j] = data
