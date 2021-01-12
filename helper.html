@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<script>
+	// GRADING FUNCTIONS
+  function grade_pregrade (grade) {
+    if (grade === '5a') {
+      return aGrade
+    } else if (grade === '5b') {
+      return bGrade
+    } else if (grade === '5c') {
+      return cGrade
+    } else if (grade === '8') {
+      return fGrade
+    } else {
+      return null
+    }
+  }
+  function grade_density (density) {
+    if (density > 8.8) {
+      return aGrade
+    } else if (density >= 8.7) {
+      return bGrade
+    } else if (density >= 8.4) {
+      return cGrade
+    } else {
+      return fGrade
+    }
+  }
+  function grade_dL (dL) {
+    if (Math.abs(dL) <= 0.03) {
+      return aGrade
+    } else if (dL <= 0.05 && dL >= -0.1) {
+      return bGrade
+    } else {
+      return fGrade
+    }
+  }
+  function grade_otherDev (dev) {
+    if (Math.abs(dev) <= 0.02) {
+      return aGrade
+    } else if (dev <= 0.02 && dev >= -0.04) {
+      return bGrade
+    } else {
+      return fGrade
+    }
+  }
+  function grade_missingRow (x) {
+    if (x) {
+      return fGrade
+    } else {
+      return aGrade
+    }
+  }
+  function grade_thirteenHoles (x) {
+    if (x) {
+      return fGrade
+    } else {
+      return aGrade
+    }
+  }
+  function grade_fiberPercentage (percent) {
+    if (percent >= 98) {
+      return aGrade
+    } else if (percent >= 97) {
+      return bGrade
+    } else if (percent >= 96) {
+      return cGrade
+    } else {
+      return fGrade
+    }
+  }
+  function grade_tower (percent) {
+    if (percent >= 96) {
+      return aGrade
+    } else if (percent >= 94) {
+      return bGrade
+    } else if (percent >= 92) {
+      return cGrade
+    } else {
+      return fGrade
+    }
+  }
+  function grade_scintRatio (ratio) {
+    if (ratio >= 0.7) {
+      return aGrade
+    } else {
+      return fGrade
+    }
+  }
+
+// SORTING HELPER FUNCTIONS
+  const readyToGradeMap = new Map([['Needs Tests', 1], ['Needs Checks', 2], ['Ready', 3]])
+  function parseFloatRemovePlus (string) {
+    if (string[0] === '+') {
+      return parseFloat(string.substr(1))
+    } else {
+      return parseFloat(string)
+    }
+  }
+  function to2digits (string) {
+    if (string.length < 2) {
+      return '0' + string
+    } else {
+      return string
+    }
+  }
+  function usDateToYYYYMMDD (usDate, sheet, dbn, col) {
+    let splitDate = usDate.split('/')
+    if (splitDate.length === 3) {
+      let month = to2digits(splitDate[0])
+      let day = to2digits(splitDate[1])
+      let year = splitDate[2]
+      return parseInt(year + month + day)
+    } else {
+      console.log("helpful hint of the day: '" + usDate + "' is NOT a date (sheet " + sheet + ", DBN " + dbn + ", column " + col + ")")
+      return null
+    }
+  }
+  function dateToYYYYMMDD (date) {
+    let y = date.getFullYear().toString()
+    let m = (date.getMonth() + 1).toString()
+    let d = date.getDate().toString()
+    if (m.length === 1) {m = '0' + m}
+    if (d.length === 1) {d = '0' + d}
+    return parseInt(y + m + d)
+  }
+  function YYYYMMDDtoDate (int) {
+    str = int.toString()
+    return new Date(parseInt(str.toString().substr(0, 4)), parseInt(str.toString().substr(4, 2)) - 1, parseInt(str.toString().substr(6, 2)))
+  }
+  function makeFileFriendly (date) {
+    return date.getFullYear() + '-' + to2digits((date.getMonth() + 1).toString()) + '-' +  to2digits(date.getDate().toString())
+      + 'T' + date.toTimeString().substr(0, 8).replace(':', '').replace(':', '')
+  }
+  function removeSuffix(string) {
+    return string.split(/[.-]/)[0]
+  }
+  function arrayToStringList (array) {
+    let string = ''
+    for (let i = 0; i < array.length - 1; i++) {
+      string += array[i] + ', '
+    }
+    if (array.length > 0) {
+      string += array[array.length - 1]
+    }
+    return string
+  }
+  function wToWide (string) {
+    if (string.toUpperCase() === 'W') {
+      return 'Wide'
+    } else if (string.toUpperCase() === 'N') {
+      return 'Narrow'
+    } else {
+      return string
+    }
+  }
+  function TFToYesNo (boolean) {
+    if (boolean == null) {
+      return ''
+    } else if (boolean) {
+      return 'Yes'
+    } else {
+      return 'No'
+    }
+  }
+  function indexFromTestingStatus (status) {
+    let hasFail
+    let testsComplete = 0
+    let testsChecked = 0
+    let testsStarted = 0
+    hasFail = !status.every((value) => value[0] !== 3)
+    status.forEach(function (value, index) {
+      if (index !== 2 && value[2] === 1) {
+        testsComplete++
+      } else if (index === 2 && value[0] !== 0) {
+        testsComplete++
+      }
+    })
+    status.forEach(function (value, index) {
+      if (index !== 2 && value[1] === 1) {
+        testsChecked++
+      }
+    })
+    status.forEach(function (value, index) {
+      if (value[0] !== 0) {
+        testsStarted++
+      }
+    })
+    return (100 * testsComplete + 10 * testsChecked + testsStarted)
+  }
+</script>
+
+</html>

@@ -1,5 +1,29 @@
 /**
- * Load the HTML page (called automatically when the web app url page is loaded)
+ * TO DO LIST:
+ * be able to reload database upon request, and handle errors appropriately
+ * investigate handling smaller interactions with database on the GAS side, since this is much faster than requesting entire sheets
+ * add function to count how many blocks are in each stage of production
+ * experiment with some function that requests smaller bits of information from the database (perhaps with a map from useful tags like "status")
+ * experiment with how fast the above requests are returned, and what is the best way to request data (cell vs dijoint range vs column vs row, etc)
+ * debug network error and try to catch this error (if possible) and automatically retry connecting periodically
+ * (where is this error occuring and how can I catch it? looks like it happens on onFailure? but idk why)
+ * store file locations as urls permanently (so we don't have to iterate through files every time a function in google script is called)
+ * option to print block object on demand? (I don't think you can do this from the console...would have to be a button or popup in the script)
+ * 
+ * 
+ * add framework to check for irregularities? (stuff like a test occuring after a block was shipped, e.g.)
+ * add framework to check LT and NL files are present in drive (for checking purposes)
+ * could implement a function which searches for LT and NL images (and even scint. files) in drive and outputs to a sheet which gives urls to files and warnings/errors if files were not found or if multiple files were founds (I think that would be cool) (the function would take a really long time to complete tho)
+ * change err to an array, and then console.error() each error in the HTML
+ * add framework for finding all LT or scint tests for a given dbn (useful for monitoring blocks)
+ * 
+ * add border around data table :3
+ * change layout of "homepage" to grid and include info like how many blocks are in each stage of production and how many blocks need tests, checks, etc
+ * change entire database load (and timestamp) to after clicking findblocks, and request rows for the homepage DBN search (should be much faster)
+ */
+
+/**
+ * Load the HTML page (called automatically when the web app url page is visited)
  */
 function doGet() {
   return HtmlService.createTemplateFromFile('index').evaluate()
@@ -18,138 +42,36 @@ function include(filename) {
 const maxDbn = 3498
 
 // Declare variables that will be needed by other functions after loadFiles has run
-let filesLoaded = false
-let error
-let database
-let blocks1_12
-let blocks13_64
-let lightTransOriginalFolder
-let lightTransCroppedFolder
-let lightTransArchiveOriginalFolder
-let lightTransAnalysisFolder
-let lightTransArchiveAnalysisFolder
-let naturalLightFolder
-let naturalLightArchiveFolder
-let imageUrlsSheet
+// should pass these to HTML so that they can be stored in browser and passed back here when needed...
+// this way, loadfiles does not have to run every time info is requested from database (~ 8 sec)
 
-/**
- * Locates and saves database sheets and all testing folders as variables to be used by other functions
- */
-function loadFiles() {
-  let QATestsFolder
-  let lightTransTestFolder
-  let errorMessage = ''
-  // Note that changing the names or locations of the folders in google drive may temporarily break this, until the paths below are chagned
-  if (DriveApp.getFilesByName('Blocks database').hasNext()) {
-    // ...found database, now save it
-    database = DriveApp.getFilesByName('Blocks database').next()
-    blocks1_12 = SpreadsheetApp.open(database).getSheetByName('Blocks DB')
-    blocks13_64 = SpreadsheetApp.open(database).getSheetByName('Blocks1364DB')
-    // ...check if you found both sheets
-    if (blocks1_12 == null || blocks13_64 == null) {
-      // Failed to locate both sheets
-      Logger.log('failed to locate database sheet(s) in database spreadsheet')
-    }
-  } else {
-    // ...failed to locate database
-    Logger.log('failed to locate file "Blocks Database" in drive')
-    errorMessage += 'failed to locate file "Blocks Database" in drive; '
-  }
-  if (DriveApp.getFilesByName('imageUrlsSheet').hasNext()) {
-    imageUrlsSheet = SpreadsheetApp.open(DriveApp.getFilesByName('imageUrlsSheet').next())
-  } else {
-    Logger.log('failed to locate file "imageUrlsSheet" in drive')
-  }
-  if (DriveApp.getFoldersByName('sPHENIX--NEW').hasNext()) {
-    if (DriveApp.getFoldersByName('sPHENIX--NEW').next().getFoldersByName('QA tests').hasNext()) {
-      QATestsFolder = DriveApp.getFoldersByName('sPHENIX--NEW').next().getFoldersByName('QA tests').next()
-      if (QATestsFolder.getFoldersByName('Light Transmission Test').hasNext()) {
-        lightTransTestFolder = QATestsFolder.getFoldersByName('Light Transmission Test').next()
-        if (lightTransTestFolder.getFoldersByName('Block pictures').hasNext()) {
-          if (lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Original').hasNext()) {
-            lightTransOriginalFolder = lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Original').next()
-          } else {
-            Logger.log('failed to locate original folder in light transmission test/block pictures')
-          }
-          if (lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Cropped').hasNext()) {
-            lightTransCroppedFolder = lightTransTestFolder.getFoldersByName('Block pictures').next().getFoldersByName('Cropped').next()
-          } else {
-            Logger.log('failed to find cropped folder in light transmission test/block pictures')
-          }
-        } else {
-          Logger.log('failed to block pictures folder in light transmission test')
-        }
-        if (lightTransTestFolder.getFoldersByName('Analysis').hasNext()) {
-          lightTransAnalysisFolder = lightTransTestFolder.getFoldersByName('Analysis').next()
-        } else {
-          Logger.log('failed to locate analysis folder in light transmission folder')
-        }
-      } else {
-        Logger.log('failed to locate light transmission test folder in QA tests')
-      }
-      if (QATestsFolder.getFoldersByName('LightTransmissionArchive').hasNext()) {
-        if (QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').hasNext()) {
-          if (QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').next().getFoldersByName('Original').hasNext()) {
-            lightTransArchiveOriginalFolder = QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Block pictures').next().getFoldersByName('Original').next()
-          } else {
-            Logger.log('failed to locate original folder in light transmission archive/block pictures')
-          }
-        } else {
-          Logger.log('failed to locate block pictures folder in light transmission archive')
-        }
-        if (QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Analysis').hasNext()) {
-          lightTransArchiveAnalysisFolder = QATestsFolder.getFoldersByName('LightTransmissionArchive').next().getFoldersByName('Analysis').next()
-        } else {
-          Logger.log('failed to locate analysis folder in light transmission archive')
-        }
-      } else {
-        Logger.log('failed to locate light transmission archive folder in QA tests')
-      }
-      if (QATestsFolder.getFoldersByName('Physical Pictures').hasNext()) {
-        naturalLightFolder = QATestsFolder.getFoldersByName('Physical Pictures').next()
-      } else {
-        Logger.log('failed to locate physical pictures in QA tests')
-      }
-      if (QATestsFolder.getFoldersByName('NaturalLightArchive').hasNext()) {
-        naturalLightArchiveFolder = QATestsFolder.getFoldersByName('NaturalLightArchive').next()
-      } else {
-        Logger.log('failed to locate natural light archive in QA tests')
-      }
-    } else {
-      Logger.log('failed to locate QA tests folder in sPHENIX--NEW')
-    }
-  } else {
-    Logger.log('failed to locate "sPHENIX--NEW" folder in drive')
-    errorMessage += 'failed to locate "sPHENIX--NEW" folder in drive; '
-  }
-  filesLoaded = true
-  error = errorMessage
-  const d1 = new Date()
-  return d1.getTime()
+const file_IDs = {
+  QATestsFolder_ID: '1z3Ez8X3hzAhQMH3YYLa7PsPFSHhCNW4b',
+  database_ID: '1qnCxA6FPIh1Y5w-cG3LFzdPnkVu2b0p14_viVjkDldg',
+  imageUrlsSheet_ID: null,
+  lightTransAnalysisFolder_ID: '1bPgaSd7G4TevyRDPs7fjbxsvPrIHkI32',
+  lightTransArchiveAnalysisFolder_ID: '12de-XwXEKke-PAjQ0KUgBHSErzj2EiVC',
+  lightTransArchiveFolder_ID: '12PmOQSZc3MC-kwTfhmzdndgGFYvbXL1Q',
+  lightTransArchiveOriginalFolder_ID: '19v0Qg2_JwEk_wSRe7bg9aFoy0DFLXIec',
+  lightTransCroppedFolder_ID: '13_MYlf7YuXZV-UaB2Fvb7EzwpeZtTWPW',
+  lightTransOriginalFolder_ID: '1hSVk78Oyfrmnjr8rHQ4jb0WOGiV9LRel',
+  lightTransTestFolder_ID: '1QY2pmdBmaOGShkIfEFe1nHd53Dr9lJqs',
+  naturalLightArchiveFolder_ID: '1B-AhosgSFJy2cVSns73vxblfcJ5NPl0Y',
+  naturalLightFolder_ID: '1Rp0USqFRaWsm5nDGBP1vUBfx6qEchBb9',
+  sphenixNewFolder_ID: '1vM9pL9jRZ_Nc2VyJU6pzo1g5zliLUn0R'
 }
 
 function getDatabase() {
   let _times = []
   const d1 = new Date()
   _times.push(d1.getTime())
-  if (!filesLoaded) {
-    _times.push(loadFiles())
-  }
-  if (error !== '') {
-    // an error occured while loading files, do don't try to pass database var to fns
-    // also pass the error to HTML so the user can be alerted
-    return {
-      sheet1: null,
-      sheet2: null,
-      err: error
-    }
-  } else {
-    return {
-      sheet1: blocks1_12.getDataRange().getDisplayValues(),
-      sheet2: blocks13_64.getDataRange().getDisplayValues(),
-      err: null,
-      times: _times
-    }
+  let blocks1_12 = SpreadsheetApp.openById(file_IDs.database_ID).getSheetByName('Blocks DB')
+  let blocks13_64 = SpreadsheetApp.openById(file_IDs.database_ID).getSheetByName('Blocks1364DB')
+  return {
+    sheet1: blocks1_12.getDataRange().getDisplayValues(),
+    sheet2: blocks13_64.getDataRange().getDisplayValues(),
+    error: null,
+    times: _times
   }
 }
 
@@ -162,13 +84,11 @@ function getDatabase() {
  * @return {string[]} Array of image urls [LT_W, LT_N, LT_cropped_W, LT_cropped_N, NL_W, NL_N]
  */
 function getImageUrls(blockMap) {
-  // Default dbn for testing only:
-  // var dbn = 811
+  // for testing only:
+  //blockMap = [666, '20190801', '20190801']
   // if files aren't loaded, load them
   const dbn = blockMap[0]
-  if (!filesLoaded) {
-    loadFiles()
-  }
+
   let lightTransImgWId
   let lightTransImgNId
   let lightTransCroppedImgWId
@@ -179,20 +99,21 @@ function getImageUrls(blockMap) {
   let natLightNarrowPos
   let currentlightTransOriginalFolder
   let currentNatLightFolder
+
   // Set the folders to search (archive or normal folder...)
   if (parseInt(blockMap[1].substring(0, 4)) === 2019) {
     // If light transmission picture date is from 2019, use the archive
-    currentlightTransOriginalFolder = lightTransArchiveOriginalFolder
+    currentlightTransOriginalFolder = DriveApp.getFolderById(file_IDs.lightTransArchiveOriginalFolder_ID)
   } else {
     // Otherwise, use the normal folder
-    currentlightTransOriginalFolder = lightTransOriginalFolder
+    currentlightTransOriginalFolder = DriveApp.getFolderById(file_IDs.lightTransOriginalFolder_ID)
   }
   if (parseInt(blockMap[2].substring(0, 4)) === 2019) {
     // If natural light picture date is from 2019, use the archive
-    currentNatLightFolder = naturalLightArchiveFolder
+    currentNatLightFolder = DriveApp.getFolderById(file_IDs.naturalLightArchiveFolder_ID)
   } else {
     // Otherwise, use the normal folder
-    currentNatLightFolder = naturalLightFolder
+    currentNatLightFolder = DriveApp.getFolderById(file_IDs.naturalLightFolder_ID)
   }
 
   // Check necessary folders and files in the drive
@@ -218,8 +139,8 @@ function getImageUrls(blockMap) {
   }
 
   // Locate cropped light transmission images...
-  lightTransCroppedImgWId = searchFolderForFiles(lightTransCroppedFolder, lightTransImgNamesWithoutExtensionWide)
-  lightTransCroppedImgNId = searchFolderForFiles(lightTransCroppedFolder, lightTransImgNamesWithoutExtensionNarrow)
+  lightTransCroppedImgWId = searchFolderForFiles(DriveApp.getFolderById(file_IDs.lightTransCroppedFolder_ID), lightTransImgNamesWithoutExtensionWide)
+  lightTransCroppedImgNId = searchFolderForFiles(DriveApp.getFolderById(file_IDs.lightTransCroppedFolder_ID), lightTransImgNamesWithoutExtensionNarrow)
 
   // Locate natural light date folder...
   const natLightDateFolder = getDateFolder(currentNatLightFolder, blockMap[2], dbn)
@@ -285,7 +206,7 @@ function getImageUrls(blockMap) {
     imageUrls[5] = [imageUrls[5], natLightNarrowPos]
   }
   Logger.log('getImageUrls returned: ' + imageUrls)
-  return imageUrls
+  return {urls: imageUrls, end: Date.now()}
 }
 
 /**
@@ -610,17 +531,14 @@ function getHistograms(fromHTML) {
   const dbn = fromHTML[0]
   const date = fromHTML[1]
   const urls = [null, null]
-  if (!filesLoaded) {
-    loadFiles()
-  }
   let analysisFolder
   // Set the folders to search (archive or normal folder...)
   if (parseInt(date.substr(0, 4)) === 2019) {
     // If light transmission picture date is from 2019, use the archive
-    analysisFolder = lightTransArchiveAnalysisFolder
+    analysisFolder = DriveApp.getFolderById(file_IDs.lightTransArchiveAnalysisFolder_ID)
   } else {
     // Otherwise, use the normal folder
-    analysisFolder = lightTransAnalysisFolder
+    analysisFolder = DriveApp.getFolderById(file_IDs.lightTransAnalysisFolder_ID)
   }
   let folderToSearch
   const subfolderIterator = analysisFolder.getFolders()
@@ -652,7 +570,7 @@ function getHistograms(fromHTML) {
       }
     }
   }
-  return urls
+  return {urls: urls, end: Date.now()}
 }
 
 /**

@@ -6,1349 +6,354 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>NPL Block Information Station</title>
 	<link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
-	<?!= include('css')?>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
 	<link rel="stylesheet" type="text/css"
 		href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.css"/>
 	<script type="text/javascript"
 		src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.js">
 	</script>
+  <?!= include('css')?>
+  <?!= include('helper')?>
+  <?!= include('datatableOptions')?>
 	<script>
 		// color constants (in HEX)
-      const red = '#800000'
-      const blue = '#0080ff'
-      const greenish = '#00ffbf'
-      const purple = '#aa00ff'
-      const magenta = '#ff00ff'
-      const orange = '#e66000'
-      const green = '#008000'
-      const black = '#000000'
-      const grey = '#ababab'
-      // color for each test (notStarted, 5A-grade, 5B-grade, 5C-Grade, fail)
-      const testColors = [grey, green, orange, blue, red]
-      // color for each test
-      const checkColors = {false: grey, true: green}
-      // larger grade values are worse
-      const aGrade = 1
-      const bGrade = 2
-      const cGrade = 3
-      const fGrade = 4
-      const notStartedGrade = 0
-      // GRADING FUNCTIONS
-      function grade_pregrade (grade) {
-        if (grade === '5a') {
-          return aGrade
-        } else if (grade === '5b') {
-          return bGrade
-        } else if (grade === '5c') {
-          return cGrade
-        } else if (grade === '8') {
-          return fGrade
-        } else {
-          return null
-        }
+    const red = '#800000'
+    const blue = '#0080ff'
+    const greenish = '#00ffbf'
+    const purple = '#aa00ff'
+    const magenta = '#ff00ff'
+    const orange = '#e66000'
+    const green = '#008000'
+    const black = '#000000'
+    const grey = '#ababab'
+    // color for each test (notStarted, 5A-grade, 5B-grade, 5C-Grade, fail)
+    const testColors = [grey, green, orange, blue, red]
+    // color for each test
+    const checkColors = {false: grey, true: green}
+    // larger grade values are worse
+    const aGrade = 1
+    const bGrade = 2
+    const cGrade = 3
+    const fGrade = 4
+    const notStartedGrade = 0
+    
+    class Block {
+      constructor(array, sheet, numericDBN) {
+        this.sheet = sheet
+        this.numericDBN = numericDBN
+        this.dbn = array[0]
+        this.block = parseInt(array[2])
+        this.status = array[3]
+        this.shipment = (!dataPresent(array[4])) ? null : parseInt(array[4])
+        this.shipmentDate = (!dataPresent(array[5])) ? null : usDateToYYYYMMDD(array[5], this.sheet, this.dbn, "shipment date")
+        this.comment = (!dataPresent(array[6])) ? null : array[6]
+        this.sector = (!dataPresent(array[7])) ? null : array[7]
+        this.powder = (!dataPresent(array[14])) ? null : array[14]
+        this.bucket = (!dataPresent(array[15])) ? null : array[15]
+        this.moldSeries = (!dataPresent(array[16])) ? null : array[16]
+        this.emptyMoldMass = (!dataPresent(array[17])) ? null : parseInt(array[17])
+        this.filledMoldMass = (!dataPresent(array[18])) ? null : parseInt(array[18])
+        this.tungstenMass = (!dataPresent(array[19]) || parseInt(array[19]) === 0) ? null : parseInt(array[19])
+        this.tungstenFillingDate = (!dataPresent(array[21])) ? null : usDateToYYYYMMDD(array[21], this.sheet, this.dbn, "tungsten filling date")
+        this.tungstenFiller = (!dataPresent(array[22])) ? null : array[22]
+        this.epoxyBatch = (!dataPresent(array[23])) ? null : parseInt(array[23])
+        this.resinMass = (!dataPresent(array[24])) ? null : parseInt(array[24])
+        this.hardenerMass = (!dataPresent(array[25])) ? null : parseInt(array[25])
+        this.pottingNotes = (!dataPresent(array[26])) ? null : array[26]
+        this.epoxyFillingTime = (!dataPresent(array[27])) ? null : parseFloat(array[27])
+        this.epoxyFillingDate = (!dataPresent(array[28])) ? null : usDateToYYYYMMDD(array[28], this.sheet, this.dbn, "epoxy filling date")
+        this.epoxyPreparer = (!dataPresent(array[29])) ? null : array[29]
+        this.machiningDate = (!dataPresent(array[31])) ? null : usDateToYYYYMMDD(array[31], this.sheet, this.dbn, "machining date")
+        this.l = (!dataPresent(array[33])) ? null : parseFloat(array[33])
+        this.bt = (!dataPresent(array[34])) ? null : parseFloat(array[34])
+        this.bb = (!dataPresent(array[35])) ? null : parseFloat(array[35])
+        this.bh = (!dataPresent(array[36])) ? null : parseFloat(array[36])
+        this.st = (!dataPresent(array[37])) ? null : parseFloat(array[37])
+        this.sb = (!dataPresent(array[38])) ? null : parseFloat(array[38])
+        this.sh = (!dataPresent(array[39])) ? null : parseFloat(array[39])
+        this.volume = (!dataPresent(array[40]) || parseInt(array[40]) === 0) ? null : parseFloat(array[40])
+        this.dimensionTester = (!dataPresent(array[41])) ? null : array[41]
+        this.mass = (!dataPresent(array[42])) ? null : parseInt(array[42])
+        this.massTester = (!dataPresent(array[43])) ? null : array[43]
+        this.density = (!dataPresent(array[44])) ? null : parseFloat(array[44])
+        this.densityDate = (!dataPresent(array[45])) ? null : parseInt(array[45])
+        this.goodEnd = (!dataPresent(array[47])) ? null : array[47]
+        this.fiberPercentage = (!dataPresent(array[49]) || parseInt(array[49]) === 0) ? null : parseFloat(array[49])
+        this.tower1 = (!dataPresent(array[55])) ? null : parseFloat(array[55])
+        this.tower2 = (!dataPresent(array[56])) ? null : parseFloat(array[56])
+        this.tower3 = (!dataPresent(array[57])) ? null : parseFloat(array[57])
+        this.tower4 = (!dataPresent(array[58])) ? null : parseFloat(array[58])
+        this.missingRow = (!dataPresent(array[59])) ? null : ((array[59] === 'Y') ? true : (array[59] === 'N') ? false : null)
+        this.thirteenHoles = (!dataPresent(array[60])) ? null : ((array[60] === 'Y') ? true : (array[60] === 'N') ? false : null)
+        this.lightTransTester = (!dataPresent(array[63])) ? null : array[63]
+        this.lightTransDate = (!dataPresent(array[64])) ? null : array[64]
+        this.lightTransDateActual = (!dataPresent(array[64]) || isNaN(parseInt(removeSuffix(array[64])))) ? null : parseInt(removeSuffix(array[64]))
+        this.scintillation = (!dataPresent(array[65])) ? null : parseFloat(array[65])
+        this.scintRatio = (!dataPresent(array[67])) ? null : parseFloat(array[67])
+        this.scintTester = (!dataPresent(array[68])) ? null : array[68]
+        this.scintDate = (!dataPresent(array[69])) ? null : array[69]
+        this.scintDateActual = (!dataPresent(array[69]) || isNaN(parseInt(removeSuffix(array[69])))) ? null : parseInt(removeSuffix(array[69]))
+        this.natLightDate = (!dataPresent(array[70])) ? null : parseInt(array[70])
+        this.natLightTester = (!dataPresent(array[71])) ? null : array[71]
+        this.retouch = array[72]
+        this.densityCheckedBy = dataPresent(array[73]) ? array[73] : null
+        this.densityChecked = this.densityCheckedBy != null
+        this.lightTransCheckedBy = dataPresent(array[74]) ? array[74] : null
+        this.lightTransChecked = this.lightTransCheckedBy != null
+        this.natLightCheckedBy = dataPresent(array[75]) ? array[75] : null
+        this.natLightChecked = this.natLightCheckedBy != null
+        this.pregrade = array[80]
+        //other calculations
+        let densityCompleteVars = [this.volume, this.mass, this.massTester, this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
+        this.densityComplete = (densityCompleteVars.every((value) => value != null)) ? true : false
+        this.lightTransComplete = (this.fiberPercentage != null && this.missingRow != null && this.thirteenHoles != null && this.lightTransTester != null) ? true : false
+        this.scintComplete = (this.scintillation != null && this.scintRatio != null) ? true : false
+        this.natLightComplete = (this.natLightDate != null && this.natLightTester != null) ? true : false
+        this.testsComplete = this.densityComplete && this.lightTransComplete && this.scintComplete && this.natLightComplete
+        this.testsChecked = this.densityChecked && this.lightTransChecked && this.natLightChecked
       }
-      function grade_density (density) {
-        if (density > 8.8) {
-          return aGrade
-        } else if (density >= 8.7) {
-          return bGrade
-        } else if (density >= 8.4) {
-          return cGrade
-        } else {
-          return fGrade
-        }
-      }
-      function grade_dL (dL) {
-        if (Math.abs(dL) <= 0.03) {
-          return aGrade
-        } else if (dL <= 0.05 && dL >= -0.1) {
-          return bGrade
-        } else {
-          return fGrade
-        }
-      }
-      function grade_otherDev (dev) {
-        if (Math.abs(dev) <= 0.02) {
-          return aGrade
-        } else if (dev <= 0.02 && dev >= -0.04) {
-          return bGrade
-        } else {
-          return fGrade
-        }
-      }
-      function grade_missingRow (x) {
-        if (x) {
-          return fGrade
-        } else {
-          return aGrade
-        }
-      }
-      function grade_thirteenHoles (x) {
-        if (x) {
-          return fGrade
-        } else {
-          return aGrade
-        }
-      }
-      function grade_fiberPercentage (percent) {
-        if (percent >= 98) {
-          return aGrade
-        } else if (percent >= 97) {
-          return bGrade
-        } else if (percent >= 96) {
-          return cGrade
-        } else {
-          return fGrade
-        }
-      }
-      function grade_tower (percent) {
-        if (percent >= 96) {
-          return aGrade
-        } else if (percent >= 94) {
-          return bGrade
-        } else if (percent >= 92) {
-          return cGrade
-        } else {
-          return fGrade
-        }
-      }
-      function grade_scintRatio (ratio) {
-        if (ratio >= 0.7) {
-          return aGrade
-        } else {
-          return fGrade
-        }
-      }
-      
-      class Block {
-        constructor(array, sheet, numericDBN) {
-          this.sheet = sheet
-          this.numericDBN = numericDBN
-          this.dbn = array[0]
-          this.block = parseInt(array[2])
-          this.status = array[3]
-          this.shipment = (!dataPresent(array[4])) ? null : parseInt(array[4])
-          this.shipmentDate = (!dataPresent(array[5])) ? null : usDateToYYYYMMDD(array[5], this.sheet, this.dbn, "shipment date")
-          this.comment = (!dataPresent(array[6])) ? null : array[6]
-          this.sector = (!dataPresent(array[7])) ? null : array[7]
-          this.powder = (!dataPresent(array[14])) ? null : array[14]
-          this.bucket = (!dataPresent(array[15])) ? null : array[15]
-          this.moldSeries = (!dataPresent(array[16])) ? null : array[16]
-          this.emptyMoldMass = (!dataPresent(array[17])) ? null : parseInt(array[17])
-          this.filledMoldMass = (!dataPresent(array[18])) ? null : parseInt(array[18])
-          this.tungstenMass = (!dataPresent(array[19]) || parseInt(array[19]) === 0) ? null : parseInt(array[19])
-          this.tungstenFillingDate = (!dataPresent(array[21])) ? null : usDateToYYYYMMDD(array[21], this.sheet, this.dbn, "tungsten filling date")
-          this.tungstenFiller = (!dataPresent(array[22])) ? null : array[22]
-          this.epoxyBatch = (!dataPresent(array[23])) ? null : parseInt(array[23])
-          this.resinMass = (!dataPresent(array[24])) ? null : parseInt(array[24])
-          this.hardenerMass = (!dataPresent(array[25])) ? null : parseInt(array[25])
-          this.pottingNotes = (!dataPresent(array[26])) ? null : array[26]
-          this.epoxyFillingTime = (!dataPresent(array[27])) ? null : parseFloat(array[27])
-          this.epoxyFillingDate = (!dataPresent(array[28])) ? null : usDateToYYYYMMDD(array[28], this.sheet, this.dbn, "epoxy filling date")
-          this.epoxyPreparer = (!dataPresent(array[29])) ? null : array[29]
-          this.machiningDate = (!dataPresent(array[31])) ? null : usDateToYYYYMMDD(array[31], this.sheet, this.dbn, "machining date")
-          this.l = (!dataPresent(array[33])) ? null : parseFloat(array[33])
-          this.bt = (!dataPresent(array[34])) ? null : parseFloat(array[34])
-          this.bb = (!dataPresent(array[35])) ? null : parseFloat(array[35])
-          this.bh = (!dataPresent(array[36])) ? null : parseFloat(array[36])
-          this.st = (!dataPresent(array[37])) ? null : parseFloat(array[37])
-          this.sb = (!dataPresent(array[38])) ? null : parseFloat(array[38])
-          this.sh = (!dataPresent(array[39])) ? null : parseFloat(array[39])
-          this.volume = (!dataPresent(array[40]) || parseInt(array[40]) === 0) ? null : parseFloat(array[40])
-          this.dimensionTester = (!dataPresent(array[41])) ? null : array[41]
-          this.mass = (!dataPresent(array[42])) ? null : parseInt(array[42])
-          this.massTester = (!dataPresent(array[43])) ? null : array[43]
-          this.density = (!dataPresent(array[44])) ? null : parseFloat(array[44])
-          this.densityDate = (!dataPresent(array[45])) ? null : parseInt(array[45])
-          this.goodEnd = (!dataPresent(array[47])) ? null : array[47]
-          this.fiberPercentage = (!dataPresent(array[49]) || parseInt(array[49]) === 0) ? null : parseFloat(array[49])
-          this.tower1 = (!dataPresent(array[55])) ? null : parseFloat(array[55])
-          this.tower2 = (!dataPresent(array[56])) ? null : parseFloat(array[56])
-          this.tower3 = (!dataPresent(array[57])) ? null : parseFloat(array[57])
-          this.tower4 = (!dataPresent(array[58])) ? null : parseFloat(array[58])
-          this.missingRow = (!dataPresent(array[59])) ? null : ((array[59] === 'Y') ? true : (array[59] === 'N') ? false : null)
-          this.thirteenHoles = (!dataPresent(array[60])) ? null : ((array[60] === 'Y') ? true : (array[60] === 'N') ? false : null)
-          this.lightTransTester = (!dataPresent(array[63])) ? null : array[63]
-          this.lightTransDate = (!dataPresent(array[64])) ? null : array[64]
-          this.lightTransDateActual = (!dataPresent(array[64]) || isNaN(parseInt(removeSuffix(array[64])))) ? null : parseInt(removeSuffix(array[64]))
-          this.scintillation = (!dataPresent(array[65])) ? null : parseFloat(array[65])
-          this.scintRatio = (!dataPresent(array[67])) ? null : parseFloat(array[67])
-          this.scintTester = (!dataPresent(array[68])) ? null : array[68]
-          this.scintDate = (!dataPresent(array[69])) ? null : array[69]
-          this.scintDateActual = (!dataPresent(array[69]) || isNaN(parseInt(removeSuffix(array[69])))) ? null : parseInt(removeSuffix(array[69]))
-          this.natLightDate = (!dataPresent(array[70])) ? null : parseInt(array[70])
-          this.natLightTester = (!dataPresent(array[71])) ? null : array[71]
-          this.retouch = array[72]
-          this.densityCheckedBy = dataPresent(array[73]) ? array[73] : null
-          this.densityChecked = this.densityCheckedBy != null
-          this.lightTransCheckedBy = dataPresent(array[74]) ? array[74] : null
-          this.lightTransChecked = this.lightTransCheckedBy != null
-          this.natLightCheckedBy = dataPresent(array[75]) ? array[75] : null
-          this.natLightChecked = this.natLightCheckedBy != null
-          this.pregrade = array[80]
-          //other calculations
-          let densityCompleteVars = [this.volume, this.mass, this.massTester, this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
-          this.densityComplete = (densityCompleteVars.every((value) => value != null)) ? true : false
-          this.lightTransComplete = (this.fiberPercentage != null && this.missingRow != null && this.thirteenHoles != null && this.lightTransTester != null) ? true : false
-          this.scintComplete = (this.scintillation != null && this.scintRatio != null) ? true : false
-          this.natLightComplete = (this.natLightDate != null && this.natLightTester != null) ? true : false
-          this.testsComplete = this.densityComplete && this.lightTransComplete && this.scintComplete && this.natLightComplete
-          this.testsChecked = this.densityChecked && this.lightTransChecked && this.natLightChecked
-        }
-        getTungstenData() {return [this.powder, this.bucket, this.moldSeries, this.emptyMoldMass, this.filledMoldMass, this.tungstenMass,this.tungstenFiller, this.tungstenFillingDate]}
-        getEpoxyData() {return [this.epoxyBatch, this.resinMass, this.hardenerMass, this.pottingNotes, this.epoxyFillingTime, this.epoxyFillingDate, this.epoxyPreparer]}
-        hasDensityData() {return [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh, this.volume, this.dimensionTester, this.mass, this.massTester, this.density, this.densityDate].some((value) => value != null)}
-        hasLightTransData() {return [this.goodEnd, this.fiberPercentage, this.tower1, this.tower2, this.tower3, this.tower4, this.missingRow, this.thirteenHoles, this.lightTransTester, this.lightTransDate].some((value) => value != null)}
-        hasTowerData() {return [this.tower1, this.tower2, this.tower3, this.tower4].some((value) => value != null)}
-        hasNatLightData() {return [this.natLightDate, this.natLightTester].some((value) => value != null)}
-        hasScintData() {return [this.scintillation, this.scintRatio, this.scintDate].some((value) => value != null)}
-        deviations() {
-          let dbn = this.dbn
-          let block = this.block
-          let tols = [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
-          let devs = []
-          if (dimensionsMap.has(block)) {
-            tols.forEach(function(value, index) {
-              if (value != null) {
-                devs[index] = value - dimensionsMap.get(block)[index]
-              } else {
-                  devs[index] = null
-              }
-            })
-          } else {
-            devs = null
-            console.log("dimensionsMap did not have key for block '" + block + "' at DBN '" + dbn + "'")
-          }
-          return devs
-        }
-        testGrades() {
-            let devs = this.deviations()
-            let devGrades = new Array(7)
-            if (devs == null) {
-              devGrades.fill(notStartedGrade)
+      getTungstenData() {return [this.powder, this.bucket, this.moldSeries, this.emptyMoldMass, this.filledMoldMass, this.tungstenMass,this.tungstenFiller, this.tungstenFillingDate]}
+      getEpoxyData() {return [this.epoxyBatch, this.resinMass, this.hardenerMass, this.pottingNotes, this.epoxyFillingTime, this.epoxyFillingDate, this.epoxyPreparer]}
+      hasDensityData() {return [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh, this.volume, this.dimensionTester, this.mass, this.massTester, this.density, this.densityDate].some((value) => value != null)}
+      hasLightTransData() {return [this.goodEnd, this.fiberPercentage, this.tower1, this.tower2, this.tower3, this.tower4, this.missingRow, this.thirteenHoles, this.lightTransTester, this.lightTransDate].some((value) => value != null)}
+      hasTowerData() {return [this.tower1, this.tower2, this.tower3, this.tower4].some((value) => value != null)}
+      hasNatLightData() {return [this.natLightDate, this.natLightTester].some((value) => value != null)}
+      hasScintData() {return [this.scintillation, this.scintRatio, this.scintDate].some((value) => value != null)}
+      deviations() {
+        let dbn = this.dbn
+        let block = this.block
+        let tols = [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
+        let devs = []
+        if (dimensionsMap.has(block)) {
+          tols.forEach(function(value, index) {
+            if (value != null) {
+              devs[index] = value - dimensionsMap.get(block)[index]
             } else {
-              for (let i = 0; i < devs.length; i++) {
-                if (i === 0) {
-                  devGrades[0] = (devs[0] == null) ? notStartedGrade : grade_dL(devs[0])
-                } else {
-                  devGrades[i] = (devs[i] == null) ? notStartedGrade : grade_otherDev(devs[i])
-                }
-              }
-            }
-            let densityValuesToGrade = [
-              ((this.density == null) ? notStartedGrade : grade_density(this.density)),
-              ...devGrades
-            ]
-            let densityGrade
-            if (densityValuesToGrade.some((value) => value == notStartedGrade))
-            {
-              densityGrade = 0
-            } else {
-              densityGrade = Math.max(...densityValuesToGrade)
-            }
-            let towers = [this.tower1, this.tower2, this.tower3, this.tower4]
-            let towerGrades = new Array(4)
-            if (towers.every((value) => value != null)) {
-              for (let i = 0; i < towers.length; i++) {
-                towerGrades[i] = (towers[i] == null) ? notStartedGrade : grade_tower(towers[i])
-              }
-            } else {
-              towerGrades.fill(notStartedGrade)
-            }
-            let lightTransValuesToGrade = [
-              (this.fiberPercentage == null) ? notStartedGrade : grade_fiberPercentage(this.fiberPercentage),
-              ...towerGrades,
-              (this.missingRow == null) ? notStartedGrade : (this.missingRow) ? fGrade : aGrade,
-              (this.thirteenHoles == null) ? notStartedGrade : (this.thirteenHoles) ? fGrade : aGrade
-            ]
-            let lightTransGrade = Math.max(...lightTransValuesToGrade)
-            let scintGrade = (this.scintRatio == null) ? notStartedGrade : grade_scintRatio(this.scintRatio)
-            let natLightGrade = (this.natLightDate != null || this.natLightTester != null) ? aGrade : notStartedGrade
-            return {
-              density: densityGrade,
-              tolerances: devGrades,
-              lightTrans: lightTransGrade,
-              towers: towerGrades,
-              scint: scintGrade,
-              natLight: natLightGrade
-            }
-          }
-        getUrls(imageUrlsCallback, histogramUrlsCallback) {
-          let that = this
-          if (!this.gotUrls) {
-            let toGetImageUrls = [this.numericDBN.toString(),
-              (this.lightTransDate == null) ? null : this.lightTransDate.toString(),
-              (this.natLightDate == null) ? null : this.natLightDate.toString()
-            ]
-            if (this.lightTransDate != null || this.natLightDate != null) {
-              google.script.run.withSuccessHandler(imageUrlsCallback).getImageUrls(toGetImageUrls)
-            } else {
-              imageUrlsCallback(null)
-            }
-            if (this.lightTransDate != null) {
-              google.script.run.withSuccessHandler(histogramUrlsCallback).getHistograms(toGetImageUrls)
-            } else {
-              histogramUrlsCallback(null)
-            }
-          }
-        }
-      }
-      class BlocksCollection {
-        constructor(array) {
-          this.array = array
-        }
-        getBlockByNumericDBN (dbn) {
-          return this.array[dbn]
-        }
-        getBlockByStringDBN (stringDBN) {
-          let numDBN
-          this.array.forEach (function (block, index, array) {
-            if (stringDBN === block.dbn) {
-              numDBN = index
+                devs[index] = null
             }
           })
-          if (numDBN != null) {return this.array[numDBN]}
+        } else {
+          devs = null
+          console.log("dimensionsMap did not have key for block '" + block + "' at DBN '" + dbn + "'")
         }
-        getBlocksNeedingRetouch (retouchStatus) {
-          let blocks = []
-          let devNames = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
-          let allowedStatuses = ['5', '5a', '5b', '5c']
-          this.array.forEach(function (block) {
-            if (block.deviations() != null && block.retouch === retouchStatus && allowedStatuses.includes(block.status)) {
-              let retouchDevs = []
-              block.deviations().forEach(function(dev, index) {
-                if (index === 0) {
-                  if (grade_dL(dev) === fGrade && dev > 0) {
-                    retouchDevs.push([devNames[index], '+' + dev.toFixed(4)])
-                  }
-                } else if (grade_otherDev(dev) === fGrade && dev > 0) { 
+        return devs
+      }
+      testGrades() {
+          let devs = this.deviations()
+          let devGrades = new Array(7)
+          if (devs == null) {
+            devGrades.fill(notStartedGrade)
+          } else {
+            for (let i = 0; i < devs.length; i++) {
+              if (i === 0) {
+                devGrades[0] = (devs[0] == null) ? notStartedGrade : grade_dL(devs[0])
+              } else {
+                devGrades[i] = (devs[i] == null) ? notStartedGrade : grade_otherDev(devs[i])
+              }
+            }
+          }
+          let densityValuesToGrade = [
+            ((this.density == null) ? notStartedGrade : grade_density(this.density)),
+            ...devGrades
+          ]
+          let densityGrade
+          if (densityValuesToGrade.some((value) => value == notStartedGrade))
+          {
+            densityGrade = 0
+          } else {
+            densityGrade = Math.max(...densityValuesToGrade)
+          }
+          let towers = [this.tower1, this.tower2, this.tower3, this.tower4]
+          let towerGrades = new Array(4)
+          if (towers.every((value) => value != null)) {
+            for (let i = 0; i < towers.length; i++) {
+              towerGrades[i] = (towers[i] == null) ? notStartedGrade : grade_tower(towers[i])
+            }
+          } else {
+            towerGrades.fill(notStartedGrade)
+          }
+          let lightTransValuesToGrade = [
+            (this.fiberPercentage == null) ? notStartedGrade : grade_fiberPercentage(this.fiberPercentage),
+            ...towerGrades,
+            (this.missingRow == null) ? notStartedGrade : (this.missingRow) ? fGrade : aGrade,
+            (this.thirteenHoles == null) ? notStartedGrade : (this.thirteenHoles) ? fGrade : aGrade
+          ]
+          let lightTransGrade = Math.max(...lightTransValuesToGrade)
+          let scintGrade = (this.scintRatio == null) ? notStartedGrade : grade_scintRatio(this.scintRatio)
+          let natLightGrade = (this.natLightDate != null || this.natLightTester != null) ? aGrade : notStartedGrade
+          return {
+            density: densityGrade,
+            tolerances: devGrades,
+            lightTrans: lightTransGrade,
+            towers: towerGrades,
+            scint: scintGrade,
+            natLight: natLightGrade
+          }
+        }
+      getUrls(imageUrlsCallback, histogramUrlsCallback, errorHandler, start) {
+        let that = this
+        if (!this.gotUrls) {
+          let toGetImageUrls = [this.numericDBN.toString(),
+            (this.lightTransDate == null) ? null : this.lightTransDate.toString(),
+            (this.natLightDate == null) ? null : this.natLightDate.toString()
+          ]
+          if (this.lightTransDate != null || this.natLightDate != null) {
+            google.script.run.withSuccessHandler(imageUrlsCallback).withFailureHandler(errorHandler).getImageUrls(toGetImageUrls)
+          } else {
+            imageUrlsCallback(null)
+          }
+          if (this.lightTransDate != null) {
+            google.script.run.withSuccessHandler(histogramUrlsCallback).withFailureHandler(errorHandler).getHistograms(toGetImageUrls)
+          } else {
+            histogramUrlsCallback(null)
+          }
+        }
+      }
+    }
+    class BlocksCollection {
+      constructor(array) {
+        this.array = array
+      }
+      getBlockByNumericDBN (dbn) {
+        return this.array[dbn]
+      }
+      getBlockByStringDBN (stringDBN) {
+        let numDBN
+        this.array.forEach (function (block, index, array) {
+          if (stringDBN === block.dbn) {
+            numDBN = index
+          }
+        })
+        if (numDBN != null) {return this.array[numDBN]}
+      }
+      getBlocksNeedingRetouch (retouchStatus) {
+        let blocks = []
+        let devNames = ['L', 'BT', 'BB', 'BH', 'ST', 'SB', 'SH']
+        let allowedStatuses = ['5', '5a', '5b', '5c']
+        this.array.forEach(function (block) {
+          if (block.deviations() != null && block.retouch === retouchStatus && allowedStatuses.includes(block.status)) {
+            let retouchDevs = []
+            block.deviations().forEach(function(dev, index) {
+              if (index === 0) {
+                if (grade_dL(dev) === fGrade && dev > 0) {
                   retouchDevs.push([devNames[index], '+' + dev.toFixed(4)])
                 }
-              })
-              if (retouchDevs.length > 0) {
-                blocks.push([block, retouchDevs])
-              }
-            }
-          })
-          return blocks
-        }
-        getBlocksModifiedInDateRange(fromDate, toDate) {
-          let noMin = false
-          let noMax = false
-          if (fromDate == null) {noMin = true}
-          if (toDate == null) {noMax = true}
-          let dates
-          if (!noMin && !noMax) {
-            dates = []
-            let current = fromDate
-            while (current <= toDate) {
-              dates.push(current)
-              let date = YYYYMMDDtoDate(current)
-              date.setDate(date.getDate() + 1)
-              current = dateToYYYYMMDD(date)
-            }
-            //console.log('date range: ' + dates)
-          }
-          let tungstenFilled = []
-          let epoxyFilled = []
-          let machined = []
-          let densityTested = []
-          let lightTransTested = []
-          let scintTested = []
-          let natLightTested = []
-          this.array.forEach(function(block) {
-            let date = block.tungstenFillingDate
-            if (date != null) {
-              if ((noMin && noMax && block.tungstenFillingDate != null)
-                || (noMin && block.tungstenFillingDate <= toDate)
-                || (noMax && block.tungstenFillingDate >= fromDate)
-                || (dates != null && dates.includes(block.tungstenFillingDate)))
-              {tungstenFilled.push(block)}
-            }
-          })
-          this.array.forEach(function(block) {
-            let date = block.epoxyFillingDate
-            if (date != null) {
-              if ((noMin && noMax && block.epoxyFillingDate != null)
-                || (noMin && block.epoxyFillingDate <= toDate)
-                || (noMax && block.epoxyFillingDate >= fromDate)
-                || (dates != null && dates.includes(block.epoxyFillingDate)))
-              {epoxyFilled.push(block)}
-            }
-          })
-          this.array.forEach(function(block) {
-            let date = block.machiningDate
-            if (date != null) {
-              if ((noMin && noMax && block.machiningDate != null)
-                || (noMin && block.machiningDate <= toDate)
-                || (noMax && block.machiningDate >= fromDate)
-                || (dates != null && dates.includes(block.machiningDate)))
-              {machined.push(block)}
-            }
-          })
-          this.array.forEach(function(block) {
-            let date = block.densityDate
-            if (date != null) {
-              if ((noMin && noMax && block.densityDate != null)
-                || (noMin && block.densityDate <= toDate)
-                || (noMax && block.densityDate >= fromDate)
-                || (dates != null && dates.includes(block.densityDate)))
-              {densityTested.push(block)}
-            }
-          })
-          this.array.forEach(function(block) {
-            let date = block.lightTransDateActual
-            if (date != null) {
-              if ((noMin && noMax && block.lightTransDateActual != null)
-                || (noMin && block.lightTransDateActual <= toDate)
-                || (noMax && block.lightTransDateActual >= fromDate)
-                || (dates != null && dates.includes(block.lightTransDateActual)))
-              {lightTransTested.push(block)}
-            }
-          })
-          this.array.forEach(function(block) {
-            let date = block.scintDateActual
-            if (date != null) {
-              if ((noMin && noMax && block.scintDateActual != null)
-                || (noMin && block.scintDateActual <= toDate)
-                || (noMax && block.scintDateActual >= fromDate)
-                || (dates != null && dates.includes(block.scintDateActual)))
-              {scintTested.push(block)}
-            }
-          })
-          this.array.forEach(function(block) {
-            let date = block.natLightDate
-            if (date != null) {
-              if ((noMin && noMax && block.natLightDate != null)
-                || (noMin && block.natLightDate <= toDate)
-                || (noMax && block.natLightDate >= fromDate)
-                || (dates != null && dates.includes(block.natLightDate)))
-              {natLightTested.push(block)}
-            }
-          })
-          return {
-            tungstenFilled: tungstenFilled,
-            epoxyFilled: epoxyFilled,
-            machined: machined,
-            densityTested: densityTested,
-            lightTransTested: lightTransTested,
-            scintTested: scintTested,
-            natLightTested: natLightTested
-          }
-        }
-      }
-	</script>
-	<script>
-		// configuration for the blocks table
-      const blocksTableOptions = {
-        paging: false,
-        scrollX: true,
-        scrollY: "480px",
-        dom: 'Brtp',
-        buttons: [
-          {extend: 'colvis', text:'Columns', collectionLayout: 'fixed four-column'},
-          {extend: 'collection', text: 'Tests', buttons: [
-            {extend: 'columnToggle', text: 'Block Information', columns: '.basicInfo'},
-            {extend: 'columnToggle', text: 'Graded', columns: '.hasGrade'},
-            {extend: 'columnToggle', text: 'Tungsten', columns: '.tungsten'},
-            {extend: 'columnToggle', text: 'Epoxy', columns: '.epoxy'},
-            {extend: 'columnToggle', text: 'Density', columns: '.density'},
-            {extend: 'columnToggle', text: 'Tolerances', columns: '.tolerances'},
-            {extend: 'columnToggle', text: 'Light Transmission', columns: '.lightTrans'},
-            {extend: 'columnToggle', text: 'Towers', columns: '.towers'},
-            {extend: 'columnToggle', text: 'Scintillation', columns: '.scint'},
-            {extend: 'columnToggle', text: 'Natural Light', columns: '.natLight'}]
-          },
-          {extend: 'copy', exportOptions: {columns: ':visible'}}
-        ],
-        colReorder: true,
-        colReorder: {fixedColumnsLeft: 1},
-        fixedColumns: true,
-        select: false,
-        columns: [
-        {name: "dbn", "title": "DBN", className: "dt-center basicInfo bolded searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              return '<span style="font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span>' + data + '</span>';
-            }
-          } else {
-            return data
-          }
-        }},
-        {name: "block", "title": "Block", className: "dt-center basicInfo searchExact", "searchable": true, "type": "block", "visible": true},
-        {name: "comment", "title": "Comment", className: "dt-center search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "status", "title": "Status", className: "dt-center basicInfo searchExact", "searchable": true, "type": "status", "visible": true},
-        {name: "testingStatus", title: "Testing Status", className: "dt-center basicInfo hasGrade", "searchable": false, "type": "testingStatus","visible": true, render: function ( data, type, row ) {
-          if (!dataPresent(data)) {
-            return ''
-          } else if (type === 'display') {
-            let tests = ['D', 'LT', 'S', 'NL']
-            function createSpan(text, color, style) {
-              if (style === 'bolded') {
-                return '<span style="color: ' + color + '; font-weight: bold;">' + text + '</span>'
-              } else if (style === 'normal') {
-                return '<span style="color: ' + color + ';">' + text + '</span>'
-              } else if (style === 'italicizedDotted') {
-                return '<span style="color: ' + color + '; font-style: italic; border-bottom: 2px dotted ' + color + ';">' + text + '</span>'
-              } else {
-                return '<span style="color: ' + color + '; font-weight: bold">' + text + '</span>'
-              }
-            }
-            let spans = []
-            let display = ''
-            data.forEach(function (value, index) {
-              if (index == 2) {
-                if (value[0] === 0) {
-                  spans[index] = createSpan(tests[index], testColors[value[0]], 'normal')
-                } else {
-                  spans[index] = createSpan(tests[index], testColors[value[0]], 'bolded')
-                }
-              } else {
-                let style = (value[2]) ? 'bolded' : ((value[0] === notStartedGrade) ? 'normal' : 'italicizedDotted')
-                spans[index] = createSpan(tests[index], testColors[value[0]], style) + createSpan('✔', checkColors[value[1]], 'none')
+              } else if (grade_otherDev(dev) === fGrade && dev > 0) { 
+                retouchDevs.push([devNames[index], '+' + dev.toFixed(4)])
               }
             })
-            spans.forEach(function (span, index) {
-              if (index != spans.length - 1) {
-                display += span + '<span> | <span>'
-              } else {
-                display += span
-              }
-            })
-            return display
-          } else {
-            return data
-          }
-        }},
-        {name: "readyToGrade", "title": "<span>Ready To</span><br><span>Grade</span>", className: "dt-center hasGrade search", "searchable": true, "type": "readyToGrade", "visible": true, render: function ( data, type, row ) {
-          if (type === 'display') {
-            return '<span style="color:' + data.color + '; font-weight: bold">' + data.text + '</span>'
-          } else {
-            return data.text
-          }
-        }},
-        {name: "pregrade", "title": "Grade", className: "dt-center basicInfo hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": true, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '' && grade_pregrade(data) != null) {
-              let color = testColors[grade_pregrade(data)]
-              return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>'
-            } else {
-              return '<span>' + data + '</span>'
+            if (retouchDevs.length > 0) {
+              blocks.push([block, retouchDevs])
             }
-          } else {
-            return data
-          }
-        }},
-        {name: "shipment", "title": "Shipment", className: "dt-center basicInfo searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "sector", "title": "Sector", className: "dt-center basicInfo search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "powder", "title": "W Powder", className: "dt-center tungsten search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "bucket", "title": "W Bucket #", className: "dt-center tungsten searchExact", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "moldSeries", "title": "<span>Mold</span><br><span>Series</span>", className: "dt-center  searchExact", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "emptyMoldMass", "title": "<span>Empty Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "filledMoldMass", "title": "<span>Filled Mold</span><br><span>Mass (g)</span>", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "tungstenMass", "title": "W Mass (g)", className: "dt-center tungsten range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "tungstenFiller", "title": "W Filler", className: "dt-center tungsten search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "tungstenFillingDate", "title": "W Filling Date", className: "dt-center tungsten search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
-        {name: "epoxyBatch", "title": "<span>Epoxy</span><br><span>Batch</span>", className: "dt-center epoxy searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "resinMass", "title": "<span>Resin</span><br><span>Mass (g)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "hardenerMass", "title": "<span>Hardener</span><br><span>Mass (g)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "epoxyFillingTime", "title": "<span>Epoxy Filling</span><br><span>Time (min)</span>", className: "dt-center epoxy range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "epoxyFillingDate", "title": "<span>Epoxy</span><br><span>Filling Date</span>", className: "dt-center epoxy search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
-        {name: "epoxyPreparer", "title": "<span>Epoxy</span><br><span>Preparer</span>", className: "dt-center epoxy search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "machiningDate", "title": "<span>Machining</span><br><span>Date</span>", className: "dt-center search", "searchable": true, "type": "usDateEmptyUnsorted", "visible": false},
-        {name: "dL", "title": "ΔL (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              let color = testColors[grade_dL(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span>' + data + '</span>'
-            }
-          } else {
-            return data
-          }
-        }},
-        {name: "dBT", "title": "ΔBT (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span>' + data + '</span>'
-            }
-          } else {
-            return data
-          }
-        }},
-        {name: "dBB", "title": "ΔBB (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span>' + data + '</span>'
-            }
-          } else {
-            return data
-          }
-        }},
-        {name: "dBH", "title": "ΔBH (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span>' + data + '</span>'
-            }
-          } else {
-            return data
-          }
-        }},
-        {name: "dST", "title": "ΔST (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span>' + data + '</span>'
-            }
-          } else {
-            return data
-          }
-        }},
-        {name: "dSB", "title": "ΔSB (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span>' + data + '</span>'
-            }
-          } else {
-            return data
-          }
-        }},
-        {name: "dSH", "title": "ΔSH (in)", className: "dt-center density tolerances hasGrade range", "searchable": true, "type": "numericWithPlusEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              let color = testColors[grade_otherDev(data)]
-              if (data > 0) {
-                return '<span style="color:' + color + '; font-weight: bold">' + '+' + data + '</span>';
-              } else {
-                return '<span style="color:' + color + '; font-weight: bold">' + data + '</span>';
-              }
-            } else {
-              return '<span>' + data + '</span>'
-            }
-          } else {
-            return data
-          }
-        }},
-        {name: "toleranceMse", "title": "Tolerance MSE", className:"dt-center range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "volume", "title": "Volume (mL)", className: "dt-center density range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "dimensionTester", "title": "<span>Dimension</span><br><span>Tester</span>", className: "dt-center density search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "mass", "title": "Mass (g)", className: "dt-center density range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "massTester", "title": "<span>Density</span><br><span>Tester</span>", className: "dt-center density search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "density", "title": "<span>Density</span><br><span>(g/mL)</span>", className: "dt-center density hasGrade range range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_density(data)] + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return data
-          }
-        }},
-        {name: "densityDate", "title": "Density Date", className: "dt-center density searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "goodEnd", "title": "Good End", className: "dt-center lightTrans search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "fiberPercentage", "title": "Fiber Count (%)", className: "dt-center lightTrans hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_fiberPercentage(data)] + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return data
-          }
-        }},
-        {name: "tower1", "title": "T1 (BL) (%)", className: "dt-center lightTrans towers hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return data
-          }
-        }},
-        {name: "tower2", "title": "T2 (BR) (%)", className: "dt-center lightTrans towers hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return data
-          }
-        }},
-        {name: "tower3", "title": "T3 (TL) (%)", className: "dt-center lightTrans towers hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return data
-          }
-        }},
-        {name: "tower4", "title": "T4 (TR) (%)", className: "dt-center lightTrans towers hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_tower(data)] + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return data
-          }
-        }},
-        {name: "missingRow", "title": "<span>Missing</span><br><span>Row</span>", className: "dt-center lightTrans hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              return '<span style="color:' + testColors[grade_missingRow(data)] + '; font-weight: bold">' + TFToYesNo(data) + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return TFToYesNo(data)
-          }
-        }},
-        {name: "thirteenHoles", "title": "<span>13 Connected</span><br><span>Holes</span>", className: "dt-center lightTrans hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-            if (data !== '') {
-              return '<span style="color:' + testColors[grade_thirteenHoles(data)] + '; font-weight: bold">' + TFToYesNo(data) + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return TFToYesNo(data)
-          }
-        }},
-        {name: "lightTransTester", "title": "LT Tester", className: "dt-center lightTrans search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "lightTransDate", "title": "LT Date", className: "dt-center lightTrans searchExact", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
-        {name: "scintillation", "title": "<span>Scintillation</span><br><span>(mV)</span>", className: "dt-center scint range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false},
-        {name: "scintRatio", "title": "<span>Scintillation</span><br><span>Ratio</span>", className: "dt-center scint hasGrade range", "searchable": true, "type": "numericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
-          if (type === 'display') {
-              if (data !== '') {
-              return '<span style="color:' + testColors[grade_scintRatio(data)] + '; font-weight: bold">' + data + '</span>';
-            } else {
-              return '<span>' + data + '</span>'
-            } 
-          } else {
-            return data
-          }
-        }},
-        {name: "scintTester", "title": "<span>Scintilliation</span><br><span>Tester</span>", className: "dt-center scint search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "scintDate", "title": "<span>Scintilliation</span><br><span>Date</span>", className: "dt-center scint searchExact", "searchable": true, "type": "YYYYMMDDwithSuffix", "visible": false},
-        {name: "natLightTester", "title": "NL Tester", className: "dt-center natLight search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false},
-        {name: "natLightDate", "title": "NL Date", className: "dt-center natLight searchExact", "searchable": true, "type": "numericEmptyUnsorted", "visible": false}
-        ]
-      }
-      // initialize blocks table
-      $(document).ready(function () {
-        for (let i = 0; i < blocksTableOptions.columns.length; i++) {
-          $('#blocksTable thead tr').append($('<th />'))
-          $('#blocksTable tfoot tr').append($('<th />'))
-        }
-        let dataTable = $('#blocksTable').DataTable(blocksTableOptions)
-        dataTable.columns('.search').every(function () {
-          let colInitial = this
-          $(colInitial.footer()).html('<input class="search" type="text" style="width: 100%" placeholder="Search" data-index="' + colInitial.index() + '"/>')
-          let input = $(colInitial.footer()).find('input.search')
-          input.keyup(function() {
-            let currentIndex = dataTable.colReorder.transpose(parseInt(this.dataset.index))
-            dataTable.column(currentIndex).search(this.value).draw()
-          })
-        }).columns('.searchExact').every(function() {
-          let colInitial = this
-          $(colInitial.footer()).html('<input class="searchExact" type="text" style="width: 100%" placeholder="Search" data-index="' + colInitial.index() + '"/>')
-          let input = $(colInitial.footer()).find('input.searchExact')
-          input.keyup(function() {
-            let currentIndex = dataTable.colReorder.transpose(parseInt(this.dataset.index))
-            //console.log('this inputs init index is ' + this.dataset.index + ' and its current index is ' + currentIndex)
-            if (this.value === '') {
-              dataTable.column(currentIndex).search('').draw()
-            } else {
-              dataTable.column(currentIndex).search('^' + this.value + '$', true, false).draw()
-            }
-          })
-        }).columns('.range').every(function () {
-          let colInitial = this
-          $(colInitial.footer()).html(
-            '<input class="min" type="text" style="width: 100%" placeholder="min"/>' + '<br>' + 
-            '<input class="max" type="text" style="width: 100%" placeholder="max"/>'
-          )
-          $(colInitial.footer()).find('input.min').keyup(function() {dataTable.draw()})
-          $(colInitial.footer()).find('input.max').keyup(function() {dataTable.draw()})
-        })
-        $('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
-        dataTable.on('draw', function () {
-          //$('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
-        }).on( 'order', function () {
-          if (arraysEqual(arrayFromFirstElements(dataTable.order()), arrayFromFirstElements(sortConfig))) {
-            //console.log('reorder: sorting columns were not changed')
-          } else {
-            // console.log('reorder: sorting colunms were changed')
-            sortConfig = [...dataTable.order()]
-            filter()
-          }
-        }).on('search', function () {
-          document.getElementById("blocksCount").innerHTML = dataTable.rows({search:'applied'}).count()
-        }).on( 'column-visibility', function ( e, settings, column, state ) {
-          if (!state) {
-            //changed to hidden, so clear the column's search bar
-            let col = dataTable.column(column)
-            if ($(col.nodes()).hasClass('search')) {
-              $(col.footer()).find('input.search').get(0).value = ''
-              $(col.footer()).find('input.search').keyup()
-            } else if ($(col.nodes()).hasClass('searchExact')) {
-              $(col.footer()).find('input.searchExact').get(0).value = ''
-              $(col.footer()).find('input.searchExact').keyup()
-            } else if ($(col.nodes()).hasClass('range')) {
-              $(col.footer()).find('input.min').get(0).value = ''
-              $(col.footer()).find('input.max').get(0).value = ''
-              dataTable.draw()
-            }
-          }
-          $('#blocksTable_wrapper > div > div > div > table > tfoot').css('display', 'none')
-        })
-      })
-      $.fn.dataTable.ext.search.push(
-        function( settings, data, dataIndex ) {
-          if (settings.sTableId === 'blocksTable') {
-            for (let i = 0; i < settings.aoColumns.length; i++) {
-              let col = settings.aoColumns[i]
-              if (col.sClass.split(" ").includes('range')) {
-                let min = parseFloat(col.nTf.children[0].value)
-                let max = parseFloat(col.nTf.children[2].value)
-                let val = parseFloat(data[i])
-                if (!((isNaN(min) && isNaN(max)) ||
-                  (isNaN(min) && val <= max) ||
-                  (min <= val && isNaN( max)) ||
-                  (min <= val && val <= max))) {
-                  return false
-                }
-              }
-            }
-            return true
-          } else {
-            return true
-          }
-        }
-      )
-      // configuration for candidate retouch table
-      const candidateRetouchTableOptions = {
-        paging: false,
-        buttons: [],
-        scrollX: true,
-        scrollY: false,
-        dom: 'Brtp',
-        select: false,
-        columns: [
-          {name: "dbn", "title": "DBN", className: "dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function(data, type, row) {
-            return '<span style="font-weight: bold">' + data + '</span>'
-          }},
-          {name: "status", "title": "Status", className: "dt-center", "searchable": true, "type": "genericEmptyUnsorted", "visible": true},
-          {name: "retouchStatus", "title": "Retouch Status", className: "dt-center", "searchable": true, "type": "genericEmptyUnsorted", "visible": true},
-          {name: "retouchableDimensions", "title": "Retouchable Dimensions", className: "dt-left", "searchable": true, "type": "genericEmptyUnsorted", "visible": true, render: function (data, type, row) {
-            let html = ''
-            data.forEach(function(value, index) {
-              if (index !== data.length - 1) {
-                html += '<span style="font-weight: bold">' + value[0] + '</span>' + '<span>' + ': ' + value[1] + ', ' + '</span>'
-              } else {
-                html += '<span style="font-weight: bold">' + value[0] + '</span>' + '<span>' + ': ' + value[1] + '</span>'
-              }
-            })
-            return html
-          }}
-        ]
-      }
-      // initialize candidate retouch table
-      $(document).ready(function () {
-        for (let i = 0; i < candidateRetouchTableOptions.columns.length; i++) {
-          $('#candidateRetouchTable').find('thead').find('tr').append($('<th />'))
-          $('#candidateRetouchTable').find('tfoot').find('tr').append($('<th />'))
-        }
-        $('#candidateRetouchTable').DataTable(candidateRetouchTableOptions)
-      })
-      // configuration for sent retouch table
-      const sentRetouchTableOptions = {
-        paging: false,
-        buttons: [],
-        scrollX: true,
-        scrollY: false,
-        dom: 'Brtp',
-        select: false,
-        columns: [
-          {name: "dbn", "title": "DBN", className: "dt-center", "searchable": true, "type": "numericEmptyUnsorted", "visible": true, render: function(data, type, row) {
-            return '<span style="font-weight: bold">' + data + '</span>'
-          }},
-          {name: "status", "title": "Status", className: "dt-center", "searchable": true, "type": "genericEmptyUnsorted", "visible": true},
-          {name: "retouchableDimensions", "title": "Retouchable Dimensions", className: "dt-left", "searchable": true, "type": "genericEmptyUnsorted", "visible": true, render: function (data, type, row) {
-            let html = ''
-            data.forEach(function(value, index) {
-              if (index !== data.length - 1) {
-                html += '<span style="font-weight: bold">' + value[0] + '</span>' + '<span>' + ': ' + value[1] + ', ' + '</span>'
-              } else {
-                html += '<span style="font-weight: bold">' + value[0] + '</span>' + '<span>' + ': ' + value[1] + '</span>'
-              }
-            })
-            return html
-          }}
-        ]
-      }
-      // initialize sent retouch table
-      $(document).ready(function () {
-        for (let i = 0; i < sentRetouchTableOptions.columns.length; i++) {
-          $('#sentRetouchTable').find('thead').find('tr').append($('<th />'))
-          $('#sentRetouchTable').find('tfoot').find('tr').append($('<th />'))
-        }
-        $('#sentRetouchTable').DataTable(sentRetouchTableOptions)
-      })
-
-      function arraysEqual (array1, array2) {
-        if (array1.length !== array2.length) {
-          return false
-        } else {
-          for (let i = 0; i < array1.length; i++) {
-            if (array1[i] !== array2[i]) {
-              return false
-            }
-          }
-          return true
-        }
-      }
-      function arrayFromFirstElements (array) {
-        let toReturn = []
-        for (let i = 0; i < array.length; i++) {
-          toReturn[i] = array[i][0]
-        }
-        return toReturn
-      }
-      var sortConfig = [0, 'asc']
-      // SORTING FUNCTIONS
-      $.extend($.fn.dataTable.ext.type.order, {
-        "YYYYMMDDwithSuffix-asc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a.includes('-')) {
-            let split = a.split('-')
-            a = parseInt(split[0]) + parseInt(split[1]) / 10
-          }
-          if (b.includes('-')) {
-            let split = b.split('-')
-            b = parseInt(split[0]) + parseInt(split[1]) / 10
-          }
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else if (isNaN(a)) {
-            return 1
-          } else if (isNaN(b)) {
-            return -1
-          } else {
-            a = parseFloat(a)
-            b = parseFloat(b)
-            return ((a > b) ? 1 : ((a < b) ? -1 : 0)) 
-          }
-        },
-        "YYYYMMDDwithSuffix-desc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a.includes('-')) {
-            let split = a.split('-')
-            a = parseInt(split[0]) + parseInt(split[1]) / 10
-          }
-          if (b.includes('-')) {
-            let split = b.split('-')
-            b = parseInt(split[0]) + parseInt(split[1]) / 10
-          }
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else if (isNaN(a)) {
-            return 1
-          } else if (isNaN(b)) {
-            return -1
-          } else {
-            a = parseFloat(a)
-            b = parseFloat(b)
-            return ((a < b) ? 1 : ((a > b) ? -1 : 0)) 
-          }
-        },
-        "numericEmptyUnsorted-asc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else if (isNaN(a)) {
-            return 1
-          } else if (isNaN(b)) {
-            return -1
-          } else {
-            a = parseFloat(a)
-            b = parseFloat(b)
-            return ((a > b) ? 1 : ((a < b) ? -1 : 0)) 
-          }
-        },
-        "numericEmptyUnsorted-desc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else if (isNaN(a)) {
-            return -1
-          } else if (isNaN(b)) {
-            return 1
-          } else {
-            a = parseFloat(a)
-            b = parseFloat(b)
-            return ((a < b) ? 1 : ((a > b) ? -1 : 0)) 
-          }
-        },
-        "genericEmptyUnsorted-asc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            return ((a > b) ? 1 : ((a < b) ? -1 : 0)) 
-          }
-        },
-        "genericEmptyUnsorted-desc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            return ((a < b) ? 1 : ((a > b) ? -1 : 0)) 
-          }
-        },
-        "usDateEmptyUnsorted-asc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            a = usDateToYYYYMMDD(a)
-            b = usDateToYYYYMMDD(b)
-            return ((a > b) ? 1 : ((a < b) ? -1 : 0)) 
-          }
-        },
-        "usDateEmptyUnsorted-desc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            a = usDateToYYYYMMDD(a)
-            b = usDateToYYYYMMDD(b)
-            return ((a < b) ? 1 : ((a > b) ? -1 : 0)) 
-          }
-        },
-        "numericWithPlusEmptyUnsorted-asc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            a = parseFloatRemovePlus(a)
-            b = parseFloatRemovePlus(b)
-            return ((a > b) ? 1 : ((a < b) ? -1 : 0)) 
-          }
-        },
-        "numericWithPlusEmptyUnsorted-desc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            a = parseFloatRemovePlus(a)
-            b = parseFloatRemovePlus(b)
-            return ((a < b) ? 1 : ((a > b) ? -1 : 0)) 
-          }
-        },
-        "block-asc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            a = parseInt(a)
-            b = parseInt(b)
-            return ((a === 123) ? -1 : ((b === 123) ? 1 : ((a > b) ? 1 : ((a < b) ? -1 : 0))))
-          }
-        },
-        "block-desc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            a = parseInt(a)
-            b = parseInt(b)
-            return ((a === 123) ? 1 : ((b === 123) ? -1 : ((a < b) ? 1 : ((a > b) ? -1 : 0))))
-          }
-        },
-        "status-asc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            return ((a === '0') ? 1 : ((b === '0') ? -1 : ((a > b) ? 1 : ((a < b) ? -1 : 0))))
-          }
-        },
-        "status-desc": function (a, b) {
-          a = (new DOMParser).parseFromString(a, 'text/html').documentElement.textContent
-          b = (new DOMParser).parseFromString(b, 'text/html').documentElement.textContent
-          if (a === b) {
-            return 0
-          } else if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            return ((a === '0') ? 1 : ((b === '0') ? -1 : ((a < b) ? 1 : ((a > b) ? -1 : 0))))
-          }
-        },
-        "testingStatus-desc": function (status, otherStatus) {
-          if (status === '') {
-            return 1
-          } else if (otherStatus === '') {
-            return -1
-          } else {
-            let index = indexFromTestingStatus(status)
-            let otherIndex = indexFromTestingStatus(otherStatus)
-            return (index > otherIndex) ? 1 : ((index < otherIndex) ? -1 : 0)  
-          }
-        },
-        "testingStatus-asc": function (status, otherStatus) {
-          if (status === '') {
-            return 1
-          } else if (otherStatus === '') {
-            return -1
-          } else {
-            let index = indexFromTestingStatus(status)
-            let otherIndex = indexFromTestingStatus(otherStatus)
-            return (index < otherIndex) ? 1 : ((index > otherIndex) ? -1 : 0)  
-          }
-        },
-        "readyToGrade-desc": function (a, b) {
-          if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            index = readyToGradeMap.get(a)
-            otherIndex = readyToGradeMap.get(b)
-            return (index > otherIndex) ? 1 : ((index < otherIndex) ? -1 : 0)  
-          }
-        },
-        "readyToGrade-asc": function (a, b) {
-          if (a === '') {
-            return 1
-          } else if (b === '') {
-            return -1
-          } else {
-            index = readyToGradeMap.get(a)
-            otherIndex = readyToGradeMap.get(b)
-            return (index < otherIndex) ? 1 : ((index > otherIndex) ? -1 : 0)  
-          }
-        }
-      });
-      // sorting helper functions
-      const readyToGradeMap = new Map([['Needs Tests', 1], ['Needs Checks', 2], ['Ready', 3]])
-      function parseFloatRemovePlus (string) {
-        if (string[0] === '+') {
-          return parseFloat(string.substr(1))
-        } else {
-          return parseFloat(string)
-        }
-      }
-      function to2digits (string) {
-        if (string.length < 2) {
-          return '0' + string
-        } else {
-          return string
-        }
-      }
-      function usDateToYYYYMMDD (usDate, sheet, dbn, col) {
-        let splitDate = usDate.split('/')
-        if (splitDate.length === 3) {
-          let month = to2digits(splitDate[0])
-          let day = to2digits(splitDate[1])
-          let year = splitDate[2]
-          return parseInt(year + month + day)
-        } else {
-          console.log("helpful hint of the day: '" + usDate + "' is NOT a date (sheet " + sheet + ", DBN " + dbn + ", column " + col + ")")
-          return null
-        }
-      }
-      function dateToYYYYMMDD (date) {
-        let y = date.getFullYear().toString()
-        let m = (date.getMonth() + 1).toString()
-        let d = date.getDate().toString()
-        if (m.length === 1) {m = '0' + m}
-        if (d.length === 1) {d = '0' + d}
-        return parseInt(y + m + d)
-      }
-      function YYYYMMDDtoDate (int) {
-        str = int.toString()
-        return new Date(parseInt(str.toString().substr(0, 4)), parseInt(str.toString().substr(4, 2)) - 1, parseInt(str.toString().substr(6, 2)))
-      }
-      function makeFileFriendly (date) {
-        return date.getFullYear() + '-' + to2digits((date.getMonth() + 1).toString()) + '-' +  to2digits(date.getDate().toString())
-          + 'T' + date.toTimeString().substr(0, 8).replace(':', '').replace(':', '')
-      }
-      function removeSuffix(string) {
-        return string.split(/[.-]/)[0]
-      }
-      function arrayToStringList (array) {
-        let string = ''
-        for (let i = 0; i < array.length - 1; i++) {
-          string += array[i] + ', '
-        }
-        if (array.length > 0) {
-          string += array[array.length - 1]
-        }
-        return string
-      }
-      function wToWide (string) {
-        if (string.toUpperCase() === 'W') {
-          return 'Wide'
-        } else if (string.toUpperCase() === 'N') {
-          return 'Narrow'
-        } else {
-          return string
-        }
-      }
-      function TFToYesNo (boolean) {
-        if (boolean == null) {
-          return ''
-        } else if (boolean) {
-          return 'Yes'
-        } else {
-          return 'No'
-        }
-      }
-      function indexFromTestingStatus (status) {
-        let hasFail
-        let testsComplete = 0
-        let testsChecked = 0
-        let testsStarted = 0
-        hasFail = !status.every((value) => value[0] !== 3)
-        status.forEach(function (value, index) {
-          if (index !== 2 && value[2] === 1) {
-            testsComplete++
-          } else if (index === 2 && value[0] !== 0) {
-            testsComplete++
           }
         })
-        status.forEach(function (value, index) {
-          if (index !== 2 && value[1] === 1) {
-            testsChecked++
-          }
-        })
-        status.forEach(function (value, index) {
-          if (value[0] !== 0) {
-            testsStarted++
-          }
-        })
-        return (100 * testsComplete + 10 * testsChecked + testsStarted)
+        return blocks
       }
+      getBlocksModifiedInDateRange(fromDate, toDate) {
+        let noMin = false
+        let noMax = false
+        if (fromDate == null) {noMin = true}
+        if (toDate == null) {noMax = true}
+        let dates
+        if (!noMin && !noMax) {
+          dates = []
+          let current = fromDate
+          while (current <= toDate) {
+            dates.push(current)
+            let date = YYYYMMDDtoDate(current)
+            date.setDate(date.getDate() + 1)
+            current = dateToYYYYMMDD(date)
+          }
+          //console.log('date range: ' + dates)
+        }
+        let tungstenFilled = []
+        let epoxyFilled = []
+        let machined = []
+        let densityTested = []
+        let lightTransTested = []
+        let scintTested = []
+        let natLightTested = []
+        this.array.forEach(function(block) {
+          let date = block.tungstenFillingDate
+          if (date != null) {
+            if ((noMin && noMax && block.tungstenFillingDate != null)
+              || (noMin && block.tungstenFillingDate <= toDate)
+              || (noMax && block.tungstenFillingDate >= fromDate)
+              || (dates != null && dates.includes(block.tungstenFillingDate)))
+            {tungstenFilled.push(block)}
+          }
+        })
+        this.array.forEach(function(block) {
+          let date = block.epoxyFillingDate
+          if (date != null) {
+            if ((noMin && noMax && block.epoxyFillingDate != null)
+              || (noMin && block.epoxyFillingDate <= toDate)
+              || (noMax && block.epoxyFillingDate >= fromDate)
+              || (dates != null && dates.includes(block.epoxyFillingDate)))
+            {epoxyFilled.push(block)}
+          }
+        })
+        this.array.forEach(function(block) {
+          let date = block.machiningDate
+          if (date != null) {
+            if ((noMin && noMax && block.machiningDate != null)
+              || (noMin && block.machiningDate <= toDate)
+              || (noMax && block.machiningDate >= fromDate)
+              || (dates != null && dates.includes(block.machiningDate)))
+            {machined.push(block)}
+          }
+        })
+        this.array.forEach(function(block) {
+          let date = block.densityDate
+          if (date != null) {
+            if ((noMin && noMax && block.densityDate != null)
+              || (noMin && block.densityDate <= toDate)
+              || (noMax && block.densityDate >= fromDate)
+              || (dates != null && dates.includes(block.densityDate)))
+            {densityTested.push(block)}
+          }
+        })
+        this.array.forEach(function(block) {
+          let date = block.lightTransDateActual
+          if (date != null) {
+            if ((noMin && noMax && block.lightTransDateActual != null)
+              || (noMin && block.lightTransDateActual <= toDate)
+              || (noMax && block.lightTransDateActual >= fromDate)
+              || (dates != null && dates.includes(block.lightTransDateActual)))
+            {lightTransTested.push(block)}
+          }
+        })
+        this.array.forEach(function(block) {
+          let date = block.scintDateActual
+          if (date != null) {
+            if ((noMin && noMax && block.scintDateActual != null)
+              || (noMin && block.scintDateActual <= toDate)
+              || (noMax && block.scintDateActual >= fromDate)
+              || (dates != null && dates.includes(block.scintDateActual)))
+            {scintTested.push(block)}
+          }
+        })
+        this.array.forEach(function(block) {
+          let date = block.natLightDate
+          if (date != null) {
+            if ((noMin && noMax && block.natLightDate != null)
+              || (noMin && block.natLightDate <= toDate)
+              || (noMax && block.natLightDate >= fromDate)
+              || (dates != null && dates.includes(block.natLightDate)))
+            {natLightTested.push(block)}
+          }
+        })
+        return {
+          tungstenFilled: tungstenFilled,
+          epoxyFilled: epoxyFilled,
+          machined: machined,
+          densityTested: densityTested,
+          lightTransTested: lightTransTested,
+          scintTested: scintTested,
+          natLightTested: natLightTested
+        }
+      }
+    }
 	</script>
 </head>
 
@@ -1715,20 +720,20 @@
 			</section>
 			<script>
 				function toPrint() {
-        var printPreview = window.open()
-        var printDocument = printPreview.document
-        printDocument.open()
-        let html = $(document.documentElement.cloneNode(true))
-        html.find('body').attr('onload', 'print()')
-        let dbn = document.getElementById('inputDBN').value
-        html.find('head title').html('BlockReport-DBN_' + dbn + '-asOf_' + makeFileFriendly(currentDate))
-        html.find('script').eq(1).remove()
-        html.find('script').eq(6).remove()
-        html.find('.removeForPrint').remove()
-        html.find('#inputDBN').prop('disabled', true).attr('value', dbn)
-        printDocument.write('<!DOCTYPE html>' + '<html>' + html.html() + '</html>')
-        printDocument.close()
-      }
+          var printPreview = window.open()
+          var printDocument = printPreview.document
+          printDocument.open()
+          let html = $(document.documentElement.cloneNode(true))
+          html.find('body').attr('onload', 'print()')
+          let dbn = document.getElementById('inputDBN').value
+          html.find('head title').html('BlockReport-DBN_' + dbn + '-asOf_' + makeFileFriendly(currentDate))
+          html.find('script').eq(1).remove()
+          html.find('script').eq(6).remove()
+          html.find('.removeForPrint').remove()
+          html.find('#inputDBN').prop('disabled', true).attr('value', dbn)
+          printDocument.write('<!DOCTYPE html>' + '<html>' + html.html() + '</html>')
+          printDocument.close()
+        }
       function copy(text) {
         var textArea = document.createElement("textarea");
         textArea.value = text;
@@ -1814,7 +819,7 @@
         document.getElementById("currentDateAndTime").innerHTML = 'As of: ' + currentDate.toString()
         document.getElementById("currentDateAndTime").style.display = 'block'
         document.getElementById('loadingDatabase').style.display = 'block'
-        google.script.run.withSuccessHandler(onSuccess).getDatabase()
+        google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).getDatabase()
         function onSuccess (gotDatabase) {
           const d1 = new Date()
           if (gotDatabase == null) {
@@ -1826,11 +831,11 @@
             alert('an error occured while loading the database and testing fodlers: ' + gotDatabase.err)
             document.getElementById('loadingDatabase').style.display = 'none'
           } else {
-            console.log('loaded database and testing folders without error')
+            console.log('loaded database and testing folders')
             database = [gotDatabase.sheet1, gotDatabase.sheet2]
             times = gotDatabase.times
-            console.log('load files took ' + (times[1] - times[0])/1000 + ' s')
-            console.log('load files to success: ' + (d1.getTime() - times[1])/1000 + ' s')
+            //console.log('load files took ' + (times[1] - times[0])/1000 + ' s')
+            console.log('load files to success: ' + (d1.getTime() - times[0])/1000 + ' s')
             let blocks = []
             for (let index = 1; index < database[0].length; index++) {
               if (database[0][databaseBlockColIndex] !== '') {
@@ -1847,6 +852,11 @@
             document.getElementById('findBlockInfo').style.display = 'block'
             calcThisWeek()
           }
+        }
+        function onFailure(err) {
+          console.error(err)
+          console.warn('failed to connect...retrying in 5 seconds')
+          window.setTimeout(getDatabaseOnLoad, 5000)
         }
       }
       
@@ -2163,7 +1173,7 @@
           if (slowMode) {
             getImageUrlsSlow(block.numericDBN)
           } else {
-            block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess)
+            block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess, errorHandler, Date.now())
           }
           getImageUrlsRun = true
         } else {
@@ -2200,7 +1210,7 @@
             if (slowMode) {
               getImageUrlsSlow(block.numericDBN)
             } else {
-              block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess)
+              block.getUrls(onGetImageUrlsSuccess, onGetHistogramsSuccess, errorHandler, Date.now())
             }
             getImageUrlsRun = true
           }
@@ -2280,7 +1290,8 @@
 
       // does not perfectly nicely handle the situation where ONE end's image is present and the other is not..
       // since this case is so rare, it tries to load both (and if one happens to not have an image, a placeholder is displayed)
-      function onGetImageUrlsSuccess (imageUrls) {
+      function onGetImageUrlsSuccess (obj) {
+        let imageUrls = obj.urls
         // check if getImageUrls returned any urls...
         if (imageUrls == null || imageUrls.every((element) => element == null)) {
           // ...NO image urls were returned, so there's no image data to display
@@ -2319,7 +1330,8 @@
           document.getElementById("allCheckboxes").style.display = 'block'
         }
       }
-      function onGetHistogramsSuccess (histogramUrls) {
+      function onGetHistogramsSuccess (obj) {
+        let histogramUrls = obj.urls
         if (histogramUrls != null) {
           if (histogramUrls[0] != null) {
             document.getElementById('histogramWide').href = histogramUrls[0]
@@ -2338,7 +1350,10 @@
           document.getElementById('histogramNarrow').style.display = 'none'
         }
       }
-
+      function errorHandler(err) {
+        console.warn('an error occured while requesting images and/or histograms')
+        console.error(err)
+      }
       function getImageUrlsSlow (dbn) {
         // check if getImageUrls returned any urls...
         if (bigArray[dbn] == null) {
@@ -2404,7 +1419,7 @@
       function madness () {
         alert('loading ALL image urls, do not submit another dbn before this request completes (should take about 90 seconds)')
         slowMode = true
-        google.script.run.withSuccessHandler(onSuccess).loadBigArray()
+        google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).loadBigArray()
         function onSuccess (data) {
           if (data == null) {
             console.log('bigArray was null :(')
@@ -2414,6 +1429,10 @@
             console.log('loaded bigArray')
             alert('loaded ALL image urls')
           }
+        }
+        function onFailure(err) {
+          console.warn('an error occured while running loadBigArray')
+          console.error(err)
         }
       }
       // hides/shows the tungsten table
@@ -2753,7 +1772,6 @@
         hideUninterestingRows = !hideUninterestingRows
         filter()
       }
-			</script>
-</body>
-
+		</script>
+  </body>
 </html>
