@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NPL Block Information Station</title>
-    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
-    <?!= include('css')?>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.css"/>
-    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.js"></script>
-    <script>
-      // color constants (in HEX)
+
+<head>
+	<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>NPL Block Information Station</title>
+	<link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+	<?!= include('css')?>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css"
+		href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.css"/>
+	<script type="text/javascript"
+		src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/b-print-1.6.2/cr-1.5.2/fc-3.3.1/sl-1.3.1/datatables.min.js">
+	</script>
+	<script>
+		// color constants (in HEX)
       const red = '#800000'
       const blue = '#0080ff'
       const greenish = '#00ffbf'
@@ -125,7 +129,7 @@
           this.block = parseInt(array[2])
           this.status = array[3]
           this.shipment = (!dataPresent(array[4])) ? null : parseInt(array[4])
-          this.shipmentDate = (!dataPresent(array[5])) ? null : usDateToYYYYMMDD(array[5])
+          this.shipmentDate = (!dataPresent(array[5])) ? null : usDateToYYYYMMDD(array[5], this.sheet, this.dbn, "shipment date")
           this.comment = (!dataPresent(array[6])) ? null : array[6]
           this.sector = (!dataPresent(array[7])) ? null : array[7]
           this.powder = (!dataPresent(array[14])) ? null : array[14]
@@ -134,16 +138,16 @@
           this.emptyMoldMass = (!dataPresent(array[17])) ? null : parseInt(array[17])
           this.filledMoldMass = (!dataPresent(array[18])) ? null : parseInt(array[18])
           this.tungstenMass = (!dataPresent(array[19]) || parseInt(array[19]) === 0) ? null : parseInt(array[19])
-          this.tungstenFillingDate = (!dataPresent(array[21])) ? null : usDateToYYYYMMDD(array[21])
+          this.tungstenFillingDate = (!dataPresent(array[21])) ? null : usDateToYYYYMMDD(array[21], this.sheet, this.dbn, "tungsten filling date")
           this.tungstenFiller = (!dataPresent(array[22])) ? null : array[22]
           this.epoxyBatch = (!dataPresent(array[23])) ? null : parseInt(array[23])
           this.resinMass = (!dataPresent(array[24])) ? null : parseInt(array[24])
           this.hardenerMass = (!dataPresent(array[25])) ? null : parseInt(array[25])
           this.pottingNotes = (!dataPresent(array[26])) ? null : array[26]
           this.epoxyFillingTime = (!dataPresent(array[27])) ? null : parseFloat(array[27])
-          this.epoxyFillingDate = (!dataPresent(array[28])) ? null : usDateToYYYYMMDD(array[28])
+          this.epoxyFillingDate = (!dataPresent(array[28])) ? null : usDateToYYYYMMDD(array[28], this.sheet, this.dbn, "epoxy filling date")
           this.epoxyPreparer = (!dataPresent(array[29])) ? null : array[29]
-          this.machiningDate = (!dataPresent(array[31])) ? null : usDateToYYYYMMDD(array[31])
+          this.machiningDate = (!dataPresent(array[31])) ? null : usDateToYYYYMMDD(array[31], this.sheet, this.dbn, "machining date")
           this.l = (!dataPresent(array[33])) ? null : parseFloat(array[33])
           this.bt = (!dataPresent(array[34])) ? null : parseFloat(array[34])
           this.bb = (!dataPresent(array[35])) ? null : parseFloat(array[35])
@@ -175,16 +179,17 @@
           this.scintDateActual = (!dataPresent(array[69]) || isNaN(parseInt(removeSuffix(array[69])))) ? null : parseInt(removeSuffix(array[69]))
           this.natLightDate = (!dataPresent(array[70])) ? null : parseInt(array[70])
           this.natLightTester = (!dataPresent(array[71])) ? null : array[71]
-          this.retouch = (this.sheet === 0) ? array[72] : null
-          this.densityCheckedBy = (this.sheet === 0 && (dataPresent(array[73]))) ? array[73] : null
+          this.retouch = array[72]
+          this.densityCheckedBy = dataPresent(array[73]) ? array[73] : null
           this.densityChecked = this.densityCheckedBy != null
-          this.lightTransCheckedBy = (this.sheet === 0 && (dataPresent(array[74]))) ? array[74] : null
+          this.lightTransCheckedBy = dataPresent(array[74]) ? array[74] : null
           this.lightTransChecked = this.lightTransCheckedBy != null
-          this.natLightCheckedBy = (this.sheet === 0 && (dataPresent(array[75]))) ? array[75] : null
+          this.natLightCheckedBy = dataPresent(array[75]) ? array[75] : null
           this.natLightChecked = this.natLightCheckedBy != null
-          this.pregrade = (this.sheet === 0) ? array[80] : null
+          this.pregrade = array[80]
           //other calculations
-          this.densityComplete = (this.volume != null && this.mass != null && this.massTester != null) ? true : false
+          let densityCompleteVars = [this.volume, this.mass, this.massTester, this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
+          this.densityComplete = (densityCompleteVars.every((value) => value != null)) ? true : false
           this.lightTransComplete = (this.fiberPercentage != null && this.missingRow != null && this.thirteenHoles != null && this.lightTransTester != null) ? true : false
           this.scintComplete = (this.scintillation != null && this.scintRatio != null) ? true : false
           this.natLightComplete = (this.natLightDate != null && this.natLightTester != null) ? true : false
@@ -199,20 +204,25 @@
         hasNatLightData() {return [this.natLightDate, this.natLightTester].some((value) => value != null)}
         hasScintData() {return [this.scintillation, this.scintRatio, this.scintDate].some((value) => value != null)}
         deviations() {
+          let dbn = this.dbn
           let block = this.block
           let tols = [this.l, this.bt, this.bb, this.bh, this.st, this.sb, this.sh]
           let devs = []
-          tols.forEach(function(value, index) {
-            if (value != null) {
-              devs[index] = value - dimensionsMap.get(block)[index]
-            } else {
-              devs[index] = null
-            }
-          })
+          if (dimensionsMap.has(block)) {
+            tols.forEach(function(value, index) {
+              if (value != null) {
+                devs[index] = value - dimensionsMap.get(block)[index]
+              } else {
+                  devs[index] = null
+              }
+            })
+          } else {
+            devs = null
+            console.log("dimensionsMap did not have key for block '" + block + "' at DBN '" + dbn + "'")
+          }
           return devs
         }
         testGrades() {
-          if (this.sheet === 0) { 
             let devs = this.deviations()
             let devGrades = new Array(7)
             if (devs == null) {
@@ -230,7 +240,13 @@
               ((this.density == null) ? notStartedGrade : grade_density(this.density)),
               ...devGrades
             ]
-            let densityGrade = Math.max(...densityValuesToGrade)
+            let densityGrade
+            if (densityValuesToGrade.some((value) => value == notStartedGrade))
+            {
+              densityGrade = 0
+            } else {
+              densityGrade = Math.max(...densityValuesToGrade)
+            }
             let towers = [this.tower1, this.tower2, this.tower3, this.tower4]
             let towerGrades = new Array(4)
             if (towers.every((value) => value != null)) {
@@ -244,7 +260,7 @@
               (this.fiberPercentage == null) ? notStartedGrade : grade_fiberPercentage(this.fiberPercentage),
               ...towerGrades,
               (this.missingRow == null) ? notStartedGrade : (this.missingRow) ? fGrade : aGrade,
-              (this.thirteenHoles == null) ? notStartedGrade : (this.missingRow) ? fGrade : aGrade
+              (this.thirteenHoles == null) ? notStartedGrade : (this.thirteenHoles) ? fGrade : aGrade
             ]
             let lightTransGrade = Math.max(...lightTransValuesToGrade)
             let scintGrade = (this.scintRatio == null) ? notStartedGrade : grade_scintRatio(this.scintRatio)
@@ -257,10 +273,7 @@
               scint: scintGrade,
               natLight: natLightGrade
             }
-          } else {
-            return null
           }
-        }
         getUrls(imageUrlsCallback, histogramUrlsCallback) {
           let that = this
           if (!this.gotUrls) {
@@ -335,7 +348,7 @@
               date.setDate(date.getDate() + 1)
               current = dateToYYYYMMDD(date)
             }
-            console.log('date range: ' + dates)
+            //console.log('date range: ' + dates)
           }
           let tungstenFilled = []
           let epoxyFilled = []
@@ -425,9 +438,9 @@
           }
         }
       }
-    </script>
-    <script>
-      // configuration for the blocks table
+	</script>
+	<script>
+		// configuration for the blocks table
       const blocksTableOptions = {
         paging: false,
         scrollX: true,
@@ -510,14 +523,14 @@
             return data
           }
         }},
-        {name: "readyToGrade", "title": "<span>Ready To</span><br><span>Grade</span>", className: "dt-center hasGrade search", "searchable": true, "type": "readyToGrade", "visible": false, render: function ( data, type, row ) {
+        {name: "readyToGrade", "title": "<span>Ready To</span><br><span>Grade</span>", className: "dt-center hasGrade search", "searchable": true, "type": "readyToGrade", "visible": true, render: function ( data, type, row ) {
           if (type === 'display') {
             return '<span style="color:' + data.color + '; font-weight: bold">' + data.text + '</span>'
           } else {
             return data.text
           }
         }},
-        {name: "pregrade", "title": "Grade", className: "dt-center basicInfo hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": false, render: function ( data, type, row ) {
+        {name: "pregrade", "title": "Grade", className: "dt-center basicInfo hasGrade search", "searchable": true, "type": "genericEmptyUnsorted", "visible": true, render: function ( data, type, row ) {
           if (type === 'display') {
             if (data !== '' && grade_pregrade(data) != null) {
               let color = testColors[grade_pregrade(data)]
@@ -794,7 +807,7 @@
           let input = $(colInitial.footer()).find('input.searchExact')
           input.keyup(function() {
             let currentIndex = dataTable.colReorder.transpose(parseInt(this.dataset.index))
-            console.log('this inputs init index is ' + this.dataset.index + ' and its current index is ' + currentIndex)
+            //console.log('this inputs init index is ' + this.dataset.index + ' and its current index is ' + currentIndex)
             if (this.value === '') {
               dataTable.column(currentIndex).search('').draw()
             } else {
@@ -1252,7 +1265,7 @@
           return string
         }
       }
-      function usDateToYYYYMMDD (usDate) {
+      function usDateToYYYYMMDD (usDate, sheet, dbn, col) {
         let splitDate = usDate.split('/')
         if (splitDate.length === 3) {
           let month = to2digits(splitDate[0])
@@ -1260,7 +1273,7 @@
           let year = splitDate[2]
           return parseInt(year + month + day)
         } else {
-          console.log("helpful hint of the day: '" + usDate + "' is NOT a date.")
+          console.log("helpful hint of the day: '" + usDate + "' is NOT a date (sheet " + sheet + ", DBN " + dbn + ", column " + col + ")")
           return null
         }
       }
@@ -1334,302 +1347,374 @@
             testsStarted++
           }
         })
-        return ((hasFail) ? -1 : 1) * (100 * testsComplete + 10 * testsChecked + testsStarted)
+        return (100 * testsComplete + 10 * testsChecked + testsStarted)
       }
-    </script>
-  </head>
-  <body onload="getDatabaseOnLoad()" style="margin: 1em;">
-    <div class="header" style="display: block; padding: 1em; overflow: auto;">
-      <img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd"/>
-      <h1>NPL Block Information Station</h1>
-    </div>
-    <div>
-      <p id="loadingDatabase" style="margin-bottom: 1em; display: none;">Loading Database...</p>
-      <p id="currentDateAndTime" style="margin: 0; display: none;"></p>
-    </div>
-    <section id="findBlockInfo" style="display: none;">
-      <button class="removeForPrint" id="loadFindBlocksButton" onclick="loadFindBlocks()" style="margin-top: 1em;">Find Blocks</button>
-      <button class="removeForPrint" id="loadRetouchButton" onclick="loadRetouch()" style="margin-top: 1em;">Retouch Information</button>
-      <button class="removeForPrint" id="loadDateRangeButton" onclick="loadDateRange()" style="margin-top: 1em;">Date Range</button><br>
-      <section style="display: inline-block; margin-top: 1em;">
-        <form action="javascript:onSubmit()" style="display: inline;">
-          <label>DBN: </label><input type="text" id="inputDBN">
-          <button class="removeForPrint" id="dbnSubmitButton">Submit</button>
-        </form>
-        <button class="removeForPrint" id="loadAllImagesButton" onclick="madness()">Load All Images</button>
-        <button class="removeForPrint" id="printButton" onclick="toPrint()" style="margin-left: 0;">Print</button>
-      </section>
-      <p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
-      <section class="removeForPrint" id="imagesSelection" style="display: none;  margin-top: 1em;">
-        <section id="allCheckboxes" style="display: none;">
-          <section id="CBshow-lightTransImgSection" style="display: none;">
-            <input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')">
-            <label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel">Show Light Transmission Original Images</label><br>
+	</script>
+</head>
+
+<body onload="getDatabaseOnLoad()" style="margin: 1em;">
+	<div class="header" style="display: block; padding: 1em; overflow: auto;">
+		<img src="https://drive.google.com/uc?id=1JLX7vfDnqgYd_OrgPNtvj1sqV8n4ANpd"/>
+		<h1>NPL Block Information Station</h1>
+	</div>
+	<div>
+		<p id="loadingDatabase" style="margin-bottom: 1em; display: none;">Loading Database...</p>
+		<p id="currentDateAndTime" style="margin: 0; display: none;"></p>
+	</div>
+	<section id="findBlockInfo" style="display: none;">
+		<button class="removeForPrint" id="loadFindBlocksButton" onclick="loadFindBlocks()" style="margin-top: 1em;">Find Blocks</button>
+		<button class="removeForPrint" id="loadRetouchButton" onclick="loadRetouch()" style="margin-top: 1em;">Retouch Information</button>
+		<button class="removeForPrint" id="loadDateRangeButton" onclick="loadDateRange()" style="margin-top: 1em;">Date Range</button><br>
+		<section style="display: inline-block; margin-top: 1em;">
+			<form action="javascript:onSubmit()" style="display: inline;">
+				<label>DBN: </label><input type="text" id="inputDBN">
+				<button class="removeForPrint" id="dbnSubmitButton">Submit</button>
+			</form>
+			<button class="removeForPrint" id="loadAllImagesButton" onclick="madness()">Load All Images</button>
+			<button class="removeForPrint" id="printButton" onclick="toPrint()" style="margin-left: 0;">Print</button>
+		</section>
+		<p id="loadingBlockData" style="display: none;">Loading Block Data...</p>
+		<section class="removeForPrint" id="imagesSelection" style="display: none;  margin-top: 1em;">
+			<section id="allCheckboxes" style="display: none;">
+				<section id="CBshow-lightTransImgSection" style="display: none;">
+					<input type="checkbox" id="CBshow-lightTransImg" onclick="toggleImages('lightTransImg')">
+					<label for="CBshow-lightTransImg" id="CBshow-lightTransImgLabel">Show Light Transmission Original Images</label><br>
           </section>
-          <section id="CBshow-lightTransImgCroppedSection" style="display: none;">
-            <input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')">
-            <label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel">Show Light Transmission Cropped Images</label><br>
+					<section id="CBshow-lightTransImgCroppedSection" style="display: none;">
+						<input type="checkbox" id="CBshow-lightTransImgCropped" onclick="toggleImages('lightTransImgCropped')">
+						<label for="CBshow-lightTransImgCropped" id="CBshow-lightTransImgCroppedLabel">Show Light Transmission Cropped Images</label><br>
           </section>
-          <section id="CBshow-natLightImgSection" style="display: none;">
-            <input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')">
-            <label for="CBshow-natLightImg" id="CBshow-natLightImgLabel">Show Natural Light Images</label>
-          </section>
-        </section>
-        <div id="loadingImages" style="display: none;">Loading Images...</div>
-        <div id="noImagesFound" style="display: none;">No Images Found</div>
-      </section>
-      <section id="blockDetailsSection" style="display: none;">
-        <h2>Block Details</h2>
-        <dl class='inline-flex'>
-          <dt id='dbnLabel'>DBN:</dt>
-          <dd id="dbn"></dd>
-          <dt id='blockLabel'>Block Design:</dt>
-          <dd id="block"></dd>
-          <dt id='statusLabel'>Status:</dt>
-          <dd id="status"></dd>
-          <dt id='pregradeLabel'>Pregrade:</dt>
-          <dd id="pregrade"></dd>
-          <dt id="shipmentLabel">BNL Shipment:</dt>
-          <dd id="shipment"></dd>
-          <dt id="sectorLabel">Sector:</dt>
-          <dd id="sector"></dd>
-          <dt id="commentLabel">Comment:</dt>
-          <dd id="comment"></dd>
-          <section style="width: 100%; padding-top: 1em;">
-            <button class="removeForPrint" id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
-            <table class="dimension" id="tungstenTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
-              <tr>
-                <th style="white-space: nowrap;">Powder</th><th style="white-space: nowrap;">Bucket Number</th><th style="white-space: nowrap;">Mold Series</th><th style="white-space: nowrap;">Empty Mold Mass (g)</th><th style="white-space: nowrap;">Filled Mold Mass (g)</th><th style="white-space: nowrap;">Tungsten Mass (g)</th><th style="white-space: nowrap;">Filler</th><th style="white-space: nowrap;">Filling Date</th>
-              </tr>
-              <tr>
-                <td id="powder"></td><td id="bucket"></td><td id="moldSeries"></td><td id="emptyMoldMass"></td><td id="filledMoldMass"></td><td id="tungstenMass"></td><td id="tungstenFiller"></td><td id="tungstenFillingDate"></td>
-              </tr>
-            </table>
-          </section>
-          <section style="width: 100%; padding: 1em 0;">
-            <button class="removeForPrint" id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
-            <table class="dimension" id="epoxyTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
-              <tr>
-                <th style="white-space: nowrap;">Epoxy Batch</th><th style="white-space: nowrap;">Resin Mass (g)</th><th style="white-space: nowrap;">Hardener Mass (g)</th><th style="white-space: nowrap;">Potting Notes</th><th style="white-space: nowrap;">Epoxy Filling Time (min)</th><th style="white-space: nowrap;">Filling Date</th><th style="white-space: nowrap;">Preparer</th>
-              </tr>
-              <tr>
-                <td id="epoxyBatch"></td><td id="resinMass"></td><td id="hardenerMass"></td><td id="pottingNotes"></td><td id="epoxyFillingTime"></td><td id="epoxyFillingDate"></td><td id="epoxyPreparer"></td>
-              </tr>
-            </table>
-          </section>
-          <dt id="machiningDateLabel">Machining Date: </dt>
-          <dd id="machiningDate"></dd>
-        </dl>
-      </section>
-      <section id="blockDetailsNoInfo" style="display: none;">
-        <p style="font-style: italic; font-size: 1.5em;">Unable to find any block information for this dbn</p>
-      </section>
-      <section id="densitySection" style="display: none;">
-        <h2 id="densitySectionLabel">Density</h2>
-        <dl class='inline-flex'>
-          <dt id='volumeLabel'>Volume:</dt>
-          <dd id="volume"></dd>
-          <dt id='dimensionTesterLabel'>Dimension Tester:</dt>
-          <dd id="dimensionTester"></dd>
-          <dt id='massLabel'>Mass:</dt>
-          <dd id="mass"></dd>
-          <dt id='massTesterLabel'>Mass Tester:</dt>
-          <dd id="massTester"></dd>
-          <dt id='densityLabel'>Density:</dt>
-          <dd id="density" style="font-weight: bold;"></dd>
-          <dt id='densityDateLabel'>Date:</dt>
-          <dd id="densityDate"></dd>
-        </dl>
-        <button class="removeForPrint" id="showTolerancesTableBtn" style="display: none;" onclick="toggleTolerancesTable()">Show Tolerances</button>
-        <table class="dimension" id="tolerancesTable" style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
-          <tr>
-            <th>ΔL</th><th>ΔBT</th><th>ΔBB</th><th>ΔBH</th><th>ΔST</th><th>ΔSB</th><th>ΔSH</th>
-          </tr>
-          <tr>
-            <td id="L" style="font-weight: bold;"></td><td id="BT" style="font-weight: bold;"></td><td id="BB" style="font-weight: bold;"></td><td id="BH" style="font-weight: bold;"></td><td id="ST" style="font-weight: bold;"></td><td id="SB" style="font-weight: bold;"></td><td id="SH" style="font-weight: bold;"></td>
-          </tr>
-        </table>
-      </section>
-      <section id="densityNoInfo" style="display: none;">
-        <p style="font-style: italic; font-size: 1.5em;">Unable to find any density data for this block</p>
-      </section>
-      <section id="lightTransSection" style="display: none;">
-        <h2 id="lightTransSectionLabel">Light Transmission</h2>
-        <dl class='inline-flex'>
-          <dt id='fiberPercentageLabel'>Fiber Count:</dt>
-          <dd id="fiberPercentage" style="font-weight: bold;"></dd>
-          <dt id='goodEndLabel'>Good End:</dt>
-          <dd id="goodEnd"></dd>
-          <dt id='missingRowLabel'>Missing Row:</dt>
-          <dd id="missingRow" style="font-weight: bold;"></dd>
-          <dt id='thirteenHolesLabel'>13 Connected Holes:</dt>
-          <dd id="thirteenHoles" style="font-weight: bold;"></dd>
-          <dt id='lightTransTesterLabel'>Tester:</dt>
-          <dd id="lightTransTester"></dd>
-          <dt id='lightTransDateLabel'>Date:</dt>
-          <dd id="lightTransDate"></dd>
-        </dl>
-        <button class="removeForPrint" id="showTowerTableBtn" style="display: none; margin-bottom: 1em;" onclick="toggleTowerTable()">Show Tower Information</button>
-        <table class="dimension" id="towerTable" style="display: none; margin-bottom: 1em; border-collapse: collapse; fill: #333;">
-          <tr>
-            <th>T1 (BL)</th><th>T2 (BR)</th><th>T3 (TL)</th><th>T3 (TR)</th>
-          </tr>
-          <tr>
-            <td id="tower1" style="font-weight: bold;"></td><td id="tower2" style="font-weight: bold;"></td><td id="tower3" style="font-weight: bold;"></td><td id="tower4" style="font-weight: bold;"></td>
-          </tr>
-        </table>
-        <a id="histogramWide" target="_blank" style="display: none;">Histograms (Wide)<br></a>
-        <a id="histogramNarrow" target="_blank" style="display: none;;">Histograms (Narrow)</a>
-        <figure class="testImg" id="lightTransImgFigW" style="display: none;">
-          <img id="lightTransImgW" height="360"/>
-          <figcaption>Wide End</figcaption>
-        </figure>
-        <figure class="testImg" id="lightTransImgFigN" style="display: none;">
-          <img id="lightTransImgN" height="360"/>
-          <figcaption>Narrow End</figcaption>
-        </figure>
-        <figure class="testImg" id="lightTransImgCroppedFigW" style="display: none;">
-          <img id="lightTransImgCroppedW" height="360"/>
-          <figcaption>Wide End</figcaption>
-        </figure>
-        <figure class="testImg" id="lightTransImgCroppedFigN" style="display: none;">
-          <img id="lightTransImgCroppedN" height="360"/>
-          <figcaption>Narrow End</figcaption>
-        </figure>
-      </section>
-      <section id="lightTransNoInfo" style="display: none;">
-        <p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this block</p>
-      </section>
-      <section id="natLightSection" style="display: none;">
-        <h2>Natural Light</h2>
-        <dl class='inline-flex'>
-          <dt id='natLightTesterLabel'>Tester:</dt>
-          <dd id="natLightTester"></dd>
-          <dt id='natLightDateLabel'>Date:</dt>
-          <dd id="natLightDate"></dd>
-        </dl>
-        <figure class="testImg" id="natLightImgFigW" style="display: none;">
-          <img id="natLightImgW" height="360"/>
-          <figcaption id="natLightImgFigCaption4">Wide End</figcaption>
-        </figure>
-        <figure class="testImg" id="natLightImgFigN" style="display: none;">
-          <img id="natLightImgN" height="360"/>
-          <figcaption id="natLightImgFigCaption5">Narrow End</figcaption>
-        </figure>
-      </section>
-      <section id="natLightNoInfo" style="display: none;">
-        <p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this block</p>
-      </section>
-      <section id="scintSection" style="display: none;">
-        <h2 id="scintSectionLabel">Scintillation</h2>
-        <dl class='inline-flex'>
-          <dt id='scintillationLabel'>Scintillation:</dt>
-          <dd id="scintillation"></dd>
-          <dt id='scintRatioLabel'>Ratio:</dt>
-          <dd id="scintRatio" style="font-weight: bold;"></dd>
-          <dt id='scintTesterLabel'>Tester:</dt>
-          <dd id="scintTester"></dd>
-          <dt id='scintDateLabel'>Date:</dt>
-          <dd id="scintDate"></dd>
-        </dl>
-      </section>
-      <section id="scintNoInfo" style="display: none;">
-        <p style="font-style: italic; font-size: 1.5em;">Unable to find any scintillation data for this block</p>
-      </section>
-    </section>
-    <section id="findBlocks" style="display: none;">
-      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
-      <form action="javascript:filter()" style="display: inline;">
-        <label style="display: inline-block; width: 90px;">DBN: </label><input style="width: 240px;" type="text" tabindex="1" id="inputDBNs">
-        <button>Submit</button>
-      </form>
-      <button onclick="clearInputDBNs()" style="display: inline;">Clear</button><br>
-      <form action="javascript:filter()" style="display: inline;">
-        <label style="display: inline-block; width: 90px;">Shipment: </label><input style="width: 240px;" type="text" tabindex="2" id="inputShipment">
-        <button>Submit</button>
-      </form>
-      <button onclick="clearInputShipment()" style="display: inline;">Clear</button><br>
-      <form action="javascript:filter()" style="display: inline;">
-        <label style="display: inline-block; width: 90px;">Status: </label><input style="width: 240px;" type="text" tabindex="3" id="inputStatus">
-        <button>Submit</button>
-      </form>
-      <button onclick="clearInputStatus()" style="display: inline;">Clear</button><br>
-      <form action="javascript:filter()" style="display: inline;">
-        <label style="display: inline-block; width: 90px;">Block Design: </label><input style="width: 240px;" type="text" tabindex="4" id="inputBlock">
-        <button>Submit</button>
-      </form>
-      <button onclick="clearInputBlock()" style="display: inline;">Clear</button><br>
-      <input id="showRowsCB" type="checkbox" style="margin-top: 1em;" onclick="toggleShowRows()"><label for="showRowsCB">Show rows with empty cells in selected column(s)</label>
-      <section style="margin: 1em 0em">
-        <span>Blocks Found:</span>
-        <span id="blocksCount"></span>
-      </section>
-      <table id="blocksTable" class="nowrap stripe hover order-column row-border cell-border" style="width: 100%;">
-        <thead><tr></tr></thead>
-        <tbody id="blocksTableBody"></tbody>
-        <tfoot><tr></tr></tfoot>
-      </table>
-    </section>
-    <section id="findRetouch" style="display: none;">
-      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
-      <table id="candidateRetouchTable" class="nowrap display cell-border" style="width: 100%;">
-        <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Needing Retouch: <span id="candidateRetouchCount"></span></caption>
-        <thead><tr></tr></thead>
-        <tbody></tbody>
-        <tfoot><tr></tr></tfoot>
-      </table>
-      <table id="sentRetouchTable" class="nowrap display cell-border" style="width: 100%;">
-        <caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">Blocks Sent For Retouch: <span id="sentRetouchCount"></span></caption>
-        <thead><tr></tr></thead>
-        <tbody></tbody>
-        <tfoot><tr></tr></tfoot>
-      </table>
-    </section>
-    <section id="dateRange" style="display: none;">
-      <button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
-      <form action="javascript:calcDateRange()" style="display: inline;">
-        <label>From: </label><input type="text" id="fromDate" style="width: 70px;">
-        <label>To: </label><input type="text" id="toDate" style="width: 70px;">
-        <button id="dateRangeSubmitButton">Submit</button>
-      </form><br>
-      <form action="javascript:calcLastDays()" style="display: inline;">
-        <label>Last </label><input type="text" id="lastDays" style="width: 24px;"><label> Weekdays</label>
-        <button>Submit</button>
-      </form><br>
-      <button onclick="changeWeek(-1)">Previous Week</button>
-      <button onclick="calcThisWeek()">Current Week</button>
-      <button onclick="changeWeek(1)">Next Week</button>
-      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
-        <span style="font-weight: bold;">Tungsten Filled: </span><span id="tungstenFilledDateRangeCount">0</span><p id="tungstenFilledDateBlocks"></p>
-        <button onclick="copy(document.getElementById('tungstenFilledDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('tungstenFilledDateBlocks').innerHTML)">Get Info</button>
-      </div>
-      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
-        <span style="font-weight: bold;">Epoxy Filled: </span><span id="epoxyFilledDateRangeCount">0</span><p id="epoxyFilledDateBlocks"></p>
-        <button onclick="copy(document.getElementById('epoxyFilledDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('epoxyFilledDateBlocks').innerHTML)">Get Info</button>
-      </div>
-      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
-        <span style="font-weight: bold;">Machined: </span><span id="machinedDateRangeCount">0</span><p id="machinedDateBlocks"></p>
-        <button onclick="copy(document.getElementById('machinedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('machinedDateBlocks').innerHTML)">Get Info</button>
-      </div>
-      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
-        <span style="font-weight: bold;">Density Tested: </span><span id="densityTestedDateRangeCount">0</span><p id="densityTestedDateBlocks"></p>
-        <button onclick="copy(document.getElementById('densityTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('densityTestedDateBlocks').innerHTML)">Get Info</button>
-      </div>
-      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
-        <span style="font-weight: bold;">Light Transmission Tested: </span><span id="lightTransTestedDateRangeCount">0</span><p id="lightTransTestedDateBlocks"></p>
-        <button onclick="copy(document.getElementById('lightTransTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('lightTransTestedDateBlocks').innerHTML)">Get Info</button>
-      </div>
-      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
-        <span style="font-weight: bold;">Scintillation Tested: </span><span id="scintTestedDateRangeCount">0</span><p id="scintTestedDateBlocks"></p>
-        <button onclick="copy(document.getElementById('scintTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('scintTestedDateBlocks').innerHTML)">Get Info</button>
-      </div>
-      <div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
-        <span style="font-weight: bold;">Natural Light Tested: </span><span id="natLightTestedDateRangeCount">0</span><p id="natLightTestedDateBlocks"></p>
-        <button onclick="copy(document.getElementById('natLightTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('natLightTestedDateBlocks').innerHTML)">Get Info</button>
-      </div>
-    </section>
-    <script>
-      function toPrint() {
+						<section id="CBshow-natLightImgSection" style="display: none;">
+							<input type="checkbox" id="CBshow-natLightImg" onclick="toggleImages('natLightImg')">
+							<label for="CBshow-natLightImg" id="CBshow-natLightImgLabel">Show Natural Light Images</label>
+						</section>
+					</section>
+					<div id="loadingImages" style="display: none;">Loading Images...</div>
+					<div id="noImagesFound" style="display: none;">No Images Found</div>
+				</section>
+				<section id="blockDetailsSection" style="display: none;">
+					<h2>Block Details</h2>
+					<dl class='inline-flex'>
+						<dt id='dbnLabel'>DBN:</dt>
+						<dd id="dbn"></dd>
+						<dt id='blockLabel'>Block Design:</dt>
+						<dd id="block"></dd>
+						<dt id='statusLabel'>Status:</dt>
+						<dd id="status"></dd>
+						<dt id='pregradeLabel'>Pregrade:</dt>
+						<dd id="pregrade"></dd>
+						<dt id="shipmentLabel">BNL Shipment:</dt>
+						<dd id="shipment"></dd>
+						<dt id="sectorLabel">Sector:</dt>
+						<dd id="sector"></dd>
+						<dt id="commentLabel">Comment:</dt>
+						<dd id="comment"></dd>
+						<section style="width: 100%; padding-top: 1em;">
+							<button class="removeForPrint" id="showTungstenTableBtn" style="display: none;" onclick="toggleTungstenTable()">Show Tungsten Powder Information</button>
+							<table class="dimension" id="tungstenTable"
+								style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+								<tr>
+									<th style="white-space: nowrap;">Powder</th>
+									<th style="white-space: nowrap;">Bucket Number</th>
+									<th style="white-space: nowrap;">Mold Series</th>
+									<th style="white-space: nowrap;">Empty Mold Mass (g)</th>
+									<th style="white-space: nowrap;">Filled Mold Mass (g)</th>
+									<th style="white-space: nowrap;">Tungsten Mass (g)</th>
+									<th style="white-space: nowrap;">Filler</th>
+									<th style="white-space: nowrap;">Filling Date</th>
+								</tr>
+								<tr>
+									<td id="powder"></td>
+									<td id="bucket"></td>
+									<td id="moldSeries"></td>
+									<td id="emptyMoldMass"></td>
+									<td id="filledMoldMass"></td>
+									<td id="tungstenMass"></td>
+									<td id="tungstenFiller"></td>
+									<td id="tungstenFillingDate"></td>
+								</tr>
+							</table>
+						</section>
+						<section style="width: 100%; padding: 1em 0;">
+							<button class="removeForPrint" id="showEpoxyTableBtn" style="display: none;" onclick="toggleEpoxyTable()">Show Epoxy Information</button>
+							<table class="dimension" id="epoxyTable"
+								style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+								<tr>
+									<th style="white-space: nowrap;">Epoxy Batch</th>
+									<th style="white-space: nowrap;">Resin Mass (g)</th>
+									<th style="white-space: nowrap;">Hardener Mass (g)</th>
+									<th style="white-space: nowrap;">Potting Notes</th>
+									<th style="white-space: nowrap;">Epoxy Filling Time (min)</th>
+									<th style="white-space: nowrap;">Filling Date</th>
+									<th style="white-space: nowrap;">Preparer</th>
+								</tr>
+								<tr>
+									<td id="epoxyBatch"></td>
+									<td id="resinMass"></td>
+									<td id="hardenerMass"></td>
+									<td id="pottingNotes"></td>
+									<td id="epoxyFillingTime"></td>
+									<td id="epoxyFillingDate"></td>
+									<td id="epoxyPreparer"></td>
+								</tr>
+							</table>
+						</section>
+						<dt id="machiningDateLabel">Machining Date: </dt>
+						<dd id="machiningDate"></dd>
+					</dl>
+				</section>
+				<section id="blockDetailsNoInfo" style="display: none;">
+					<p style="font-style: italic; font-size: 1.5em;">Unable to find any block information for this dbn
+					</p>
+				</section>
+				<section id="densitySection" style="display: none;">
+					<h2 id="densitySectionLabel">Density</h2>
+					<dl class='inline-flex'>
+						<dt id='volumeLabel'>Volume:</dt>
+						<dd id="volume"></dd>
+						<dt id='dimensionTesterLabel'>Dimension Tester:</dt>
+						<dd id="dimensionTester"></dd>
+						<dt id='massLabel'>Mass:</dt>
+						<dd id="mass"></dd>
+						<dt id='massTesterLabel'>Mass Tester:</dt>
+						<dd id="massTester"></dd>
+						<dt id='densityLabel'>Density:</dt>
+						<dd id="density" style="font-weight: bold;"></dd>
+						<dt id='densityDateLabel'>Date:</dt>
+						<dd id="densityDate"></dd>
+					</dl>
+					<button class="removeForPrint" id="showTolerancesTableBtn" style="display: none;" onclick="toggleTolerancesTable()">Show Tolerances</button>
+					<table class="dimension" id="tolerancesTable"
+						style="display: none; padding-top: 1em; border-collapse: collapse; fill: #333;">
+						<tr>
+							<th>ΔL</th>
+							<th>ΔBT</th>
+							<th>ΔBB</th>
+							<th>ΔBH</th>
+							<th>ΔST</th>
+							<th>ΔSB</th>
+							<th>ΔSH</th>
+						</tr>
+						<tr>
+							<td id="L" style="font-weight: bold;"></td>
+							<td id="BT" style="font-weight: bold;"></td>
+							<td id="BB" style="font-weight: bold;"></td>
+							<td id="BH" style="font-weight: bold;"></td>
+							<td id="ST" style="font-weight: bold;"></td>
+							<td id="SB" style="font-weight: bold;"></td>
+							<td id="SH" style="font-weight: bold;"></td>
+						</tr>
+					</table>
+				</section>
+				<section id="densityNoInfo" style="display: none;">
+					<p style="font-style: italic; font-size: 1.5em;">Unable to find any density data for this block</p>
+				</section>
+				<section id="lightTransSection" style="display: none;">
+					<h2 id="lightTransSectionLabel">Light Transmission</h2>
+					<dl class='inline-flex'>
+						<dt id='fiberPercentageLabel'>Fiber Count:</dt>
+						<dd id="fiberPercentage" style="font-weight: bold;"></dd>
+						<dt id='goodEndLabel'>Good End:</dt>
+						<dd id="goodEnd"></dd>
+						<dt id='missingRowLabel'>Missing Row:</dt>
+						<dd id="missingRow" style="font-weight: bold;"></dd>
+						<dt id='thirteenHolesLabel'>13 Connected Holes:</dt>
+						<dd id="thirteenHoles" style="font-weight: bold;"></dd>
+						<dt id='lightTransTesterLabel'>Tester:</dt>
+						<dd id="lightTransTester"></dd>
+						<dt id='lightTransDateLabel'>Date:</dt>
+						<dd id="lightTransDate"></dd>
+					</dl>
+					<button class="removeForPrint" id="showTowerTableBtn" style="display: none; margin-bottom: 1em;" onclick="toggleTowerTable()">Show Tower Information</button>
+					<table class="dimension" id="towerTable"
+						style="display: none; margin-bottom: 1em; border-collapse: collapse; fill: #333;">
+						<tr>
+							<th>T1 (BL)</th>
+							<th>T2 (BR)</th>
+							<th>T3 (TL)</th>
+							<th>T3 (TR)</th>
+						</tr>
+						<tr>
+							<td id="tower1" style="font-weight: bold;"></td>
+							<td id="tower2" style="font-weight: bold;"></td>
+							<td id="tower3" style="font-weight: bold;"></td>
+							<td id="tower4" style="font-weight: bold;"></td>
+						</tr>
+					</table>
+					<a id="histogramWide" target="_blank" style="display: none;">Histograms (Wide)<br></a>
+						<a id="histogramNarrow" target="_blank" style="display: none;;">Histograms (Narrow)</a>
+						<figure class="testImg" id="lightTransImgFigW" style="display: none;">
+							<img id="lightTransImgW" height="360"/>
+							<figcaption>Wide End</figcaption>
+						</figure>
+						<figure class="testImg" id="lightTransImgFigN" style="display: none;">
+							<img id="lightTransImgN" height="360"/>
+							<figcaption>Narrow End</figcaption>
+						</figure>
+						<figure class="testImg" id="lightTransImgCroppedFigW" style="display: none;">
+							<img id="lightTransImgCroppedW" height="360"/>
+							<figcaption>Wide End</figcaption>
+						</figure>
+						<figure class="testImg" id="lightTransImgCroppedFigN" style="display: none;">
+							<img id="lightTransImgCroppedN" height="360"/>
+							<figcaption>Narrow End</figcaption>
+						</figure>
+				</section>
+				<section id="lightTransNoInfo" style="display: none;">
+					<p style="font-style: italic; font-size: 1.5em;">Unable to find any light transmission data for this
+						block</p>
+				</section>
+				<section id="natLightSection" style="display: none;">
+					<h2>Natural Light</h2>
+					<dl class='inline-flex'>
+						<dt id='natLightTesterLabel'>Tester:</dt>
+						<dd id="natLightTester"></dd>
+						<dt id='natLightDateLabel'>Date:</dt>
+						<dd id="natLightDate"></dd>
+					</dl>
+					<figure class="testImg" id="natLightImgFigW" style="display: none;">
+						<img id="natLightImgW" height="360"/>
+						<figcaption id="natLightImgFigCaption4">Wide End</figcaption>
+					</figure>
+					<figure class="testImg" id="natLightImgFigN" style="display: none;">
+						<img id="natLightImgN" height="360"/>
+						<figcaption id="natLightImgFigCaption5">Narrow End</figcaption>
+					</figure>
+				</section>
+				<section id="natLightNoInfo" style="display: none;">
+					<p style="font-style: italic; font-size: 1.5em;">Unable to find any natural light data for this
+						block</p>
+				</section>
+				<section id="scintSection" style="display: none;">
+					<h2 id="scintSectionLabel">Scintillation</h2>
+					<dl class='inline-flex'>
+						<dt id='scintillationLabel'>Scintillation:</dt>
+						<dd id="scintillation"></dd>
+						<dt id='scintRatioLabel'>Ratio:</dt>
+						<dd id="scintRatio" style="font-weight: bold;"></dd>
+						<dt id='scintTesterLabel'>Tester:</dt>
+						<dd id="scintTester"></dd>
+						<dt id='scintDateLabel'>Date:</dt>
+						<dd id="scintDate"></dd>
+					</dl>
+				</section>
+				<section id="scintNoInfo" style="display: none;">
+					<p style="font-style: italic; font-size: 1.5em;">Unable to find any scintillation data for this
+						block</p>
+				</section>
+			</section>
+			<section id="findBlocks" style="display: none;">
+				<button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
+				<form action="javascript:filter()" style="display: inline;">
+					<label style="display: inline-block; width: 90px;">DBN: </label><input style="width: 240px;" type="text" tabindex="1" id="inputDBNs">
+					<button>Submit</button>
+				</form>
+				<button onclick="clearInputDBNs()" style="display: inline;">Clear</button><br>
+				<form action="javascript:filter()" style="display: inline;">
+					<label style="display: inline-block; width: 90px;">Shipment: </label><input style="width: 240px;" type="text" tabindex="2" id="inputShipment">
+					<button>Submit</button>
+				</form>
+				<button onclick="clearInputShipment()" style="display: inline;">Clear</button><br>
+				<form action="javascript:filter()" style="display: inline;">
+					<label style="display: inline-block; width: 90px;">Status: </label><input style="width: 240px;" type="text" tabindex="3" id="inputStatus">
+					<button>Submit</button>
+				</form>
+				<button onclick="clearInputStatus()" style="display: inline;">Clear</button><br>
+				<form action="javascript:filter()" style="display: inline;">
+					<label style="display: inline-block; width: 90px;">Block Design: </label><input style="width: 240px;" type="text" tabindex="4" id="inputBlock">
+					<button>Submit</button>
+				</form>
+				<button onclick="clearInputBlock()" style="display: inline;">Clear</button><br>
+				<input id="showRowsCB" type="checkbox" style="margin-top: 1em;" onclick="toggleShowRows()"><label for="showRowsCB">Show rows with empty cells in selected column(s)</label>
+				<section style="margin: 1em 0em">
+					<span>Blocks Found:</span>
+					<span id="blocksCount"></span>
+				</section>
+				<table id="blocksTable" class="nowrap stripe hover order-column row-border cell-border"
+					style="width: 100%;">
+					<thead>
+						<tr></tr>
+					</thead>
+					<tbody id="blocksTableBody"></tbody>
+					<tfoot>
+						<tr></tr>
+					</tfoot>
+				</table>
+			</section>
+			<section id="findRetouch" style="display: none;">
+				<button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
+				<table id="candidateRetouchTable" class="nowrap display cell-border" style="width: 100%;">
+					<caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">
+						Blocks Needing Retouch: <span id="candidateRetouchCount"></span></caption>
+					<thead>
+						<tr></tr>
+					</thead>
+					<tbody></tbody>
+					<tfoot>
+						<tr></tr>
+					</tfoot>
+				</table>
+				<table id="sentRetouchTable" class="nowrap display cell-border" style="width: 100%;">
+					<caption style="text-align: center; font-weight: bold; background-color: lightgrey; padding: 8px;">
+						Blocks Sent For Retouch: <span id="sentRetouchCount"></span></caption>
+					<thead>
+						<tr></tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+			<section id="dateRange" style="display: none;">
+				<button onclick="loadFindBlockInfo()" style="margin: 1em 0em;">Back</button><br>
+				<form action="javascript:calcDateRange()" style="display: inline;">
+					<label>From: </label><input type="text" id="fromDate" style="width: 70px;">
+					<label>To: </label><input type="text" id="toDate" style="width: 70px;">
+					<button id="dateRangeSubmitButton">Submit</button>
+				</form><br>
+				<form action="javascript:calcLastDays()" style="display: inline;">
+					<label>Last </label><input type="text" id="lastDays" style="width: 24px;"><label> Weekdays</label>
+					<button>Submit</button>
+				</form><br>
+				<button onclick="changeWeek(-1)">Previous Week</button>
+				<button onclick="calcThisWeek()">Current Week</button>
+				<button onclick="changeWeek(1)">Next Week</button>
+				<div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+					<span style="font-weight: bold;">Tungsten Filled: </span><span id="tungstenFilledDateRangeCount">0</span>
+					<p id="tungstenFilledDateBlocks"></p>
+					<button onclick="copy(document.getElementById('tungstenFilledDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('tungstenFilledDateBlocks').innerHTML)">Get Info</button>
+				</div>
+				<div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+					<span style="font-weight: bold;">Epoxy Filled: </span><span id="epoxyFilledDateRangeCount">0</span>
+					<p id="epoxyFilledDateBlocks"></p>
+					<button onclick="copy(document.getElementById('epoxyFilledDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('epoxyFilledDateBlocks').innerHTML)">Get Info</button>
+				</div>
+				<div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+					<span style="font-weight: bold;">Machined: </span><span id="machinedDateRangeCount">0</span>
+					<p id="machinedDateBlocks"></p>
+					<button onclick="copy(document.getElementById('machinedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('machinedDateBlocks').innerHTML)">Get Info</button>
+				</div>
+				<div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+					<span style="font-weight: bold;">Density Tested: </span><span id="densityTestedDateRangeCount">0</span>
+					<p id="densityTestedDateBlocks"></p>
+					<button onclick="copy(document.getElementById('densityTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('densityTestedDateBlocks').innerHTML)">Get Info</button>
+				</div>
+				<div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+					<span style="font-weight: bold;">Light Transmission Tested: </span><span id="lightTransTestedDateRangeCount">0</span>
+					<p id="lightTransTestedDateBlocks"></p>
+					<button onclick="copy(document.getElementById('lightTransTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('lightTransTestedDateBlocks').innerHTML)">Get Info</button>
+				</div>
+				<div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+					<span style="font-weight: bold;">Scintillation Tested: </span><span id="scintTestedDateRangeCount">0</span>
+					<p id="scintTestedDateBlocks"></p>
+					<button onclick="copy(document.getElementById('scintTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('scintTestedDateBlocks').innerHTML)">Get Info</button>
+				</div>
+				<div style="margin: 1em 0; padding: 1em; border: 1px solid black;">
+					<span style="font-weight: bold;">Natural Light Tested: </span><span id="natLightTestedDateRangeCount">0</span>
+					<p id="natLightTestedDateBlocks"></p>
+					<button onclick="copy(document.getElementById('natLightTestedDateBlocks').innerHTML)">Copy</button><button onclick="findBlocksFromList(document.getElementById('natLightTestedDateBlocks').innerHTML)">Get Info</button>
+				</div>
+			</section>
+			<script>
+				function toPrint() {
         var printPreview = window.open()
         var printDocument = printPreview.document
         printDocument.open()
@@ -1731,6 +1816,7 @@
         document.getElementById('loadingDatabase').style.display = 'block'
         google.script.run.withSuccessHandler(onSuccess).getDatabase()
         function onSuccess (gotDatabase) {
+          const d1 = new Date()
           if (gotDatabase == null) {
             alert('oops, fn gotDatabase returned null! unable to load database and testing folders from drive')
             document.getElementById('loadingDatabase').style.display = 'none'
@@ -1742,6 +1828,9 @@
           } else {
             console.log('loaded database and testing folders without error')
             database = [gotDatabase.sheet1, gotDatabase.sheet2]
+            times = gotDatabase.times
+            console.log('load files took ' + (times[1] - times[0])/1000 + ' s')
+            console.log('load files to success: ' + (d1.getTime() - times[1])/1000 + ' s')
             let blocks = []
             for (let index = 1; index < database[0].length; index++) {
               if (database[0][databaseBlockColIndex] !== '') {
@@ -2007,7 +2096,7 @@
             document.getElementById('goodEnd' + 'Label').style.display = 'none'
           }
           if (block.fiberPercentage != null) {
-            document.getElementById('fiberPercentage').innerHTML = block.fiberPercentage + ' %'
+            document.getElementById('fiberPercentage').innerHTML = parseFloat(block.fiberPercentage).toFixed(2) + ' %'
             document.getElementById('fiberPercentage').style.color = testColors[grade_fiberPercentage(block.fiberPercentage)]
             document.getElementById('fiberPercentage').style.display = 'inline'
             document.getElementById('fiberPercentage' + 'Label').style.display = 'inline'
@@ -2131,7 +2220,7 @@
           // some info present, so make the info section visible and update its entries and hide the noInfo section
           document.getElementById("scintSection").style.display = 'block'
           if (block.scintillation != null) {
-            document.getElementById('scintillation').innerHTML = block.scintillation + ' mV'
+            document.getElementById('scintillation').innerHTML = parseFloat(block.scintillation).toFixed(3) + ' mV'
             document.getElementById('scintillation').style.display = 'inline'
             document.getElementById('scintillation' + 'Label').style.display = 'inline'
           } else {
@@ -2435,7 +2524,7 @@
               }
               if (tolerancesNames.includes(name)) {
                 let k = tolerancesNames.findIndex((value) => name === value)
-                rowData[j] = (tolerances[k] == null) ? '' : tolerances[k].toFixed(3)
+                rowData[j] = (tolerances == null || tolerances[k] == null) ? '' : tolerances[k].toFixed(3)
               } else if (towerNames.includes(name)) {
                 if (dataPresent(data)) {
                   rowData[j] = parseFloat(data).toFixed(2)
@@ -2449,7 +2538,7 @@
                   rowData[j] = ''
                 }
               } else if (name === 'toleranceMse') {
-                if (tolerances.every((value) => value != null)) {
+                if (tolerances != null && tolerances.every((value) => value != null)) {
                   tolerances.forEach((value, index, array) => array[index] = value * value)
                   rowData[j] = ((tolerances.reduce((a, b) => (a + b))) / 7).toFixed(9)
                 } else {
@@ -2463,7 +2552,7 @@
                 }
               } else if (name === 'fiberPercentage') {
                 if (dataPresent(data) && data !== '0.00') {
-                  rowData[j] = data
+                  rowData[j] =  parseFloat(data).toFixed(2)
                 } else {
                   rowData[j] = ''
                 }
@@ -2664,6 +2753,7 @@
         hideUninterestingRows = !hideUninterestingRows
         filter()
       }
-    </script>
-  </body>
+			</script>
+</body>
+
 </html>

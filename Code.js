@@ -14,29 +14,28 @@ function include(filename) {
   return HtmlService.createTemplateFromFile(filename).evaluate()
     .getContent()
 }
-
 // Maximum DBN (reject dbns larger than this)
-var maxDbn = 3498
+const maxDbn = 3498
 
 // Declare variables that will be needed by other functions after loadFiles has run
-var filesLoaded = false
-var error
-var database
-var blocksSheet1
-var blocksSheet2
-var lightTransOriginalFolder
-var lightTransCroppedFolder
-var lightTransArchiveOriginalFolder
-var lightTransAnalysisFolder
-var lightTransArchiveAnalysisFolder
-var naturalLightFolder
-var naturalLightArchiveFolder
-var imageUrlsSheet
+let filesLoaded = false
+let error
+let database
+let blocks1_12
+let blocks13_64
+let lightTransOriginalFolder
+let lightTransCroppedFolder
+let lightTransArchiveOriginalFolder
+let lightTransAnalysisFolder
+let lightTransArchiveAnalysisFolder
+let naturalLightFolder
+let naturalLightArchiveFolder
+let imageUrlsSheet
 
 /**
  * Locates and saves database sheets and all testing folders as variables to be used by other functions
  */
-function loadFiles () {
+function loadFiles() {
   let QATestsFolder
   let lightTransTestFolder
   let errorMessage = ''
@@ -44,10 +43,10 @@ function loadFiles () {
   if (DriveApp.getFilesByName('Blocks database').hasNext()) {
     // ...found database, now save it
     database = DriveApp.getFilesByName('Blocks database').next()
-    blocksSheet1 = SpreadsheetApp.open(database).getSheetByName('Blocks DB')
-    blocksSheet2 = SpreadsheetApp.open(database).getSheetByName('Blocks1364DB')
+    blocks1_12 = SpreadsheetApp.open(database).getSheetByName('Blocks DB')
+    blocks13_64 = SpreadsheetApp.open(database).getSheetByName('Blocks1364DB')
     // ...check if you found both sheets
-    if (blocksSheet1 == null || blocksSheet2 == null) {
+    if (blocks1_12 == null || blocks13_64 == null) {
       // Failed to locate both sheets
       Logger.log('failed to locate database sheet(s) in database spreadsheet')
     }
@@ -125,11 +124,16 @@ function loadFiles () {
   }
   filesLoaded = true
   error = errorMessage
+  const d1 = new Date()
+  return d1.getTime()
 }
 
-function getDatabase () {
+function getDatabase() {
+  let _times = []
+  const d1 = new Date()
+  _times.push(d1.getTime())
   if (!filesLoaded) {
-    loadFiles()
+    _times.push(loadFiles())
   }
   if (error !== '') {
     // an error occured while loading files, do don't try to pass database var to fns
@@ -140,11 +144,11 @@ function getDatabase () {
       err: error
     }
   } else {
-    const sheets = SpreadsheetApp.open(database).getSheets()
     return {
-      sheet1: sheets[0].getDataRange().getDisplayValues(),
-      sheet2: sheets[1].getDataRange().getDisplayValues(),
-      err: null
+      sheet1: blocks1_12.getDataRange().getDisplayValues(),
+      sheet2: blocks13_64.getDataRange().getDisplayValues(),
+      err: null,
+      times: _times
     }
   }
 }
@@ -157,7 +161,7 @@ function getDatabase () {
  * @param {number} dbn The block's DBN
  * @return {string[]} Array of image urls [LT_W, LT_N, LT_cropped_W, LT_cropped_N, NL_W, NL_N]
  */
-function getImageUrls (blockMap) {
+function getImageUrls(blockMap) {
   // Default dbn for testing only:
   // var dbn = 811
   // if files aren't loaded, load them
@@ -290,7 +294,7 @@ function getImageUrls (blockMap) {
  * @param {*} fileNameWithoutExtensionArray Array of files names to search, searching for the first name first
  * @return {string} File id of the first matching file
  */
-function searchFolderForFiles (folderToSearch, fileNameWithoutExtensionArray) {
+function searchFolderForFiles(folderToSearch, fileNameWithoutExtensionArray) {
   // First check for .JPG, since that covers ALMOST all of the images, and this process is much faster...
   // Logger.log('fileNameWithoutExtensionArray was ' + fileNameWithoutExtensionArray)
   const jpgArray = [...fileNameWithoutExtensionArray]
@@ -326,7 +330,7 @@ function searchFolderForFiles (folderToSearch, fileNameWithoutExtensionArray) {
  * @param {number} inputDbn The block's DBN
  * @return {string} The formatted block name without -W or -N, e.g. DBN_0123
  */
-function formatFileNamePrefixesForLightTrans (inputDbn) {
+function formatFileNamePrefixesForLightTrans(inputDbn) {
   // Default dbn for testing only:
   // var inputDbn = 1
   const dbnString = inputDbn.toString()
@@ -352,7 +356,7 @@ function formatFileNamePrefixesForLightTrans (inputDbn) {
  * @param {number} dbn Block DBN
  * @return {string} Most recent matching folder's name
  */
-function getDateFolder (folderToSearch, date, dbn) {
+function getDateFolder(folderToSearch, date, dbn) {
   let folderToReturnName
   // Search folderToSearch for candidate folders with the correct date
   const subFolderIterator = folderToSearch.getFolders()
@@ -401,7 +405,7 @@ function getDateFolder (folderToSearch, date, dbn) {
  * An experimental function that crosschecks the LT and NL dates found in the database with those found by loadBigArray
  * @param {*} bigArray
  */
-function checkBigArraySheet (bigArray) {
+function checkBigArraySheet(bigArray) {
   if (!filesLoaded) {
     loadFiles()
   }
@@ -409,7 +413,7 @@ function checkBigArraySheet (bigArray) {
     bigArray = loadBigArray()
   }
   // Checks if a value (say, returned by a map) is significant (not null, empty, #NUM!, or #DIV/0!)
-  function dataPresent (data) {
+  function dataPresent(data) {
     return (data != null && data !== '' && data !== '#NUM!' && data !== '#DIV/0!')
   }
   Logger.log('checking bigArraySheet')
@@ -497,7 +501,7 @@ function checkBigArraySheet (bigArray) {
 /**
  * An experimental function that writes all data from bigArray to a google sheet named "imageUrlsSheet" in the user's drive
  */
-function putBigArray (bigArray) {
+function putBigArray(bigArray) {
   if (bigArray == null) {
     bigArray = loadBigArray()
   }
@@ -523,7 +527,7 @@ function putBigArray (bigArray) {
  * an experimental fucntion that loads iterates through all testing folders to find the most recent testing
  * images for each block (takes a long time)
  */
-function loadBigArray () {
+function loadBigArray() {
   if (!filesLoaded) {
     loadFiles()
   }
@@ -536,7 +540,7 @@ function loadBigArray () {
    * @returns {Array} bigArray indexed by dbn -> [[LT W img url, date, x], [LT N img url, date, x], [LTCropped img url, date, x], [LTCropped img url, date, x], [NL img url, date, x], [NL img url, date, x]]
    * where x is 0 for single-block images, 1 for 2 blocks, this one on left, and 2 for 2 blocks, this one on right
    */
-  function massIteration (folder, imageType) {
+  function massIteration(folder, imageType) {
     if (imageType === 'LTCropped') {
       iterate(folder)
     } else {
@@ -545,7 +549,7 @@ function loadBigArray () {
         iterate(folderIterator.next())
       }
     }
-    function iterate (subfolder) {
+    function iterate(subfolder) {
       const fileIterator = subfolder.getFiles()
       while (fileIterator.hasNext()) {
         const file = fileIterator.next()
@@ -602,7 +606,7 @@ function loadBigArray () {
   massIteration(naturalLightArchiveFolder, 'NL')
   return bigArray
 }
-function getHistograms (fromHTML) {
+function getHistograms(fromHTML) {
   const dbn = fromHTML[0]
   const date = fromHTML[1]
   const urls = [null, null]
@@ -656,7 +660,7 @@ function getHistograms (fromHTML) {
  * @param {string} string to be trimmed
  * @returns {string} string with beginning zeroes removed
  */
-function removeZeroes (string) {
+function removeZeroes(string) {
   let toReturn = string
   while (toReturn.charAt(0) === '0' && toReturn.length > 1) {
     toReturn = toReturn.substr(1)
@@ -668,7 +672,7 @@ function removeZeroes (string) {
  * Converts a Javascript date object to a String in format such as 20201225
  * @param {Date} date
  */
-function dateToEight (date) {
+function dateToEight(date) {
   const yr = date.getFullYear().toString()
   let mo = (date.getMonth() + 1).toString()
   let day = date.getDate().toString()
